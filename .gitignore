@@ -1,0 +1,26 @@
+# Dependencies
+node_modules/
+
+# Next.js
+.next/
+out/
+
+# Env & local
+.env
+.env*.local
+
+# Debug / OS
+npm-debug.log*
+.DS_Store
+*.pem
+
+# IDE
+.idea/
+.vscode/
+*.swp
+
+# Vercel
+.vercel
+
+# Uploads (optional: remove this line if you want gallery uploads in git)
+# public/uploads/
