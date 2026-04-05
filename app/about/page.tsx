@@ -145,10 +145,10 @@ export default function About() {
   return (
     <div>
       {/* Hero Section */}
-      <section className="relative bg-gradient-to-br from-pink-50 via-rose-50 to-pink-100 py-1.5 overflow-hidden">
+      <section className="relative bg-gradient-to-br from-champagne-50 via-stone-100 to-champagne-100 py-1.5 overflow-hidden">
         <div className="absolute inset-0 opacity-5">
-          <div className="absolute top-10 right-10 w-64 h-64 bg-pink-300 rounded-full blur-3xl"></div>
-          <div className="absolute bottom-10 left-10 w-48 h-48 bg-rose-300 rounded-full blur-3xl"></div>
+          <div className="absolute top-10 right-10 w-64 h-64 bg-champagne-300 rounded-full blur-3xl"></div>
+          <div className="absolute bottom-10 left-10 w-48 h-48 bg-champagne-200/50 rounded-full blur-3xl"></div>
         </div>
         <div className="container mx-auto px-6 relative z-10">
           <Breadcrumbs items={[{ label: 'About' }]} />
@@ -191,8 +191,8 @@ export default function About() {
                   to ensure lasting results.
                 </p>
                 <p className="text-gray-700 leading-relaxed">
-                  Visit our <Link href="/services" className="text-pink-600 hover:text-pink-700 font-semibold">services page</Link> to 
-                  explore our offerings, or <Link href="/booking" className="text-pink-600 hover:text-pink-700 font-semibold">book an appointment</Link> today 
+                  Visit our <Link href="/services" className="text-champagne-600 hover:text-champagne-700 font-semibold">services page</Link> to 
+                  explore our offerings, or <Link href="/booking" className="text-champagne-600 hover:text-champagne-700 font-semibold">book an appointment</Link> today 
                   to experience the <strong>Perfect Nails</strong> difference.
                 </p>
               </>
@@ -219,28 +219,28 @@ export default function About() {
             <h2 className="text-2xl font-bold text-gray-900 mb-4">Why Choose Perfect Nails?</h2>
             <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
               <div>
-                <h3 className="text-xl font-semibold text-pink-600 mb-2">Expert Technicians</h3>
+                <h3 className="text-xl font-semibold text-champagne-600 mb-2">Expert Technicians</h3>
                 <p className="text-gray-700">
                   Our team consists of highly trained and experienced nail technicians who are skilled in 
                   the latest techniques and trends in nail care and design.
                 </p>
               </div>
               <div>
-                <h3 className="text-xl font-semibold text-pink-600 mb-2">Premium Products</h3>
+                <h3 className="text-xl font-semibold text-champagne-600 mb-2">Premium Products</h3>
                 <p className="text-gray-700">
                   We use only the highest quality products and tools to ensure your nails look beautiful 
                   and last as long as possible.
                 </p>
               </div>
               <div>
-                <h3 className="text-xl font-semibold text-pink-600 mb-2">Relaxing Environment</h3>
+                <h3 className="text-xl font-semibold text-champagne-600 mb-2">Relaxing Environment</h3>
                 <p className="text-gray-700">
                   Our salon provides a clean, comfortable, and relaxing atmosphere where you can unwind 
                   and enjoy your nail care experience.
                 </p>
               </div>
               <div>
-                <h3 className="text-xl font-semibold text-pink-600 mb-2">Convenient Location</h3>
+                <h3 className="text-xl font-semibold text-champagne-600 mb-2">Convenient Location</h3>
                 <p className="text-gray-700">
                   Located at <strong>4030 E Bell Rd #110, Phoenix, AZ 85032</strong>, we're easily accessible 
                   and offer convenient parking for our clients.
@@ -265,14 +265,14 @@ export default function About() {
             </ul>
             <Link 
               href="/services" 
-              className="inline-block px-6 py-3 bg-pink-600 text-white rounded-lg font-semibold hover:bg-pink-700 transition"
+              className="inline-block px-6 py-3 bg-champagne-600 text-white rounded-lg font-semibold hover:bg-champagne-700 transition"
             >
               View All Services →
             </Link>
           </section>
 
           {/* CTA Section */}
-          <section className="bg-gradient-to-br from-pink-50 to-rose-50 rounded-lg shadow-md p-8 text-center">
+          <section className="bg-gradient-to-br from-champagne-50 to-stone-100 rounded-lg shadow-md p-8 text-center">
             <h2 className="text-2xl font-bold text-gray-900 mb-4">Ready to Experience Perfect Nails?</h2>
             <p className="text-gray-700 mb-6">
               Book your appointment today and discover why we're <strong>Phoenix's premier nail salon</strong>.
@@ -280,13 +280,13 @@ export default function About() {
             <div className="flex flex-col sm:flex-row gap-4 justify-center">
               <Link
                 href="/booking"
-                className="px-8 py-3 bg-pink-600 text-white rounded-lg font-semibold hover:bg-pink-700 transition shadow-lg"
+                className="px-8 py-3 bg-champagne-600 text-white rounded-lg font-semibold hover:bg-champagne-700 transition shadow-lg"
               >
                 Book Appointment
               </Link>
               <Link
                 href="/contact"
-                className="px-8 py-3 bg-white text-pink-600 rounded-lg font-semibold hover:bg-pink-50 transition shadow-lg border-2 border-pink-600"
+                className="px-8 py-3 bg-white text-champagne-600 rounded-lg font-semibold hover:bg-champagne-50 transition shadow-lg border-2 border-champagne-600"
               >
                 Contact Us
               </Link>

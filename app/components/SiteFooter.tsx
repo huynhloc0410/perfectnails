@@ -10,7 +10,7 @@ export default function SiteFooter() {
   const mapsUrl = `https://www.google.com/maps/search/?api=1&query=${encodeURIComponent(SITE_DEFAULT_ADDRESS)}`;
 
   return (
-    <footer className="font-nav mt-auto border-t border-pink-100/90 bg-gradient-to-b from-white to-[#fff8fa]">
+    <footer className="font-nav mt-auto border-t border-champagne-200/90 bg-gradient-to-b from-white to-champagne-50/90">
       <div className="mx-auto max-w-3xl px-4 py-10 text-center sm:px-6 sm:py-12">
         <Link
           href="/"
@@ -25,19 +25,19 @@ export default function SiteFooter() {
           <a href={SITE_PHONE_HREF} className="footer-action-link">
             {SITE_PHONE_DISPLAY}
           </a>
-          <span className="hidden text-pink-200 sm:inline" aria-hidden>
+          <span className="hidden text-champagne-300 sm:inline" aria-hidden>
             ·
           </span>
           <a href={mapsUrl} className="footer-action-link" target="_blank" rel="noopener noreferrer">
             Directions
           </a>
-          <span className="hidden text-pink-200 sm:inline" aria-hidden>
+          <span className="hidden text-champagne-300 sm:inline" aria-hidden>
             ·
           </span>
           <Link href="/contact" className="footer-action-link">
             Contact
           </Link>
-          <span className="hidden text-pink-200 sm:inline" aria-hidden>
+          <span className="hidden text-champagne-300 sm:inline" aria-hidden>
             ·
           </span>
           <Link href="/booking" className="footer-action-link">

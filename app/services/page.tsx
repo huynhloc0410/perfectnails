@@ -115,10 +115,10 @@ export default function Services() {
       />
     <div>
       {/* Hero Section */}
-      <section className="relative bg-gradient-to-br from-pink-50 via-rose-50 to-pink-100 py-1.5 overflow-hidden">
+      <section className="relative bg-gradient-to-br from-champagne-50 via-stone-100 to-champagne-100 py-1.5 overflow-hidden">
         <div className="absolute inset-0 opacity-5">
-          <div className="absolute top-10 right-10 w-64 h-64 bg-pink-300 rounded-full blur-3xl"></div>
-          <div className="absolute bottom-10 left-10 w-48 h-48 bg-rose-300 rounded-full blur-3xl"></div>
+          <div className="absolute top-10 right-10 w-64 h-64 bg-champagne-300 rounded-full blur-3xl"></div>
+          <div className="absolute bottom-10 left-10 w-48 h-48 bg-champagne-200/50 rounded-full blur-3xl"></div>
         </div>
         <div className="container mx-auto px-6 relative z-10">
           <Breadcrumbs items={[{ label: 'Services' }]} />
@@ -144,8 +144,8 @@ export default function Services() {
           {categories.map((category) => (
             <section key={category} className="scroll-mt-20">
               <div className="mb-6">
-                <h2 className="text-3xl font-bold text-pink-600 mb-2">{category}</h2>
-                <div className="h-1 w-20 bg-pink-500 rounded"></div>
+                <h2 className="text-3xl font-bold text-champagne-600 mb-2">{category}</h2>
+                <div className="h-1 w-20 bg-champagne-500 rounded"></div>
               </div>
               
               <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
@@ -160,7 +160,7 @@ export default function Services() {
                     )}
                     <div className="flex justify-between items-center mt-4">
                       <div>
-                        <span className="text-2xl font-bold text-pink-600">
+                        <span className="text-2xl font-bold text-champagne-600">
                           $
                           {Number(
                             typeof service.price === 'number'
@@ -174,7 +174,7 @@ export default function Services() {
                       </div>
                       <Link
                         href="/booking"
-                        className="px-4 py-2 bg-pink-500 text-white rounded-lg hover:bg-pink-600 transition font-semibold text-sm"
+                        className="px-4 py-2 bg-champagne-500 text-white rounded-lg hover:bg-champagne-600 transition font-semibold text-sm"
                       >
                         Book Now
                       </Link>
@@ -189,8 +189,8 @@ export default function Services() {
           {uncategorizedServices.length > 0 && (
             <section className="scroll-mt-20">
               <div className="mb-6">
-                <h2 className="text-3xl font-bold text-pink-600 mb-2">Other Services</h2>
-                <div className="h-1 w-20 bg-pink-500 rounded"></div>
+                <h2 className="text-3xl font-bold text-champagne-600 mb-2">Other Services</h2>
+                <div className="h-1 w-20 bg-champagne-500 rounded"></div>
               </div>
               
               <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
@@ -205,7 +205,7 @@ export default function Services() {
                     )}
                     <div className="flex justify-between items-center mt-4">
                       <div>
-                        <span className="text-2xl font-bold text-pink-600">
+                        <span className="text-2xl font-bold text-champagne-600">
                           $
                           {Number(
                             typeof service.price === 'number'
@@ -219,7 +219,7 @@ export default function Services() {
                       </div>
                       <Link
                         href="/booking"
-                        className="px-4 py-2 bg-pink-500 text-white rounded-lg hover:bg-pink-600 transition font-semibold text-sm"
+                        className="px-4 py-2 bg-champagne-500 text-white rounded-lg hover:bg-champagne-600 transition font-semibold text-sm"
                       >
                         Book Now
                       </Link>

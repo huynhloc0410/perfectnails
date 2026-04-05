@@ -56,10 +56,10 @@ export default function Gallery() {
 
   return (
     <div>
-      <section className="relative bg-gradient-to-br from-pink-50 via-rose-50 to-pink-100 py-1.5 overflow-hidden">
+      <section className="relative bg-gradient-to-br from-champagne-50 via-stone-100 to-champagne-100 py-1.5 overflow-hidden">
         <div className="absolute inset-0 opacity-5">
-          <div className="absolute top-10 right-10 w-64 h-64 bg-pink-300 rounded-full blur-3xl"></div>
-          <div className="absolute bottom-10 left-10 w-48 h-48 bg-rose-300 rounded-full blur-3xl"></div>
+          <div className="absolute top-10 right-10 w-64 h-64 bg-champagne-300 rounded-full blur-3xl"></div>
+          <div className="absolute bottom-10 left-10 w-48 h-48 bg-champagne-200/50 rounded-full blur-3xl"></div>
         </div>
         <div className="container mx-auto px-6 relative z-10">
           <Breadcrumbs items={[{ label: 'Gallery' }]} />

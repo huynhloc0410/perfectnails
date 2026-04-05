@@ -39,10 +39,10 @@ export default function AdminLogin() {
   };
 
   return (
-    <div className="min-h-screen bg-gradient-to-br from-pink-50 to-pink-100 flex items-center justify-center px-4">
+    <div className="min-h-screen bg-gradient-to-br from-champagne-50 to-champagne-100 flex items-center justify-center px-4">
       <div className="bg-white rounded-lg shadow-xl p-8 w-full max-w-md">
         <div className="text-center mb-8">
-          <h1 className="text-3xl font-bold text-pink-600 mb-2">Admin Login</h1>
+          <h1 className="text-3xl font-bold text-champagne-600 mb-2">Admin Login</h1>
           <p className="text-gray-600">Perfect Nails - Admin Dashboard</p>
         </div>
 
@@ -61,7 +61,7 @@ export default function AdminLogin() {
               type="password"
               value={password}
               onChange={(e) => setPassword(e.target.value)}
-              className="w-full px-4 py-2 border border-gray-300 rounded-md focus:ring-pink-500 focus:border-pink-500"
+              className="w-full px-4 py-2 border border-gray-300 rounded-md focus:ring-champagne-500 focus:border-champagne-500"
               placeholder="Admin password"
               required
               autoComplete="current-password"
@@ -71,7 +71,7 @@ export default function AdminLogin() {
           <button
             type="submit"
             disabled={loading}
-            className="w-full bg-pink-500 text-white py-2 px-4 rounded-md hover:bg-pink-600 transition font-semibold disabled:opacity-60"
+            className="w-full bg-champagne-500 text-white py-2 px-4 rounded-md hover:bg-champagne-600 transition font-semibold disabled:opacity-60"
           >
             {loading ? 'Signing in…' : 'Login'}
           </button>

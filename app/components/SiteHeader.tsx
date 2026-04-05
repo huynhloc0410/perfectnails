@@ -29,7 +29,7 @@ export default function SiteHeader() {
   }, [pathname]);
 
   return (
-    <header className="font-nav sticky top-0 z-50 w-full border-b border-pink-100/90 bg-white/90 shadow-[0_1px_0_rgba(251,207,232,0.35)] backdrop-blur-md">
+    <header className="font-nav sticky top-0 z-50 w-full border-b border-champagne-200/90 bg-white/90 shadow-[0_1px_0_rgba(197,168,92,0.22)] backdrop-blur-md">
       <div className="relative">
         <nav
           className="container mx-auto flex max-w-6xl items-center gap-3 px-4 py-3 sm:px-6 sm:py-3.5"
@@ -37,7 +37,7 @@ export default function SiteHeader() {
         >
           <button
             type="button"
-            className="inline-flex h-11 w-11 shrink-0 items-center justify-center rounded-xl text-gray-800 transition hover:bg-pink-50 hover:text-pink-700 md:hidden"
+            className="inline-flex h-11 w-11 shrink-0 items-center justify-center rounded-xl text-gray-800 transition hover:bg-champagne-50 hover:text-champagne-800 md:hidden"
             aria-expanded={open}
             aria-controls="mobile-nav-panel"
             aria-label={open ? 'Close menu' : 'Open menu'}
@@ -56,7 +56,7 @@ export default function SiteHeader() {
 
           <Link
             href="/"
-            className="font-display min-w-0 flex-1 text-center text-[1.35rem] font-semibold leading-tight tracking-tight text-pink-900 md:flex-none md:text-left md:text-[1.5rem]"
+            className="font-display min-w-0 flex-1 text-center text-[1.35rem] font-semibold leading-tight tracking-tight text-neutral-900 md:flex-none md:text-left md:text-[1.5rem]"
           >
             <span className="site-brand-gradient">Perfect Nails</span>
           </Link>
@@ -99,7 +99,7 @@ export default function SiteHeader() {
 
         <div
           id="mobile-nav-panel"
-          className={`absolute left-0 right-0 top-full z-50 max-h-[min(75vh,calc(100dvh-3.5rem))] overflow-y-auto border-t border-pink-100/80 bg-white/98 shadow-lg backdrop-blur-md md:hidden ${
+          className={`absolute left-0 right-0 top-full z-50 max-h-[min(75vh,calc(100dvh-3.5rem))] overflow-y-auto border-t border-champagne-200/80 bg-white/98 shadow-lg backdrop-blur-md md:hidden ${
             open ? 'block' : 'hidden'
           }`}
           aria-hidden={!open}
@@ -117,8 +117,8 @@ export default function SiteHeader() {
                           ? 'bg-gray-100 text-gray-800'
                           : 'text-gray-500 hover:bg-gray-50 hover:text-gray-800'
                         : active
-                          ? 'bg-pink-100/90 text-pink-900'
-                          : 'text-gray-800 hover:bg-pink-50 hover:text-pink-700'
+                          ? 'bg-champagne-100/90 text-neutral-900'
+                          : 'text-gray-800 hover:bg-champagne-50 hover:text-champagne-800'
                     }`}
                     onClick={() => setOpen(false)}
                   >

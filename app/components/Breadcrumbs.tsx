@@ -16,7 +16,7 @@ export default function Breadcrumbs({ items }: BreadcrumbsProps) {
     <nav className="container mx-auto max-w-full px-4 py-3 sm:px-6 sm:py-4" aria-label="Breadcrumb">
       <ol className="flex flex-wrap items-center gap-x-2 gap-y-1 text-sm text-gray-600">
         <li>
-          <Link href="/" className="hover:text-pink-600 transition">
+          <Link href="/" className="hover:text-champagne-700 transition">
             Home
           </Link>
         </li>
@@ -24,7 +24,7 @@ export default function Breadcrumbs({ items }: BreadcrumbsProps) {
           <li key={index} className="flex min-w-0 items-center">
             <span className="mx-1 text-gray-400 sm:mx-2" aria-hidden>/</span>
             {item.href ? (
-              <Link href={item.href} className="hover:text-pink-600 transition">
+              <Link href={item.href} className="hover:text-champagne-700 transition">
                 {item.label}
               </Link>
             ) : (

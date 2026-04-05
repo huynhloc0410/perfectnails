@@ -353,10 +353,10 @@ export default function Booking() {
   return (
     <div>
       {/* Hero Section */}
-      <section className="relative bg-gradient-to-br from-pink-50 via-rose-50 to-pink-100 py-1.5 overflow-hidden">
+      <section className="relative bg-gradient-to-br from-champagne-50 via-stone-100 to-champagne-100 py-1.5 overflow-hidden">
         <div className="absolute inset-0 opacity-5">
-          <div className="absolute top-10 left-10 w-64 h-64 bg-pink-300 rounded-full blur-3xl"></div>
-          <div className="absolute bottom-10 right-10 w-48 h-48 bg-rose-300 rounded-full blur-3xl"></div>
+          <div className="absolute top-10 left-10 w-64 h-64 bg-champagne-300 rounded-full blur-3xl"></div>
+          <div className="absolute bottom-10 right-10 w-48 h-48 bg-champagne-200/50 rounded-full blur-3xl"></div>
         </div>
         <div className="container mx-auto px-6 relative z-10">
           <Breadcrumbs items={[{ label: 'Booking' }]} />
@@ -387,7 +387,7 @@ export default function Booking() {
               value={formData.name}
               onChange={(e) => setFormData({ ...formData, name: e.target.value })}
               placeholder="Your Name"
-              className="w-full px-4 py-2 border border-gray-300 rounded-md focus:ring-pink-500 focus:border-pink-500"
+              className="w-full px-4 py-2 border border-gray-300 rounded-md focus:ring-champagne-500 focus:border-champagne-500"
               required
             />
           </div>
@@ -400,7 +400,7 @@ export default function Booking() {
               value={formData.phone}
               onChange={(e) => setFormData({ ...formData, phone: e.target.value })}
               placeholder="Phone Number"
-              className="w-full px-4 py-2 border border-gray-300 rounded-md focus:ring-pink-500 focus:border-pink-500"
+              className="w-full px-4 py-2 border border-gray-300 rounded-md focus:ring-champagne-500 focus:border-champagne-500"
               required
             />
           </div>
@@ -412,7 +412,7 @@ export default function Booking() {
                 name="service"
                 value={formData.service}
                 onChange={(e) => setFormData({ ...formData, service: e.target.value, employee: '', date: '', timeSlot: '' })}
-                className="w-full px-4 py-2 border border-gray-300 rounded-md focus:ring-pink-500 focus:border-pink-500"
+                className="w-full px-4 py-2 border border-gray-300 rounded-md focus:ring-champagne-500 focus:border-champagne-500"
                 required
               >
                 <option value="">Select a service</option>
@@ -440,7 +440,7 @@ export default function Booking() {
                 name="employee"
                 value={formData.employee}
                 onChange={(e) => setFormData({ ...formData, employee: e.target.value, date: '', timeSlot: '' })}
-                className="w-full px-4 py-2 border border-gray-300 rounded-md focus:ring-pink-500 focus:border-pink-500"
+                className="w-full px-4 py-2 border border-gray-300 rounded-md focus:ring-champagne-500 focus:border-champagne-500"
                 required
                 disabled={!formData.service}
               >
@@ -474,11 +474,11 @@ export default function Booking() {
               {/* Calendar */}
               <div className="border border-gray-200 rounded-lg overflow-hidden w-full max-w-md mx-auto">
                 {/* Month Navigation */}
-                <div className="bg-pink-50 px-2 py-1.5 flex justify-between items-center border-b border-gray-200">
+                <div className="bg-champagne-50 px-2 py-1.5 flex justify-between items-center border-b border-gray-200">
                   <button
                     type="button"
                     onClick={() => navigateMonth('prev')}
-                    className="px-1.5 py-0.5 text-pink-600 hover:bg-pink-100 rounded transition text-xs"
+                    className="px-1.5 py-0.5 text-champagne-600 hover:bg-champagne-100 rounded transition text-xs"
                   >
                     ←
                   </button>
@@ -489,7 +489,7 @@ export default function Booking() {
                     type="button"
                     onClick={() => navigateMonth('next')}
                     disabled={currentMonth.getMonth() === maxDate.getMonth() && currentMonth.getFullYear() === maxDate.getFullYear()}
-                    className="px-1.5 py-0.5 text-pink-600 hover:bg-pink-100 rounded transition text-xs disabled:opacity-50 disabled:cursor-not-allowed"
+                    className="px-1.5 py-0.5 text-champagne-600 hover:bg-champagne-100 rounded transition text-xs disabled:opacity-50 disabled:cursor-not-allowed"
                   >
                     →
                   </button>
@@ -552,10 +552,10 @@ export default function Booking() {
                             ${!isSelectable 
                               ? 'text-gray-300 cursor-not-allowed bg-gray-50' 
                               : isSelected
-                              ? 'bg-pink-600 text-white shadow-sm font-semibold'
+                              ? 'bg-champagne-600 text-white shadow-sm font-semibold'
                               : isTodayDate
-                              ? 'bg-pink-100 text-pink-700 hover:bg-pink-200 font-semibold border border-pink-400'
-                              : 'bg-white text-gray-700 hover:bg-pink-50 hover:text-pink-600 border border-gray-200'
+                              ? 'bg-champagne-100 text-champagne-700 hover:bg-champagne-200 font-semibold border border-champagne-400'
+                              : 'bg-white text-gray-700 hover:bg-champagne-50 hover:text-champagne-600 border border-gray-200'
                             }
                           `}
                           style={{ height: '28px', width: '100%' }}
@@ -570,7 +570,7 @@ export default function Booking() {
 
               {formData.date && (
                 <div className="mt-2 text-sm text-gray-600">
-                  <span className="font-medium text-pink-600">✓</span> {formatDate(new Date(formData.date))}
+                  <span className="font-medium text-champagne-600">✓</span> {formatDate(new Date(formData.date))}
                 </div>
               )}
             </div>
@@ -624,8 +624,8 @@ export default function Booking() {
                                         className={`
                                           px-3 py-1.5 rounded-md text-sm font-medium transition min-w-[60px]
                                           ${isSelected
-                                            ? 'bg-pink-600 text-white shadow-md'
-                                            : 'bg-gray-100 text-gray-700 hover:bg-pink-100 hover:text-pink-700 border border-gray-200'
+                                            ? 'bg-champagne-600 text-white shadow-md'
+                                            : 'bg-gray-100 text-gray-700 hover:bg-champagne-100 hover:text-champagne-700 border border-gray-200'
                                           }
                                         `}
                                       >
@@ -649,7 +649,7 @@ export default function Booking() {
 
               {formData.timeSlot && (
                 <div className="mt-2 text-sm text-gray-600">
-                  <span className="font-medium text-pink-600">✓</span> {formData.timeSlot}
+                  <span className="font-medium text-champagne-600">✓</span> {formData.timeSlot}
                   {selectedService?.duration !== 0 && (
                     <span> ({schedulingMinutes(selectedService?.duration)} min)</span>
                   )}
@@ -660,7 +660,7 @@ export default function Booking() {
 
           <button
             type="submit"
-            className="w-full bg-pink-500 text-white px-4 py-2 rounded-md hover:bg-pink-600 transition font-semibold disabled:bg-gray-300 disabled:cursor-not-allowed"
+            className="w-full bg-champagne-500 text-white px-4 py-2 rounded-md hover:bg-champagne-600 transition font-semibold disabled:bg-gray-300 disabled:cursor-not-allowed"
             disabled={!formData.employee || !formData.service || !formData.date || !formData.timeSlot}
           >
             Book Now

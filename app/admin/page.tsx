@@ -455,19 +455,19 @@ export default function AdminPage() {
       <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
         <div className="bg-white rounded-lg shadow-lg overflow-hidden">
           {/* Header */}
-          <div className="bg-gradient-to-r from-pink-500 to-pink-600 px-6 py-6 flex justify-between items-center">
+          <div className="bg-gradient-to-r from-neutral-950 via-neutral-900 to-champagne-950 px-6 py-6 flex justify-between items-center border-b border-champagne-600/25">
             <div>
               <h1 className="text-3xl font-bold text-white">Admin Dashboard</h1>
-              <p className="text-pink-100 mt-2">Manage your nail salon website</p>
+              <p className="text-champagne-200 mt-2">Manage your nail salon website</p>
               {useCms && (
-                <p className="text-pink-50 text-sm mt-1">
+                <p className="text-champagne-300/90 text-sm mt-1">
                   Site data (services, staff, bookings, about, contact) is saved to Amazon S3.
                 </p>
               )}
             </div>
             <button
               onClick={handleLogout}
-              className="px-4 py-2 bg-white text-pink-600 rounded-md hover:bg-pink-50 transition font-semibold"
+              className="px-4 py-2 bg-champagne-400 text-neutral-950 rounded-md hover:bg-champagne-300 transition font-semibold"
             >
               Logout
             </button>
@@ -482,7 +482,7 @@ export default function AdminPage() {
                   onClick={() => setActiveTab(tab)}
                   className={`px-4 py-4 font-medium text-sm whitespace-nowrap ${
                     activeTab === tab
-                      ? 'border-b-2 border-pink-500 text-pink-600'
+                      ? 'border-b-2 border-champagne-500 text-champagne-600'
                       : 'text-gray-500 hover:text-gray-700 hover:border-gray-300'
                   }`}
                 >
@@ -508,7 +508,7 @@ export default function AdminPage() {
                   />
                   <label
                     htmlFor="image-upload"
-                    className="cursor-pointer inline-flex items-center px-4 py-2 bg-pink-500 text-white rounded-lg hover:bg-pink-600 transition"
+                    className="cursor-pointer inline-flex items-center px-4 py-2 bg-champagne-500 text-white rounded-lg hover:bg-champagne-600 transition"
                   >
                     <svg className="w-5 h-5 mr-2" fill="none" stroke="currentColor" viewBox="0 0 24 24">
                       <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M12 4v16m8-8H4" />
@@ -559,7 +559,7 @@ export default function AdminPage() {
                         type="text"
                         value={serviceForm.name}
                         onChange={(e) => setServiceForm({ ...serviceForm, name: e.target.value })}
-                        className="w-full px-3 py-2 border border-gray-300 rounded-md focus:ring-pink-500 focus:border-pink-500"
+                        className="w-full px-3 py-2 border border-gray-300 rounded-md focus:ring-champagne-500 focus:border-champagne-500"
                         placeholder="e.g., Manicure"
                       />
                     </div>
@@ -570,7 +570,7 @@ export default function AdminPage() {
                         step="0.01"
                         value={serviceForm.price}
                         onChange={(e) => setServiceForm({ ...serviceForm, price: e.target.value })}
-                        className="w-full px-3 py-2 border border-gray-300 rounded-md focus:ring-pink-500 focus:border-pink-500"
+                        className="w-full px-3 py-2 border border-gray-300 rounded-md focus:ring-champagne-500 focus:border-champagne-500"
                         placeholder="0.00"
                       />
                     </div>
@@ -580,7 +580,7 @@ export default function AdminPage() {
                         type="number"
                         value={serviceForm.duration}
                         onChange={(e) => setServiceForm({ ...serviceForm, duration: e.target.value })}
-                        className="w-full px-3 py-2 border border-gray-300 rounded-md focus:ring-pink-500 focus:border-pink-500"
+                        className="w-full px-3 py-2 border border-gray-300 rounded-md focus:ring-champagne-500 focus:border-champagne-500"
                         placeholder="45"
                         min="0"
                         step="1"
@@ -596,7 +596,7 @@ export default function AdminPage() {
                         <select
                           value={serviceForm.category}
                           onChange={(e) => setServiceForm({ ...serviceForm, category: e.target.value })}
-                          className="flex-1 px-3 py-2 border border-gray-300 rounded-md focus:ring-pink-500 focus:border-pink-500"
+                          className="flex-1 px-3 py-2 border border-gray-300 rounded-md focus:ring-champagne-500 focus:border-champagne-500"
                         >
                           <option value="">Select or create category</option>
                           {getCategories().map((cat) => (
@@ -616,7 +616,7 @@ export default function AdminPage() {
                               }
                             }
                           }}
-                          className="flex-1 px-3 py-2 border border-gray-300 rounded-md focus:ring-pink-500 focus:border-pink-500"
+                          className="flex-1 px-3 py-2 border border-gray-300 rounded-md focus:ring-champagne-500 focus:border-champagne-500"
                           placeholder="Or type new category"
                         />
                         {newCategory.trim() && (
@@ -626,7 +626,7 @@ export default function AdminPage() {
                               setServiceForm({ ...serviceForm, category: newCategory.trim() });
                               setNewCategory('');
                             }}
-                            className="px-3 py-2 bg-pink-500 text-white rounded-md hover:bg-pink-600 transition text-sm"
+                            className="px-3 py-2 bg-champagne-500 text-white rounded-md hover:bg-champagne-600 transition text-sm"
                           >
                             Use
                           </button>
@@ -641,7 +641,7 @@ export default function AdminPage() {
                       <textarea
                         value={serviceForm.description}
                         onChange={(e) => setServiceForm({ ...serviceForm, description: e.target.value })}
-                        className="w-full px-3 py-2 border border-gray-300 rounded-md focus:ring-pink-500 focus:border-pink-500"
+                        className="w-full px-3 py-2 border border-gray-300 rounded-md focus:ring-champagne-500 focus:border-champagne-500"
                         rows={3}
                         placeholder="Service description..."
                       />
@@ -650,7 +650,7 @@ export default function AdminPage() {
                   <div className="mt-4 flex gap-2">
                     <button
                       onClick={saveService}
-                      className="px-4 py-2 bg-pink-500 text-white rounded-md hover:bg-pink-600 transition"
+                      className="px-4 py-2 bg-champagne-500 text-white rounded-md hover:bg-champagne-600 transition"
                     >
                       {editingService ? 'Update Service' : 'Add Service'}
                     </button>
@@ -680,7 +680,7 @@ export default function AdminPage() {
                         const categoryServices = services.filter(s => s.category === category);
                         return (
                           <div key={category} className="border border-gray-200 rounded-lg p-4">
-                            <h3 className="text-xl font-semibold text-pink-600 mb-4 pb-2 border-b border-gray-200">
+                            <h3 className="text-xl font-semibold text-champagne-600 mb-4 pb-2 border-b border-gray-200">
                               {category}
                             </h3>
                             <div className="space-y-3">
@@ -690,7 +690,7 @@ export default function AdminPage() {
                                     <h4 className="font-semibold text-lg text-gray-800">{service.name}</h4>
                                     <p className="text-gray-600 text-sm mt-1">{service.description || 'No description'}</p>
                                     <div className="flex items-center gap-3 mt-2">
-                                      <p className="text-pink-600 font-semibold">
+                                      <p className="text-champagne-600 font-semibold">
                                       $
                                       {Number(
                                         typeof service.price === 'number'
@@ -736,7 +736,7 @@ export default function AdminPage() {
                                   <h4 className="font-semibold text-lg text-gray-800">{service.name}</h4>
                                   <p className="text-gray-600 text-sm mt-1">{service.description || 'No description'}</p>
                                   <div className="flex items-center gap-3 mt-2">
-                                    <p className="text-pink-600 font-semibold">
+                                    <p className="text-champagne-600 font-semibold">
                                       $
                                       {Number(
                                         typeof service.price === 'number'
@@ -789,7 +789,7 @@ export default function AdminPage() {
                       type="text"
                       value={aboutContent.title}
                       onChange={(e) => setAboutContent({ ...aboutContent, title: e.target.value })}
-                      className="w-full px-3 py-2 border border-gray-300 rounded-md focus:ring-pink-500 focus:border-pink-500"
+                      className="w-full px-3 py-2 border border-gray-300 rounded-md focus:ring-champagne-500 focus:border-champagne-500"
                       placeholder="About Us"
                     />
                   </div>
@@ -798,14 +798,14 @@ export default function AdminPage() {
                     <textarea
                       value={aboutContent.content}
                       onChange={(e) => setAboutContent({ ...aboutContent, content: e.target.value })}
-                      className="w-full px-3 py-2 border border-gray-300 rounded-md focus:ring-pink-500 focus:border-pink-500"
+                      className="w-full px-3 py-2 border border-gray-300 rounded-md focus:ring-champagne-500 focus:border-champagne-500"
                       rows={10}
                       placeholder="Write about your nail salon..."
                     />
                   </div>
                   <button
                     onClick={saveAbout}
-                    className="px-4 py-2 bg-pink-500 text-white rounded-md hover:bg-pink-600 transition"
+                    className="px-4 py-2 bg-champagne-500 text-white rounded-md hover:bg-champagne-600 transition"
                   >
                     Save Changes
                   </button>
@@ -825,7 +825,7 @@ export default function AdminPage() {
                         type="text"
                         value={contactContent.address}
                         onChange={(e) => setContactContent({ ...contactContent, address: e.target.value })}
-                        className="w-full px-3 py-2 border border-gray-300 rounded-md focus:ring-pink-500 focus:border-pink-500"
+                        className="w-full px-3 py-2 border border-gray-300 rounded-md focus:ring-champagne-500 focus:border-champagne-500"
                         placeholder="123 Main St, Glendale, AZ"
                       />
                     </div>
@@ -835,7 +835,7 @@ export default function AdminPage() {
                         type="text"
                         value={contactContent.phone}
                         onChange={(e) => setContactContent({ ...contactContent, phone: e.target.value })}
-                        className="w-full px-3 py-2 border border-gray-300 rounded-md focus:ring-pink-500 focus:border-pink-500"
+                        className="w-full px-3 py-2 border border-gray-300 rounded-md focus:ring-champagne-500 focus:border-champagne-500"
                         placeholder="(623) 302-2156"
                       />
                     </div>
@@ -845,7 +845,7 @@ export default function AdminPage() {
                         type="email"
                         value={contactContent.email}
                         onChange={(e) => setContactContent({ ...contactContent, email: e.target.value })}
-                        className="w-full px-3 py-2 border border-gray-300 rounded-md focus:ring-pink-500 focus:border-pink-500"
+                        className="w-full px-3 py-2 border border-gray-300 rounded-md focus:ring-champagne-500 focus:border-champagne-500"
                         placeholder="info@perfectnails.com"
                       />
                     </div>
@@ -857,7 +857,7 @@ export default function AdminPage() {
                       <textarea
                         value={contactContent.hours}
                         onChange={(e) => setContactContent({ ...contactContent, hours: e.target.value })}
-                        className="w-full px-3 py-2 border border-gray-300 rounded-md focus:ring-pink-500 focus:border-pink-500 font-mono text-sm"
+                        className="w-full px-3 py-2 border border-gray-300 rounded-md focus:ring-champagne-500 focus:border-champagne-500 font-mono text-sm"
                         placeholder="Monday - Friday: 9:00 AM - 7:00 PM
 Saturday - Sunday: 10:00 AM - 6:00 PM"
                         rows={5}
@@ -886,7 +886,7 @@ Saturday - Sunday: 10:00 AM - 6:00 PM`}
                             ...contactContent, 
                             socialMedia: { ...contactContent.socialMedia, facebook: e.target.value }
                           })}
-                          className="w-full px-3 py-2 border border-gray-300 rounded-md focus:ring-pink-500 focus:border-pink-500"
+                          className="w-full px-3 py-2 border border-gray-300 rounded-md focus:ring-champagne-500 focus:border-champagne-500"
                           placeholder="Facebook URL"
                         />
                       </div>
@@ -899,7 +899,7 @@ Saturday - Sunday: 10:00 AM - 6:00 PM`}
                             ...contactContent, 
                             socialMedia: { ...contactContent.socialMedia, instagram: e.target.value }
                           })}
-                          className="w-full px-3 py-2 border border-gray-300 rounded-md focus:ring-pink-500 focus:border-pink-500"
+                          className="w-full px-3 py-2 border border-gray-300 rounded-md focus:ring-champagne-500 focus:border-champagne-500"
                           placeholder="Instagram URL"
                         />
                       </div>
@@ -912,7 +912,7 @@ Saturday - Sunday: 10:00 AM - 6:00 PM`}
                             ...contactContent, 
                             socialMedia: { ...contactContent.socialMedia, twitter: e.target.value }
                           })}
-                          className="w-full px-3 py-2 border border-gray-300 rounded-md focus:ring-pink-500 focus:border-pink-500"
+                          className="w-full px-3 py-2 border border-gray-300 rounded-md focus:ring-champagne-500 focus:border-champagne-500"
                           placeholder="Twitter URL"
                         />
                       </div>
@@ -920,7 +920,7 @@ Saturday - Sunday: 10:00 AM - 6:00 PM`}
                   </div>
                   <button
                     onClick={saveContact}
-                    className="px-4 py-2 bg-pink-500 text-white rounded-md hover:bg-pink-600 transition"
+                    className="px-4 py-2 bg-champagne-500 text-white rounded-md hover:bg-champagne-600 transition"
                   >
                     Save Changes
                   </button>
@@ -988,7 +988,7 @@ Saturday - Sunday: 10:00 AM - 6:00 PM`}
                         type="text"
                         value={employeeForm.name}
                         onChange={(e) => setEmployeeForm({ ...employeeForm, name: e.target.value })}
-                        className="w-full px-3 py-2 border border-gray-300 rounded-md focus:ring-pink-500 focus:border-pink-500"
+                        className="w-full px-3 py-2 border border-gray-300 rounded-md focus:ring-champagne-500 focus:border-champagne-500"
                         placeholder="Employee name"
                       />
                     </div>
@@ -998,7 +998,7 @@ Saturday - Sunday: 10:00 AM - 6:00 PM`}
                         type="text"
                         value={employeeForm.phone}
                         onChange={(e) => setEmployeeForm({ ...employeeForm, phone: e.target.value })}
-                        className="w-full px-3 py-2 border border-gray-300 rounded-md focus:ring-pink-500 focus:border-pink-500"
+                        className="w-full px-3 py-2 border border-gray-300 rounded-md focus:ring-champagne-500 focus:border-champagne-500"
                         placeholder="(623) 302-2156"
                       />
                     </div>
@@ -1007,7 +1007,7 @@ Saturday - Sunday: 10:00 AM - 6:00 PM`}
                       <select
                         value={employeeForm.role}
                         onChange={(e) => setEmployeeForm({ ...employeeForm, role: e.target.value as 'Water' | 'Powder' | 'Everything' })}
-                        className="w-full px-3 py-2 border border-gray-300 rounded-md focus:ring-pink-500 focus:border-pink-500"
+                        className="w-full px-3 py-2 border border-gray-300 rounded-md focus:ring-champagne-500 focus:border-champagne-500"
                       >
                         <option value="">Select a role</option>
                         <option value="Water">Water (Manicure & Pedicure only)</option>
@@ -1026,7 +1026,7 @@ Saturday - Sunday: 10:00 AM - 6:00 PM`}
                   <div className="mt-4 flex gap-2">
                     <button
                       onClick={saveEmployee}
-                      className="px-4 py-2 bg-pink-500 text-white rounded-md hover:bg-pink-600 transition"
+                      className="px-4 py-2 bg-champagne-500 text-white rounded-md hover:bg-champagne-600 transition"
                     >
                       {editingEmployee ? 'Update Employee' : 'Add Employee'}
                     </button>
@@ -1050,7 +1050,7 @@ Saturday - Sunday: 10:00 AM - 6:00 PM`}
                       <div className="flex-1">
                         <h4 className="font-semibold text-lg text-gray-800">{employee.name}</h4>
                         <div className="flex items-center gap-2 mt-1">
-                          <span className="px-2 py-1 bg-pink-100 text-pink-700 rounded text-xs font-semibold">
+                          <span className="px-2 py-1 bg-champagne-100 text-champagne-700 rounded text-xs font-semibold">
                             {employee.role}
                           </span>
                         </div>
