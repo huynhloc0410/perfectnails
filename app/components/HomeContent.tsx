@@ -103,7 +103,7 @@ export default function HomeContent() {
   }, []);
 
   return (
-    <section className="relative min-h-dvh w-full overflow-hidden">
+    <section className="relative min-h-[70dvh] w-full overflow-hidden">
       {/* 1 — Hero: full-bleed image, minimal copy, Book + Call */}
       {HERO_BACKGROUNDS.map((src, i) => (
         <img
@@ -122,10 +122,10 @@ export default function HomeContent() {
         aria-hidden
       />
 
-      <div className="relative z-10 mx-auto flex min-h-dvh w-full max-w-lg flex-col items-center px-5 pb-10 pt-20 sm:max-w-xl sm:pb-12 sm:pt-24 md:pt-28">
+      <div className="relative z-10 mx-auto flex min-h-[70dvh] w-full max-w-lg flex-col items-center px-5 pb-7 pt-14 sm:max-w-xl sm:pb-[2.1rem] sm:pt-[4.2rem] md:pt-[4.9rem]">
         {/* Middle-top: centered vertically, then shifted up (not pinned to bottom) */}
-        <div className="flex w-full flex-1 flex-col items-center justify-center text-center motion-reduce:translate-y-0 -translate-y-[min(18vh,6.5rem)] sm:-translate-y-[min(22vh,8rem)] md:-translate-y-[min(24vh,9rem)]">
-          <p className="font-display mb-8 max-w-sm text-3xl font-semibold leading-tight tracking-wide text-white drop-shadow-[0_2px_8px_rgba(0,0,0,0.45)] sm:mb-9 sm:max-w-md sm:text-4xl md:text-[2.75rem]">
+        <div className="flex w-full flex-1 flex-col items-center justify-center text-center motion-reduce:translate-y-0 -translate-y-[min(12.6vh,4.55rem)] sm:-translate-y-[min(15.4vh,5.6rem)] md:-translate-y-[min(16.8vh,6.3rem)]">
+          <p className="font-display mb-[1.4rem] max-w-sm text-3xl font-semibold leading-tight tracking-wide text-white drop-shadow-[0_2px_8px_rgba(0,0,0,0.45)] sm:mb-[2.025rem] sm:max-w-md sm:text-4xl md:text-[2.75rem]">
             Beauty in Every Detail
           </p>
           <div className="grid w-full grid-cols-2 gap-3 sm:gap-4">
@@ -160,7 +160,7 @@ export default function HomeContent() {
               <span className="relative z-[2]">Services and price</span>
             </Link>
           </div>
-          <address className="mx-auto mt-[5rem] w-full max-w-md not-italic">
+          <address className="mx-auto mt-[3.5rem] w-full max-w-md not-italic">
             <a
               href={`https://www.google.com/maps/search/?api=1&query=${encodeURIComponent(heroAddress)}`}
               target="_blank"

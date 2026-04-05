@@ -13,7 +13,7 @@ interface BreadcrumbsProps {
 
 export default function Breadcrumbs({ items }: BreadcrumbsProps) {
   return (
-    <nav className="container mx-auto max-w-full px-4 py-3 sm:px-6 sm:py-4" aria-label="Breadcrumb">
+    <nav className="container mx-auto max-w-full px-4 py-[0.525rem] sm:px-6 sm:py-[0.7rem]" aria-label="Breadcrumb">
       <ol className="flex flex-wrap items-center gap-x-2 gap-y-1 text-sm text-gray-600">
         <li>
           <Link href="/" className="hover:text-champagne-700 transition">

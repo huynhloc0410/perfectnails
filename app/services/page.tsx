@@ -116,17 +116,17 @@ export default function Services() {
       />
     <div>
       {/* Hero Section */}
-      <section className="relative border-b border-champagne-400/35 bg-gradient-to-br from-champagne-50 via-stone-100 to-champagne-100 py-3 overflow-hidden">
+      <section className="relative border-b border-champagne-400/35 bg-gradient-to-br from-champagne-50 via-stone-100 to-champagne-100 py-[0.525rem] overflow-hidden">
         <div className="absolute inset-0 opacity-5">
           <div className="absolute top-10 right-10 w-64 h-64 bg-champagne-300 rounded-full blur-3xl"></div>
           <div className="absolute bottom-10 left-10 w-48 h-48 bg-champagne-200/50 rounded-full blur-3xl"></div>
         </div>
         <div className="container mx-auto px-6 relative z-10">
           <Breadcrumbs items={[{ label: 'Services' }]} />
-          <div className="text-center mb-1 mt-0.5">
+          <div className="text-center mb-[0.175rem] mt-[0.175rem]">
             <h1 className="text-xl md:text-2xl font-bold text-gray-900 mb-0.5">Our Services</h1>
             <PageHeroRule />
-            <p className="text-sm text-gray-600 max-w-2xl mx-auto mt-3">
+            <p className="text-sm text-gray-600 max-w-2xl mx-auto mt-[0.525rem]">
               Explore our comprehensive range of professional nail care services, organized by category
             </p>
           </div>
