@@ -4,8 +4,12 @@ import Link from 'next/link';
 import { useEffect, useState } from 'react';
 import {
   SITE_DEFAULT_ADDRESS,
+  SITE_PHONE_DISPLAY,
+  SITE_PHONE_HREF,
   effectiveContactAddress,
+  formatPhoneDisplay,
   migrateLegacyStoredContactAddress,
+  toTelHref,
 } from '../lib/siteContact';
 import { fetchCmsSite } from '../lib/cmsSiteClient';
 
@@ -14,29 +18,6 @@ const HERO_BACKGROUNDS = [
   '/images/nail1.webp',
   '/images/nail2.jpeg',
 ] as const;
-
-const DEFAULT_PHONE_DISPLAY = '(623) 302-2156';
-
-function toTelHref(raw: string | undefined): string {
-  if (!raw || !raw.trim()) return 'tel:+16233022156';
-  const d = raw.replace(/\D/g, '');
-  if (d.length === 10) return `tel:+1${d}`;
-  if (d.length === 11 && d.startsWith('1')) return `tel:+${d}`;
-  if (d.length >= 10) return `tel:+${d}`;
-  return 'tel:+16233022156';
-}
-
-function formatPhoneDisplay(raw: string | undefined): string {
-  if (!raw || !raw.trim()) return DEFAULT_PHONE_DISPLAY;
-  const d = raw.replace(/\D/g, '');
-  if (d.length === 10) {
-    return `(${d.slice(0, 3)}) ${d.slice(3, 6)}-${d.slice(6)}`;
-  }
-  if (d.length === 11 && d.startsWith('1')) {
-    return `(${d.slice(1, 4)}) ${d.slice(4, 7)}-${d.slice(7)}`;
-  }
-  return raw.trim();
-}
 
 function PhoneIcon({ className }: { className?: string }) {
   return (
@@ -48,8 +29,8 @@ function PhoneIcon({ className }: { className?: string }) {
 
 export default function HomeContent() {
   const [heroIndex, setHeroIndex] = useState(0);
-  const [callHref, setCallHref] = useState('tel:+16233022156');
-  const [phoneDisplay, setPhoneDisplay] = useState(DEFAULT_PHONE_DISPLAY);
+  const [callHref, setCallHref] = useState(SITE_PHONE_HREF);
+  const [phoneDisplay, setPhoneDisplay] = useState(SITE_PHONE_DISPLAY);
   const [heroAddress, setHeroAddress] = useState(SITE_DEFAULT_ADDRESS);
 
   useEffect(() => {

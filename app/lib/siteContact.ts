@@ -35,3 +35,26 @@ export function effectiveContactAddress(stored: string | undefined | null): stri
   if (LEGACY_ADDRESSES_LOWER.has(t.toLowerCase())) return SITE_DEFAULT_ADDRESS;
   return t;
 }
+
+/** `tel:` link for footer, hero, contact — falls back to site default. */
+export function toTelHref(raw: string | undefined | null): string {
+  if (!raw || !raw.trim()) return SITE_PHONE_HREF;
+  const d = raw.replace(/\D/g, '');
+  if (d.length === 10) return `tel:+1${d}`;
+  if (d.length === 11 && d.startsWith('1')) return `tel:+${d}`;
+  if (d.length >= 10) return `tel:+${d}`;
+  return SITE_PHONE_HREF;
+}
+
+/** Pretty phone for display — falls back to site default. */
+export function formatPhoneDisplay(raw: string | undefined | null): string {
+  if (!raw || !raw.trim()) return SITE_PHONE_DISPLAY;
+  const d = raw.replace(/\D/g, '');
+  if (d.length === 10) {
+    return `(${d.slice(0, 3)}) ${d.slice(3, 6)}-${d.slice(6)}`;
+  }
+  if (d.length === 11 && d.startsWith('1')) {
+    return `(${d.slice(1, 4)}) ${d.slice(4, 7)}-${d.slice(7)}`;
+  }
+  return raw.trim();
+}
