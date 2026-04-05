@@ -127,19 +127,19 @@ export default function HomeContent() {
             </a>
             <Link
               href="/booking"
-              className="cta-flash-btn relative z-0 flex items-center justify-center rounded-full border-2 border-white/90 bg-white/25 px-4 py-3.5 text-center text-sm font-semibold text-white shadow-lg transition hover:bg-white/35 active:scale-[0.98] sm:px-8 sm:text-base"
+              className="cta-flash-btn relative z-0 flex items-center justify-center rounded-full border-2 border-white/90 bg-white/15 px-4 py-3.5 text-center text-sm font-semibold text-white shadow-lg backdrop-blur-sm transition hover:bg-white/25 active:scale-[0.98] sm:px-8 sm:text-base"
             >
               <span className="relative z-[2]">Book online</span>
             </Link>
             <Link
               href="/gallery"
-              className="cta-flash-btn relative z-0 rounded-full border-2 border-white/90 bg-white/25 px-3 py-3.5 text-center text-sm font-semibold text-white shadow-lg transition hover:bg-white/35 active:scale-[0.98] sm:px-6 sm:text-base"
+              className="cta-flash-btn relative z-0 rounded-full border-2 border-white/90 bg-white/15 px-3 py-3.5 text-center text-sm font-semibold text-white shadow-lg backdrop-blur-sm transition hover:bg-white/25 active:scale-[0.98] sm:px-6 sm:text-base"
             >
               <span className="relative z-[2]">See our work</span>
             </Link>
             <Link
               href="/services"
-              className="cta-flash-btn relative z-0 rounded-full border-2 border-white/90 bg-white/25 px-3 py-3.5 text-center text-sm font-semibold leading-snug text-white shadow-lg transition hover:bg-white/35 active:scale-[0.98] sm:px-5 sm:text-base"
+              className="cta-flash-btn relative z-0 rounded-full border-2 border-white/90 bg-white/15 px-3 py-3.5 text-center text-sm font-semibold leading-snug text-white shadow-lg backdrop-blur-sm transition hover:bg-white/25 active:scale-[0.98] sm:px-5 sm:text-base"
             >
               <span className="relative z-[2]">Services and price</span>
             </Link>
@@ -149,7 +149,7 @@ export default function HomeContent() {
               href={`https://www.google.com/maps/search/?api=1&query=${encodeURIComponent(heroAddress)}`}
               target="_blank"
               rel="noopener noreferrer"
-              className="cta-flash-btn relative z-0 flex w-full flex-col items-center justify-center gap-1 rounded-full border-2 border-white/90 bg-white/25 px-4 py-3.5 text-center shadow-lg transition hover:bg-white/35 active:scale-[0.98] sm:px-8 sm:py-4"
+              className="cta-flash-btn relative z-0 flex w-full flex-col items-center justify-center gap-1 rounded-full border-2 border-white/90 bg-white/15 px-4 py-3.5 text-center shadow-lg backdrop-blur-sm transition hover:bg-white/25 active:scale-[0.98] sm:px-8 sm:py-4"
             >
               <span className="relative z-[2] text-sm font-semibold text-white drop-shadow-[0_1px_6px_rgba(0,0,0,0.45)] sm:text-base">
                 Address
