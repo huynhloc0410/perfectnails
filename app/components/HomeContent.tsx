@@ -84,26 +84,29 @@ export default function HomeContent() {
   }, []);
 
   return (
-    <section className="relative min-h-[70dvh] w-full overflow-hidden">
-      {/* 1 — Hero: full-bleed image, minimal copy, Book + Call */}
+    <section className="relative isolate min-h-[70svh] w-full overflow-hidden">
+      {/* 1 — Hero: svh avoids dvh jumps when mobile browser chrome shows/hides; isolate + gpu layers reduce tear */}
       {HERO_BACKGROUNDS.map((src, i) => (
         <img
           key={src}
           src={src}
           alt=""
-          className={`absolute inset-0 h-full w-full object-cover object-center transition-opacity duration-700 ease-in-out ${
-            i === heroIndex ? 'opacity-100' : 'opacity-0'
+          className={`absolute inset-0 h-full w-full object-cover object-center transition-opacity duration-700 ease-in-out motion-reduce:transition-none ${
+            i === heroIndex
+              ? 'z-[1] opacity-100'
+              : 'z-0 opacity-0 pointer-events-none'
           }`}
+          style={{ transform: 'translateZ(0)' }}
           aria-hidden
           fetchPriority={i === 0 ? 'high' : 'low'}
         />
       ))}
       <div
-        className="absolute inset-0 bg-gradient-to-t from-black/55 via-black/25 to-black/35"
+        className="absolute inset-0 z-[2] bg-gradient-to-t from-black/55 via-black/25 to-black/35"
         aria-hidden
       />
 
-      <div className="relative z-10 mx-auto flex min-h-[70dvh] w-full max-w-lg flex-col items-center px-5 pb-7 pt-[calc(4.5rem+env(safe-area-inset-top,0px))] sm:max-w-xl sm:pb-[2.1rem] sm:pt-[calc(5rem+env(safe-area-inset-top,0px))] md:pt-[calc(5.25rem+env(safe-area-inset-top,0px))]">
+      <div className="relative z-10 mx-auto flex min-h-[70svh] w-full max-w-lg flex-col items-center px-5 pb-7 pt-[calc(4.5rem+env(safe-area-inset-top,0px))] sm:max-w-xl sm:pb-[2.1rem] sm:pt-[calc(5rem+env(safe-area-inset-top,0px))] md:pt-[calc(5.25rem+env(safe-area-inset-top,0px))]">
         {/* Stack below sticky header (no negative translate — avoids overlap with nav) */}
         <div className="flex w-full flex-1 flex-col items-center justify-center text-center">
           <p className="font-display mb-[1.4rem] max-w-sm text-3xl font-semibold leading-tight tracking-wide text-white drop-shadow-[0_2px_8px_rgba(0,0,0,0.45)] sm:mb-[2.025rem] sm:max-w-md sm:text-4xl md:text-[2.75rem]">
@@ -124,19 +127,19 @@ export default function HomeContent() {
             </a>
             <Link
               href="/booking"
-              className="cta-flash-btn relative z-0 flex items-center justify-center rounded-full border-2 border-white/90 bg-white/15 px-4 py-3.5 text-center text-sm font-semibold text-white shadow-lg backdrop-blur-sm transition hover:bg-white/25 active:scale-[0.98] sm:px-8 sm:text-base"
+              className="cta-flash-btn relative z-0 flex items-center justify-center rounded-full border-2 border-white/90 bg-white/25 px-4 py-3.5 text-center text-sm font-semibold text-white shadow-lg transition hover:bg-white/35 active:scale-[0.98] sm:px-8 sm:text-base"
             >
               <span className="relative z-[2]">Book online</span>
             </Link>
             <Link
               href="/gallery"
-              className="cta-flash-btn relative z-0 rounded-full border-2 border-white/90 bg-white/15 px-3 py-3.5 text-center text-sm font-semibold text-white shadow-lg backdrop-blur-sm transition hover:bg-white/25 active:scale-[0.98] sm:px-6 sm:text-base"
+              className="cta-flash-btn relative z-0 rounded-full border-2 border-white/90 bg-white/25 px-3 py-3.5 text-center text-sm font-semibold text-white shadow-lg transition hover:bg-white/35 active:scale-[0.98] sm:px-6 sm:text-base"
             >
               <span className="relative z-[2]">See our work</span>
             </Link>
             <Link
               href="/services"
-              className="cta-flash-btn relative z-0 rounded-full border-2 border-white/90 bg-white/15 px-3 py-3.5 text-center text-sm font-semibold leading-snug text-white shadow-lg backdrop-blur-sm transition hover:bg-white/25 active:scale-[0.98] sm:px-5 sm:text-base"
+              className="cta-flash-btn relative z-0 rounded-full border-2 border-white/90 bg-white/25 px-3 py-3.5 text-center text-sm font-semibold leading-snug text-white shadow-lg transition hover:bg-white/35 active:scale-[0.98] sm:px-5 sm:text-base"
             >
               <span className="relative z-[2]">Services and price</span>
             </Link>
@@ -146,7 +149,7 @@ export default function HomeContent() {
               href={`https://www.google.com/maps/search/?api=1&query=${encodeURIComponent(heroAddress)}`}
               target="_blank"
               rel="noopener noreferrer"
-              className="cta-flash-btn relative z-0 flex w-full flex-col items-center justify-center gap-1 rounded-full border-2 border-white/90 bg-white/15 px-4 py-3.5 text-center shadow-lg backdrop-blur-sm transition hover:bg-white/25 active:scale-[0.98] sm:px-8 sm:py-4"
+              className="cta-flash-btn relative z-0 flex w-full flex-col items-center justify-center gap-1 rounded-full border-2 border-white/90 bg-white/25 px-4 py-3.5 text-center shadow-lg transition hover:bg-white/35 active:scale-[0.98] sm:px-8 sm:py-4"
             >
               <span className="relative z-[2] text-sm font-semibold text-white drop-shadow-[0_1px_6px_rgba(0,0,0,0.45)] sm:text-base">
                 Address
