@@ -122,9 +122,9 @@ export default function HomeContent() {
         aria-hidden
       />
 
-      <div className="relative z-10 mx-auto flex min-h-[70dvh] w-full max-w-lg flex-col items-center px-5 pb-7 pt-14 sm:max-w-xl sm:pb-[2.1rem] sm:pt-[4.2rem] md:pt-[4.9rem]">
-        {/* Middle-top: centered vertically, then shifted up (not pinned to bottom) */}
-        <div className="flex w-full flex-1 flex-col items-center justify-center text-center motion-reduce:translate-y-0 -translate-y-[min(12.6vh,4.55rem)] sm:-translate-y-[min(15.4vh,5.6rem)] md:-translate-y-[min(16.8vh,6.3rem)]">
+      <div className="relative z-10 mx-auto flex min-h-[70dvh] w-full max-w-lg flex-col items-center px-5 pb-7 pt-[calc(4.5rem+env(safe-area-inset-top,0px))] sm:max-w-xl sm:pb-[2.1rem] sm:pt-[calc(5rem+env(safe-area-inset-top,0px))] md:pt-[calc(5.25rem+env(safe-area-inset-top,0px))]">
+        {/* Stack below sticky header (no negative translate — avoids overlap with nav) */}
+        <div className="flex w-full flex-1 flex-col items-center justify-center text-center">
           <p className="font-display mb-[1.4rem] max-w-sm text-3xl font-semibold leading-tight tracking-wide text-white drop-shadow-[0_2px_8px_rgba(0,0,0,0.45)] sm:mb-[2.025rem] sm:max-w-md sm:text-4xl md:text-[2.75rem]">
             Beauty in Every Detail
           </p>

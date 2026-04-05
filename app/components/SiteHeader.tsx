@@ -20,6 +20,9 @@ function navItemActive(href: string, pathname: string): boolean {
   return pathname === href || pathname.startsWith(`${href}/`);
 }
 
+/** Below sticky bar (py-3 + row ~44px + border) + notch — keeps sheet flush under header */
+const MOBILE_MENU_TOP = 'calc(4.25rem + env(safe-area-inset-top, 0px))';
+
 export default function SiteHeader() {
   const [open, setOpen] = useState(false);
   const pathname = usePathname();
@@ -28,11 +31,21 @@ export default function SiteHeader() {
     setOpen(false);
   }, [pathname]);
 
+  useEffect(() => {
+    if (typeof document === 'undefined') return;
+    if (!open) return;
+    const prev = document.body.style.overflow;
+    document.body.style.overflow = 'hidden';
+    return () => {
+      document.body.style.overflow = prev;
+    };
+  }, [open]);
+
   return (
-    <header className="font-nav sticky top-0 z-50 w-full border-b border-champagne-400/45 bg-white/90 shadow-[0_1px_0_rgba(118,93,34,0.2)] backdrop-blur-md">
+    <header className="font-nav sticky top-0 z-[300] w-full border-b border-champagne-400/45 bg-white/95 shadow-[0_1px_0_rgba(118,93,34,0.2)] backdrop-blur-md">
       <div className="relative">
         <nav
-          className="container mx-auto flex max-w-6xl items-center gap-3 px-4 py-3 sm:px-6 sm:py-3.5"
+          className="relative z-[320] container mx-auto flex max-w-6xl items-center gap-3 bg-white/95 px-4 py-3 backdrop-blur-md sm:px-6 sm:py-3.5"
           aria-label="Main navigation"
         >
           <button
@@ -97,38 +110,51 @@ export default function SiteHeader() {
           <div className="w-11 shrink-0 md:hidden" aria-hidden />
         </nav>
 
-        <div
-          id="mobile-nav-panel"
-          className={`absolute left-0 right-0 top-full z-50 max-h-[min(75vh,calc(100dvh-3.5rem))] overflow-y-auto border-t border-champagne-400/40 bg-white/98 shadow-lg backdrop-blur-md md:hidden ${
-            open ? 'block' : 'hidden'
-          }`}
-          aria-hidden={!open}
-        >
-          <ul className="container mx-auto flex flex-col gap-0.5 px-4 py-3 sm:px-6">
-            {navLinks.map(({ href, label, admin }) => {
-              const active = navItemActive(href, pathname);
-              return (
-                <li key={href}>
-                  <Link
-                    href={href}
-                    className={`block rounded-xl px-3 py-3.5 text-[17px] font-semibold transition ${
-                      admin
-                        ? active
-                          ? 'bg-gray-100 text-gray-800'
-                          : 'text-gray-500 hover:bg-gray-50 hover:text-gray-800'
-                        : active
-                          ? 'bg-champagne-100/90 text-neutral-900'
-                          : 'text-gray-800 hover:bg-champagne-50 hover:text-champagne-800'
-                    }`}
-                    onClick={() => setOpen(false)}
-                  >
-                    {label}
-                  </Link>
-                </li>
-              );
-            })}
-          </ul>
-        </div>
+        {open && (
+          <>
+            <button
+              type="button"
+              className="fixed inset-0 z-[305] bg-neutral-950/45 backdrop-blur-[2px] md:hidden"
+              aria-label="Close menu"
+              onClick={() => setOpen(false)}
+            />
+            <div
+              id="mobile-nav-panel"
+              role="navigation"
+              aria-label="Mobile menu"
+              className="fixed inset-x-0 bottom-0 z-[310] flex min-h-0 flex-col border-t border-champagne-400/50 bg-white shadow-[0_-8px_32px_rgba(0,0,0,0.12)] md:hidden"
+              style={{ top: MOBILE_MENU_TOP }}
+            >
+              <p className="shrink-0 border-b border-champagne-200/80 px-4 py-2.5 text-center text-xs font-semibold uppercase tracking-wide text-champagne-800 sm:px-6">
+                Menu
+              </p>
+              <ul className="container mx-auto flex min-h-0 flex-1 flex-col gap-1 overflow-y-auto overscroll-y-contain px-4 py-3 sm:px-6 sm:py-4 pb-[max(1.25rem,env(safe-area-inset-bottom,0px))]">
+                {navLinks.map(({ href, label, admin }) => {
+                  const active = navItemActive(href, pathname);
+                  return (
+                    <li key={href}>
+                      <Link
+                        href={href}
+                        className={`block rounded-xl border border-transparent px-4 py-4 text-[17px] font-semibold transition active:scale-[0.99] ${
+                          admin
+                            ? active
+                              ? 'bg-gray-100 text-gray-800'
+                              : 'text-gray-500 hover:border-gray-200 hover:bg-gray-50 hover:text-gray-800'
+                            : active
+                              ? 'border-champagne-300/60 bg-champagne-100 text-neutral-900'
+                              : 'text-gray-800 hover:border-champagne-200 hover:bg-champagne-50 hover:text-champagne-900'
+                        }`}
+                        onClick={() => setOpen(false)}
+                      >
+                        {label}
+                      </Link>
+                    </li>
+                  );
+                })}
+              </ul>
+            </div>
+          </>
+        )}
       </div>
     </header>
   );
