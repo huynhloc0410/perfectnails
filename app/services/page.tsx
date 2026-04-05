@@ -28,8 +28,12 @@ export default function Services() {
           const servicesList = data.site.services as Service[];
           setServices(servicesList);
           const uniqueCategories = Array.from(
-            new Set(servicesList.map((s) => s.category || 'Other'))
-          ).filter((cat) => cat.trim() !== '');
+            new Set(
+              servicesList
+                .map((s) => (s.category || '').trim())
+                .filter((cat) => cat !== '')
+            )
+          );
           setCategories(uniqueCategories);
           return;
         }
@@ -42,8 +46,12 @@ export default function Services() {
         const servicesList: Service[] = JSON.parse(savedServices);
         setServices(servicesList);
         const uniqueCategories = Array.from(
-          new Set(servicesList.map((s) => s.category || 'Other'))
-        ).filter((cat) => cat.trim() !== '');
+          new Set(
+            servicesList
+              .map((s) => (s.category || '').trim())
+              .filter((cat) => cat !== '')
+          )
+        );
         setCategories(uniqueCategories);
       }
     })();
@@ -52,9 +60,11 @@ export default function Services() {
     };
   }, []);
 
-  // Group services by category
+  // Group services by category (only non-empty category strings)
   const servicesByCategory = categories.reduce((acc, category) => {
-    acc[category] = services.filter(s => (s.category || 'Other') === category);
+    acc[category] = services.filter(
+      (s) => (s.category || '').trim() === category
+    );
     return acc;
   }, {} as Record<string, Service[]>);
 
@@ -150,7 +160,14 @@ export default function Services() {
                     )}
                     <div className="flex justify-between items-center mt-4">
                       <div>
-                        <span className="text-2xl font-bold text-pink-600">${service.price.toFixed(2)}</span>
+                        <span className="text-2xl font-bold text-pink-600">
+                          $
+                          {Number(
+                            typeof service.price === 'number'
+                              ? service.price
+                              : parseFloat(String(service.price))
+                          ).toFixed(2)}
+                        </span>
                         {service.duration !== 0 && (
                           <p className="mt-1 text-sm text-gray-500">{service.duration || 45} minutes</p>
                         )}
@@ -188,7 +205,14 @@ export default function Services() {
                     )}
                     <div className="flex justify-between items-center mt-4">
                       <div>
-                        <span className="text-2xl font-bold text-pink-600">${service.price.toFixed(2)}</span>
+                        <span className="text-2xl font-bold text-pink-600">
+                          $
+                          {Number(
+                            typeof service.price === 'number'
+                              ? service.price
+                              : parseFloat(String(service.price))
+                          ).toFixed(2)}
+                        </span>
                         {service.duration !== 0 && (
                           <p className="mt-1 text-sm text-gray-500">{service.duration || 45} minutes</p>
                         )}

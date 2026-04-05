@@ -14,6 +14,7 @@ export interface CmsSiteApiShape {
       hours?: string;
       socialMedia?: { facebook?: string; instagram?: string; twitter?: string };
     };
+    gallery?: string[];
   };
   error?: string;
 }

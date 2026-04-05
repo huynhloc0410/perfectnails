@@ -66,12 +66,14 @@ export default function AdminPage() {
     bookings?: Booking[];
     about?: typeof aboutContent;
     contact?: typeof contactContent;
+    gallery?: string[];
   }) => {
     const nextServices = partial.services ?? services;
     const nextEmployees = partial.employees ?? employees;
     const nextBookings = partial.bookings ?? bookings;
     const nextAbout = partial.about ?? aboutContent;
     const nextContact = partial.contact ?? contactContent;
+    const nextGallery = partial.gallery ?? galleryImages;
 
     if (!useCms) {
       if (partial.services !== undefined) {
@@ -89,6 +91,9 @@ export default function AdminPage() {
       if (partial.contact !== undefined) {
         localStorage.setItem('admin-contact', JSON.stringify(nextContact));
       }
+      if (partial.gallery !== undefined) {
+        localStorage.setItem('admin-gallery', JSON.stringify(nextGallery));
+      }
       return;
     }
 
@@ -103,6 +108,7 @@ export default function AdminPage() {
         bookings: nextBookings,
         about: nextAbout,
         contact: nextContact,
+        gallery: nextGallery,
       }),
     });
     if (!res.ok) {
@@ -125,9 +131,9 @@ export default function AdminPage() {
         if (data.configured === true && data.site && !data.error) {
           const s = data.site;
           setUseCms(true);
-          if (Array.isArray(s.services)) setServices(s.services);
-          if (Array.isArray(s.employees)) setEmployees(s.employees);
-          if (Array.isArray(s.bookings)) setBookings(s.bookings);
+          if (Array.isArray(s.services)) setServices(s.services as Service[]);
+          if (Array.isArray(s.employees)) setEmployees(s.employees as Employee[]);
+          if (Array.isArray(s.bookings)) setBookings(s.bookings as Booking[]);
           if (s.about && typeof s.about === 'object') {
             setAboutContent((prev) => ({ ...prev, ...s.about }));
           }
@@ -138,6 +144,9 @@ export default function AdminPage() {
               ...c,
               socialMedia: { ...prev.socialMedia, ...(c.socialMedia || {}) },
             }));
+          }
+          if (Array.isArray(s.gallery) && s.gallery.length > 0) {
+            setGalleryImages(s.gallery as string[]);
           }
         } else {
           const savedServices = localStorage.getItem('admin-services');
@@ -168,13 +177,73 @@ export default function AdminPage() {
 
       if (cancelled) return;
       const savedGallery = localStorage.getItem('admin-gallery');
-      if (savedGallery) setGalleryImages(JSON.parse(savedGallery));
+      if (savedGallery) {
+        try {
+          const g = JSON.parse(savedGallery) as string[];
+          if (Array.isArray(g) && g.length > 0) {
+            setGalleryImages((prev) => (prev.length > 0 ? prev : g));
+          }
+        } catch {
+          /* ignore */
+        }
+      }
     })();
 
     return () => {
       cancelled = true;
     };
   }, []);
+
+  /** If S3 site has no gallery yet but this browser still has admin-gallery, publish once (logged-in admin). */
+  useEffect(() => {
+    if (!useCms) return;
+    let cancelled = false;
+    (async () => {
+      try {
+        const r = await fetch('/api/cms/site', { credentials: 'same-origin' });
+        const d = await r.json();
+        if (cancelled || !d.configured || !d.site) return;
+        const remoteG = d.site.gallery;
+        if (Array.isArray(remoteG) && remoteG.length > 0) return;
+        const raw = localStorage.getItem('admin-gallery');
+        if (!raw) return;
+        const local = JSON.parse(raw) as unknown;
+        if (!Array.isArray(local) || local.length === 0) return;
+        const urls = local.filter((x): x is string => typeof x === 'string' && x.trim() !== '');
+        if (urls.length === 0) return;
+        const s = d.site as Record<string, unknown>;
+        const put = await fetch('/api/cms/site', {
+          method: 'PUT',
+          credentials: 'same-origin',
+          headers: { 'Content-Type': 'application/json' },
+          body: JSON.stringify({
+            version: typeof s.version === 'number' ? s.version : 1,
+            services: Array.isArray(s.services) ? s.services : [],
+            employees: Array.isArray(s.employees) ? s.employees : [],
+            bookings: Array.isArray(s.bookings) ? s.bookings : [],
+            about: s.about && typeof s.about === 'object' ? s.about : { title: '', content: '' },
+            contact:
+              s.contact && typeof s.contact === 'object'
+                ? s.contact
+                : {
+                    address: '',
+                    phone: '',
+                    email: '',
+                    hours: '',
+                    socialMedia: { facebook: '', instagram: '', twitter: '' },
+                  },
+            gallery: urls,
+          }),
+        });
+        if (put.ok) setGalleryImages(urls);
+      } catch {
+        /* ignore */
+      }
+    })();
+    return () => {
+      cancelled = true;
+    };
+  }, [useCms]);
 
   const handleLogout = async () => {
     try {
@@ -205,7 +274,7 @@ export default function AdminPage() {
         const data = await response.json();
         const newImages = [...galleryImages, data.url];
         setGalleryImages(newImages);
-        localStorage.setItem('admin-gallery', JSON.stringify(newImages));
+        void persistSiteSnapshot({ gallery: newImages });
         alert('Image uploaded successfully!');
       } else {
         alert('Failed to upload image');
@@ -220,7 +289,7 @@ export default function AdminPage() {
     if (confirm('Are you sure you want to delete this image?')) {
       const newImages = galleryImages.filter((_, i) => i !== index);
       setGalleryImages(newImages);
-      localStorage.setItem('admin-gallery', JSON.stringify(newImages));
+      void persistSiteSnapshot({ gallery: newImages });
     }
   };
 
@@ -246,14 +315,24 @@ export default function AdminPage() {
       return;
     }
 
+    const categoryResolved =
+      (serviceForm.category || '').trim() || (newCategory || '').trim();
+    if (!categoryResolved) {
+      alert(
+        'Please choose a category from the dropdown, or type a new category and click Use (or press Enter).'
+      );
+      return;
+    }
+
     const duration = parseDurationFromForm(serviceForm.duration);
 
     if (editingService) {
-      const updated = services.map(s => 
-        s.id === editingService.id 
-          ? { 
-              ...editingService, 
-              ...serviceForm, 
+      const updated = services.map(s =>
+        s.id === editingService.id
+          ? {
+              ...editingService,
+              ...serviceForm,
+              category: categoryResolved,
               price: parseFloat(serviceForm.price),
               duration,
             }
@@ -268,7 +347,7 @@ export default function AdminPage() {
         name: serviceForm.name,
         description: serviceForm.description,
         price: parseFloat(serviceForm.price),
-        category: serviceForm.category || '',
+        category: categoryResolved,
         duration,
       };
       const updated = [...services, newService];
@@ -284,7 +363,9 @@ export default function AdminPage() {
     setServiceForm({
       name: service.name,
       description: service.description,
-      price: service.price.toString(),
+      price: String(
+        typeof service.price === 'number' ? service.price : parseFloat(String(service.price)) || 0
+      ),
       category: service.category || '',
       duration:
         service.duration != null && Number.isFinite(service.duration) && service.duration >= 0
@@ -609,7 +690,14 @@ export default function AdminPage() {
                                     <h4 className="font-semibold text-lg text-gray-800">{service.name}</h4>
                                     <p className="text-gray-600 text-sm mt-1">{service.description || 'No description'}</p>
                                     <div className="flex items-center gap-3 mt-2">
-                                      <p className="text-pink-600 font-semibold">${service.price.toFixed(2)}</p>
+                                      <p className="text-pink-600 font-semibold">
+                                      $
+                                      {Number(
+                                        typeof service.price === 'number'
+                                          ? service.price
+                                          : parseFloat(String(service.price))
+                                      ).toFixed(2)}
+                                    </p>
                                       {service.duration !== 0 && (
                                         <p className="text-gray-500 text-sm">({service.duration || 45} min)</p>
                                       )}
@@ -648,7 +736,14 @@ export default function AdminPage() {
                                   <h4 className="font-semibold text-lg text-gray-800">{service.name}</h4>
                                   <p className="text-gray-600 text-sm mt-1">{service.description || 'No description'}</p>
                                   <div className="flex items-center gap-3 mt-2">
-                                    <p className="text-pink-600 font-semibold">${service.price.toFixed(2)}</p>
+                                    <p className="text-pink-600 font-semibold">
+                                      $
+                                      {Number(
+                                        typeof service.price === 'number'
+                                          ? service.price
+                                          : parseFloat(String(service.price))
+                                      ).toFixed(2)}
+                                    </p>
                                     {service.duration !== 0 && (
                                       <p className="text-gray-500 text-sm">({service.duration || 45} min)</p>
                                     )}
