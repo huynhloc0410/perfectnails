@@ -77,9 +77,14 @@ export default function AdminPage() {
     if (savedContact) setContactContent(JSON.parse(savedContact));
   }, []);
 
-  const handleLogout = () => {
-    localStorage.removeItem('admin-authenticated');
+  const handleLogout = async () => {
+    try {
+      await fetch('/api/admin/logout', { method: 'POST', credentials: 'same-origin' });
+    } catch {
+      /* still navigate away */
+    }
     router.push('/admin/login');
+    router.refresh();
   };
 
   // Gallery Management
@@ -93,6 +98,7 @@ export default function AdminPage() {
     try {
       const response = await fetch('/api/admin/upload', {
         method: 'POST',
+        credentials: 'same-origin',
         body: formData,
       });
 

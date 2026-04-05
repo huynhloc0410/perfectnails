@@ -4,25 +4,37 @@ import { useState } from 'react';
 import { useRouter } from 'next/navigation';
 
 export default function AdminLogin() {
-  const [username, setUsername] = useState('');
   const [password, setPassword] = useState('');
   const [error, setError] = useState('');
+  const [loading, setLoading] = useState(false);
   const router = useRouter();
 
-  // Default credentials (in production, use proper authentication)
-  const ADMIN_USERNAME = 'admin';
-  const ADMIN_PASSWORD = 'admin123';
-
-  const handleLogin = (e: React.FormEvent) => {
+  const handleLogin = async (e: React.FormEvent) => {
     e.preventDefault();
     setError('');
+    setLoading(true);
 
-    if (username === ADMIN_USERNAME && password === ADMIN_PASSWORD) {
-      // Store auth token
-      localStorage.setItem('admin-authenticated', 'true');
+    try {
+      const res = await fetch('/api/admin/login', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        credentials: 'same-origin',
+        body: JSON.stringify({ password }),
+      });
+
+      const data = await res.json().catch(() => ({}));
+
+      if (!res.ok) {
+        setError(typeof data.error === 'string' ? data.error : 'Login failed');
+        return;
+      }
+
       router.push('/admin');
-    } else {
-      setError('Invalid username or password');
+      router.refresh();
+    } catch {
+      setError('Network error');
+    } finally {
+      setLoading(false);
     }
   };
 
@@ -43,20 +55,6 @@ export default function AdminLogin() {
 
           <div>
             <label className="block text-sm font-medium text-gray-700 mb-2">
-              Username
-            </label>
-            <input
-              type="text"
-              value={username}
-              onChange={(e) => setUsername(e.target.value)}
-              className="w-full px-4 py-2 border border-gray-300 rounded-md focus:ring-pink-500 focus:border-pink-500"
-              placeholder="Enter username"
-              required
-            />
-          </div>
-
-          <div>
-            <label className="block text-sm font-medium text-gray-700 mb-2">
               Password
             </label>
             <input
@@ -64,24 +62,25 @@ export default function AdminLogin() {
               value={password}
               onChange={(e) => setPassword(e.target.value)}
               className="w-full px-4 py-2 border border-gray-300 rounded-md focus:ring-pink-500 focus:border-pink-500"
-              placeholder="Enter password"
+              placeholder="Admin password"
               required
+              autoComplete="current-password"
             />
           </div>
 
           <button
             type="submit"
-            className="w-full bg-pink-500 text-white py-2 px-4 rounded-md hover:bg-pink-600 transition font-semibold"
+            disabled={loading}
+            className="w-full bg-pink-500 text-white py-2 px-4 rounded-md hover:bg-pink-600 transition font-semibold disabled:opacity-60"
           >
-            Login
+            {loading ? 'Signing in…' : 'Login'}
           </button>
         </form>
 
-        <div className="mt-6 text-center text-sm text-gray-500">
-          <p>Default: admin / admin123</p>
-        </div>
+        <p className="mt-6 text-center text-sm text-gray-500">
+          Password is set in server configuration (<code className="text-xs bg-gray-100 px-1 rounded">ADMIN_PASSWORD</code>).
+        </p>
       </div>
     </div>
   );
 }
-
