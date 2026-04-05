@@ -1,4 +1,5 @@
 import { Metadata } from 'next';
+import { Suspense } from 'react';
 
 export const metadata: Metadata = {
   title: 'Book an Appointment - Schedule Your Nail Service | Perfect Nails',
@@ -27,6 +28,10 @@ export default function BookingLayout({
 }: {
   children: React.ReactNode;
 }) {
-  return children;
+  return (
+    <Suspense fallback={<div className="min-h-[50vh] w-full bg-champagne-50/50" aria-hidden />}>
+      {children}
+    </Suspense>
+  );
 }
 

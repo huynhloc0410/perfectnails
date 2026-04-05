@@ -1,6 +1,7 @@
 'use client';
 
 import { useState, useEffect } from 'react';
+import { useSearchParams } from 'next/navigation';
 import Breadcrumbs from '../components/Breadcrumbs';
 import PageHeroRule from '../components/PageHeroRule';
 import { fetchCmsSite } from '../lib/cmsSiteClient';
@@ -44,6 +45,8 @@ function schedulingMinutes(duration: number | undefined): number {
 }
 
 export default function Booking() {
+  const searchParams = useSearchParams();
+  const serviceFromQuery = searchParams.get('service');
   const [services, setServices] = useState<Service[]>([]);
   const [employees, setEmployees] = useState<Employee[]>([]);
   const [bookings, setBookings] = useState<Booking[]>([]);
@@ -93,6 +96,18 @@ export default function Booking() {
       cancelled = true;
     };
   }, []);
+
+  /** Prefill service from /booking?service=... (e.g. Services → Book Now) */
+  useEffect(() => {
+    const fromUrl = serviceFromQuery?.trim();
+    if (!fromUrl || services.length === 0) return;
+    const match = services.find((s) => s.name === fromUrl);
+    if (!match) return;
+    setFormData((prev) => {
+      if (prev.service === match.name) return prev;
+      return { ...prev, service: match.name, employee: '', date: '', timeSlot: '' };
+    });
+  }, [services, serviceFromQuery]);
 
   // Filter employees based on selected service
   useEffect(() => {

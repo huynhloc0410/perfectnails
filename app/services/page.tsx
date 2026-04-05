@@ -175,7 +175,7 @@ export default function Services() {
                         )}
                       </div>
                       <Link
-                        href="/booking"
+                        href={`/booking?service=${encodeURIComponent(service.name)}`}
                         className="px-4 py-2 bg-champagne-500 text-white rounded-lg hover:bg-champagne-600 transition font-semibold text-sm"
                       >
                         Book Now
@@ -220,7 +220,7 @@ export default function Services() {
                         )}
                       </div>
                       <Link
-                        href="/booking"
+                        href={`/booking?service=${encodeURIComponent(service.name)}`}
                         className="px-4 py-2 bg-champagne-500 text-white rounded-lg hover:bg-champagne-600 transition font-semibold text-sm"
                       >
                         Book Now
