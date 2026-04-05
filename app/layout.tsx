@@ -95,7 +95,7 @@ export default function RootLayout({ children }: { children: React.ReactNode }) 
       >
         <SiteHeader />
 
-        <main className="w-full flex-1 overflow-x-hidden overscroll-y-contain">{children}</main>
+        <main className="w-full flex-1 overflow-x-hidden">{children}</main>
 
         <SiteFooter />
       </body>
