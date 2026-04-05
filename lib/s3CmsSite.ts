@@ -112,3 +112,50 @@ export async function writeCmsSiteToS3(site: CmsSitePayload): Promise<void> {
     })
   );
 }
+
+/** Prefix for gallery images (no leading slash; trailing slash optional). */
+export function galleryUploadPrefix(): string {
+  const p = s3Env('S3_GALLERY_PREFIX') || 'perfectnails/gallery';
+  return p.replace(/\/$/, '');
+}
+
+/** Public URL for an object key (needs bucket policy or CDN allowing GetObject). */
+export function publicUrlForS3ObjectKey(key: string): string {
+  const encoded = key
+    .split('/')
+    .map((seg) => encodeURIComponent(seg))
+    .join('/');
+  const cdn = s3Env('AWS_CDN_URL', 'S3_PUBLIC_BASE_URL');
+  if (cdn) {
+    return `${cdn.replace(/\/$/, '')}/${encoded}`;
+  }
+  const b = bucket();
+  const r = s3Env('AWS_REGION', 'AWS_DEFAULT_REGION')!;
+  return `https://${b}.s3.${r}.amazonaws.com/${encoded}`;
+}
+
+/** Upload a gallery image; returns HTTPS URL for <img src>. */
+export async function uploadPublicGalleryImage(params: {
+  buffer: Buffer;
+  contentType: string;
+  originalName: string;
+}): Promise<string> {
+  const client = getClient();
+  if (!client) throw new Error('S3 not configured');
+
+  const prefix = galleryUploadPrefix();
+  const safe = params.originalName.replace(/[^a-zA-Z0-9.-]/g, '_') || 'image';
+  const key = `${prefix}/${Date.now()}-${safe}`;
+
+  await client.send(
+    new PutObjectCommand({
+      Bucket: bucket(),
+      Key: key,
+      Body: params.buffer,
+      ContentType: params.contentType || 'application/octet-stream',
+      CacheControl: 'public, max-age=31536000, immutable',
+    })
+  );
+
+  return publicUrlForS3ObjectKey(key);
+}
