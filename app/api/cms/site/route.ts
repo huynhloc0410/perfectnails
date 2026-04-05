@@ -1,7 +1,12 @@
 import { NextRequest, NextResponse } from 'next/server';
 import { ADMIN_SESSION_COOKIE, verifyAdminToken } from '@/lib/adminSessionVerify';
 import { defaultCmsSite, normalizeCmsSite } from '@/lib/cmsSiteTypes';
-import { isS3CmsConfigured, readCmsSiteFromS3, writeCmsSiteToS3 } from '@/lib/s3CmsSite';
+import {
+  isS3CmsConfigured,
+  readCmsSiteFromS3,
+  s3EnvMissingParts,
+  writeCmsSiteToS3,
+} from '@/lib/s3CmsSite';
 
 export const dynamic = 'force-dynamic';
 
@@ -10,7 +15,13 @@ export async function GET() {
 
   if (!configured) {
     return NextResponse.json(
-      { configured: false, site: defaultCmsSite() },
+      {
+        configured: false,
+        site: defaultCmsSite(),
+        s3EnvMissing: s3EnvMissingParts(),
+        s3EnvHint:
+          'Set AWS_ACCESS_KEY_ID, AWS_SECRET_ACCESS_KEY, region (AWS_REGION or AWS_DEFAULT_REGION), bucket (S3_BUCKET_NAME or S3_BUCKET). Names are case-sensitive on Render.',
+      },
       {
         headers: { 'Cache-Control': 'private, no-store' },
       }

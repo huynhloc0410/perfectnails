@@ -1,38 +1,55 @@
 import { S3Client, GetObjectCommand, PutObjectCommand } from '@aws-sdk/client-s3';
-import { runtimeEnv } from '@/lib/runtimeEnv';
 import {
   type CmsSitePayload,
   defaultCmsSite,
   normalizeCmsSite,
 } from '@/lib/cmsSiteTypes';
 
+/** First non-empty trimmed value among env keys (copy/paste from other projects often uses different names). */
+function s3Env(...keys: string[]): string | undefined {
+  for (const k of keys) {
+    const v = process.env[k];
+    if (v !== undefined && v.trim() !== '') return v.trim();
+  }
+  return undefined;
+}
+
+/** Which S3-related env groups are still missing (for debugging — no values exposed). */
+export function s3EnvMissingParts(): string[] {
+  const missing: string[] = [];
+  if (!s3Env('AWS_ACCESS_KEY_ID')) missing.push('AWS_ACCESS_KEY_ID');
+  if (!s3Env('AWS_SECRET_ACCESS_KEY')) missing.push('AWS_SECRET_ACCESS_KEY');
+  if (!s3Env('AWS_REGION', 'AWS_DEFAULT_REGION')) {
+    missing.push('AWS_REGION_or_AWS_DEFAULT_REGION');
+  }
+  if (!s3Env('S3_BUCKET_NAME', 'S3_BUCKET', 'AWS_S3_BUCKET', 'BUCKET_NAME')) {
+    missing.push('S3_BUCKET_NAME_or_S3_BUCKET');
+  }
+  return missing;
+}
+
 export function isS3CmsConfigured(): boolean {
-  return Boolean(
-    runtimeEnv('AWS_ACCESS_KEY_ID') &&
-      runtimeEnv('AWS_SECRET_ACCESS_KEY') &&
-      runtimeEnv('AWS_REGION') &&
-      runtimeEnv('S3_BUCKET_NAME')
-  );
+  return s3EnvMissingParts().length === 0;
 }
 
 function getClient(): S3Client | null {
   if (!isS3CmsConfigured()) return null;
   return new S3Client({
-    region: runtimeEnv('AWS_REGION'),
+    region: s3Env('AWS_REGION', 'AWS_DEFAULT_REGION'),
     credentials: {
-      accessKeyId: runtimeEnv('AWS_ACCESS_KEY_ID')!,
-      secretAccessKey: runtimeEnv('AWS_SECRET_ACCESS_KEY')!,
+      accessKeyId: s3Env('AWS_ACCESS_KEY_ID')!,
+      secretAccessKey: s3Env('AWS_SECRET_ACCESS_KEY')!,
     },
   });
 }
 
 /** S3 object key, e.g. cms/site.json or my-prefix/perfectnails/site.json */
 export function cmsSiteObjectKey(): string {
-  return runtimeEnv('S3_SITE_OBJECT_KEY') || 'cms/site.json';
+  return s3Env('S3_SITE_OBJECT_KEY') || 'cms/site.json';
 }
 
 function bucket(): string {
-  return runtimeEnv('S3_BUCKET_NAME')!;
+  return s3Env('S3_BUCKET_NAME', 'S3_BUCKET', 'AWS_S3_BUCKET', 'BUCKET_NAME')!;
 }
 
 export async function readCmsSiteFromS3(): Promise<CmsSitePayload | null> {
