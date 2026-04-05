@@ -1,0 +1,10 @@
+# Render Blueprint (optional): Dashboard → New → Blueprint → connect repo.
+# Or create a Web Service manually with the same build/start commands below.
+
+services:
+  - type: web
+    name: perfectnails
+    runtime: node
+    buildCommand: npm install && npm run build
+    startCommand: npm start
+    healthCheckPath: /
