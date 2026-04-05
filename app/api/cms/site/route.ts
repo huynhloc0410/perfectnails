@@ -20,7 +20,7 @@ export async function GET() {
         site: defaultCmsSite(),
         s3EnvMissing: s3EnvMissingParts(),
         s3EnvHint:
-          'Set AWS_ACCESS_KEY_ID, AWS_SECRET_ACCESS_KEY, region (AWS_REGION or AWS_DEFAULT_REGION), bucket (S3_BUCKET_NAME or S3_BUCKET). Names are case-sensitive on Render.',
+          'Set AWS_ACCESS_KEY_ID, AWS_SECRET_ACCESS_KEY, region (AWS_REGION or AWS_DEFAULT_REGION), bucket (AWS_S3_BUCKET_NAME from NailsByNi, or S3_BUCKET_NAME, etc.). Names are case-sensitive on Render.',
       },
       {
         headers: { 'Cache-Control': 'private, no-store' },

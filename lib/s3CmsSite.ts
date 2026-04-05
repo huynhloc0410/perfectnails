@@ -22,8 +22,16 @@ export function s3EnvMissingParts(): string[] {
   if (!s3Env('AWS_REGION', 'AWS_DEFAULT_REGION')) {
     missing.push('AWS_REGION_or_AWS_DEFAULT_REGION');
   }
-  if (!s3Env('S3_BUCKET_NAME', 'S3_BUCKET', 'AWS_S3_BUCKET', 'BUCKET_NAME')) {
-    missing.push('S3_BUCKET_NAME_or_S3_BUCKET');
+  if (
+    !s3Env(
+      'AWS_S3_BUCKET_NAME',
+      'S3_BUCKET_NAME',
+      'S3_BUCKET',
+      'AWS_S3_BUCKET',
+      'BUCKET_NAME'
+    )
+  ) {
+    missing.push('AWS_S3_BUCKET_NAME_or_S3_BUCKET_NAME');
   }
   return missing;
 }
@@ -49,7 +57,13 @@ export function cmsSiteObjectKey(): string {
 }
 
 function bucket(): string {
-  return s3Env('S3_BUCKET_NAME', 'S3_BUCKET', 'AWS_S3_BUCKET', 'BUCKET_NAME')!;
+  return s3Env(
+    'AWS_S3_BUCKET_NAME',
+    'S3_BUCKET_NAME',
+    'S3_BUCKET',
+    'AWS_S3_BUCKET',
+    'BUCKET_NAME'
+  )!;
 }
 
 export async function readCmsSiteFromS3(): Promise<CmsSitePayload | null> {

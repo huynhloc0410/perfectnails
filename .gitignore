@@ -22,5 +22,8 @@ npm-debug.log*
 # Vercel
 .vercel
 
+# Local clone of other repos for reference
+_old_NailsByNi_ref/
+
 # Uploads (optional: remove this line if you want gallery uploads in git)
 # public/uploads/
