@@ -2,6 +2,7 @@
 
 import { useState, useEffect } from 'react';
 import Breadcrumbs from '../components/Breadcrumbs';
+import { fetchCmsSite } from '../lib/cmsSiteClient';
 
 interface Service {
   id: string;
@@ -59,22 +60,37 @@ export default function Booking() {
   const [currentMonth, setCurrentMonth] = useState(new Date());
 
   useEffect(() => {
-    const savedServices = localStorage.getItem('admin-services');
-    const savedEmployees = localStorage.getItem('admin-employees');
-    const savedBookings = localStorage.getItem('admin-bookings');
-    
-    if (savedServices) {
-      const servicesList = JSON.parse(savedServices);
-      setServices(servicesList);
-    }
-    
-    if (savedEmployees) {
-      setEmployees(JSON.parse(savedEmployees));
-    }
-
-    if (savedBookings) {
-      setBookings(JSON.parse(savedBookings));
-    }
+    let cancelled = false;
+    (async () => {
+      try {
+        const data = await fetchCmsSite();
+        if (cancelled) return;
+        if (data.configured && data.site && !data.error) {
+          if (Array.isArray(data.site.services)) {
+            setServices(data.site.services as Service[]);
+          }
+          if (Array.isArray(data.site.employees)) {
+            setEmployees(data.site.employees as Employee[]);
+          }
+          if (Array.isArray(data.site.bookings)) {
+            setBookings(data.site.bookings as Booking[]);
+          }
+          return;
+        }
+      } catch {
+        /* local fallback */
+      }
+      if (cancelled) return;
+      const savedServices = localStorage.getItem('admin-services');
+      const savedEmployees = localStorage.getItem('admin-employees');
+      const savedBookings = localStorage.getItem('admin-bookings');
+      if (savedServices) setServices(JSON.parse(savedServices));
+      if (savedEmployees) setEmployees(JSON.parse(savedEmployees));
+      if (savedBookings) setBookings(JSON.parse(savedBookings));
+    })();
+    return () => {
+      cancelled = true;
+    };
   }, []);
 
   // Filter employees based on selected service

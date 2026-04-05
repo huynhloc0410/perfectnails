@@ -7,6 +7,7 @@ import {
   effectiveContactAddress,
   migrateLegacyStoredContactAddress,
 } from '../lib/siteContact';
+import { fetchCmsSite } from '../lib/cmsSiteClient';
 
 const HERO_BACKGROUNDS = [
   '/images/nail0.webp',
@@ -62,20 +63,43 @@ export default function HomeContent() {
   }, []);
 
   useEffect(() => {
-    migrateLegacyStoredContactAddress();
-    const saved = localStorage.getItem('admin-contact');
-    if (saved) {
+    let cancelled = false;
+    (async () => {
       try {
-        const c = JSON.parse(saved) as { phone?: string; address?: string };
-        if (c.phone) {
-          setCallHref(toTelHref(c.phone));
-          setPhoneDisplay(formatPhoneDisplay(c.phone));
+        const data = await fetchCmsSite();
+        if (cancelled) return;
+        if (data.configured && data.site?.contact && !data.error) {
+          const c = data.site.contact;
+          if (c.phone) {
+            setCallHref(toTelHref(c.phone));
+            setPhoneDisplay(formatPhoneDisplay(c.phone));
+          }
+          setHeroAddress(effectiveContactAddress(c.address));
+          return;
         }
-        setHeroAddress(effectiveContactAddress(c.address));
       } catch {
-        /* keep defaults */
+        /* local fallback */
       }
-    }
+      if (!cancelled) {
+        migrateLegacyStoredContactAddress();
+        const saved = localStorage.getItem('admin-contact');
+        if (saved) {
+          try {
+            const c = JSON.parse(saved) as { phone?: string; address?: string };
+            if (c.phone) {
+              setCallHref(toTelHref(c.phone));
+              setPhoneDisplay(formatPhoneDisplay(c.phone));
+            }
+            setHeroAddress(effectiveContactAddress(c.address));
+          } catch {
+            /* keep defaults */
+          }
+        }
+      }
+    })();
+    return () => {
+      cancelled = true;
+    };
   }, []);
 
   return (

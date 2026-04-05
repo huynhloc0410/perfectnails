@@ -6,6 +6,7 @@ import {
   SITE_DEFAULT_ADDRESS,
   migrateLegacyStoredContactAddress,
 } from '../lib/siteContact';
+import { fetchCmsSite } from '../lib/cmsSiteClient';
 
 interface ContactContent {
   address: string;
@@ -30,10 +31,37 @@ export default function Contact() {
 
   useEffect(() => {
     migrateLegacyStoredContactAddress();
-    const savedContact = localStorage.getItem('admin-contact');
-    if (savedContact) {
-      setContact(JSON.parse(savedContact));
-    }
+    let cancelled = false;
+    (async () => {
+      try {
+        const data = await fetchCmsSite();
+        if (cancelled) return;
+        if (data.configured && data.site?.contact && !data.error) {
+          const c = data.site.contact;
+          setContact({
+            address: c.address || '',
+            phone: c.phone || '',
+            email: c.email || '',
+            hours: c.hours || '',
+            socialMedia: {
+              facebook: c.socialMedia?.facebook || '',
+              instagram: c.socialMedia?.instagram || '',
+              twitter: c.socialMedia?.twitter || '',
+            },
+          });
+          return;
+        }
+      } catch {
+        /* local fallback */
+      }
+      if (!cancelled) {
+        const savedContact = localStorage.getItem('admin-contact');
+        if (savedContact) setContact(JSON.parse(savedContact));
+      }
+    })();
+    return () => {
+      cancelled = true;
+    };
   }, []);
 
   const defaultAddress = SITE_DEFAULT_ADDRESS;

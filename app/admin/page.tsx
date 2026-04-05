@@ -55,26 +55,125 @@ export default function AdminPage() {
   const [employeeForm, setEmployeeForm] = useState({ name: '', role: '' as 'Water' | 'Powder' | 'Everything' | '', phone: '' });
   const [editingService, setEditingService] = useState<Service | null>(null);
   const [editingEmployee, setEditingEmployee] = useState<Employee | null>(null);
+  /** When true, services/employees/bookings/about/contact sync to S3 via PUT /api/cms/site */
+  const [useCms, setUseCms] = useState(false);
 
   // Authentication is handled by admin layout
 
-  // Load data from localStorage on mount
+  const persistSiteSnapshot = async (partial: {
+    services?: Service[];
+    employees?: Employee[];
+    bookings?: Booking[];
+    about?: typeof aboutContent;
+    contact?: typeof contactContent;
+  }) => {
+    const nextServices = partial.services ?? services;
+    const nextEmployees = partial.employees ?? employees;
+    const nextBookings = partial.bookings ?? bookings;
+    const nextAbout = partial.about ?? aboutContent;
+    const nextContact = partial.contact ?? contactContent;
+
+    if (!useCms) {
+      if (partial.services !== undefined) {
+        localStorage.setItem('admin-services', JSON.stringify(nextServices));
+      }
+      if (partial.employees !== undefined) {
+        localStorage.setItem('admin-employees', JSON.stringify(nextEmployees));
+      }
+      if (partial.bookings !== undefined) {
+        localStorage.setItem('admin-bookings', JSON.stringify(nextBookings));
+      }
+      if (partial.about !== undefined) {
+        localStorage.setItem('admin-about', JSON.stringify(nextAbout));
+      }
+      if (partial.contact !== undefined) {
+        localStorage.setItem('admin-contact', JSON.stringify(nextContact));
+      }
+      return;
+    }
+
+    const res = await fetch('/api/cms/site', {
+      method: 'PUT',
+      credentials: 'same-origin',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify({
+        version: 1,
+        services: nextServices,
+        employees: nextEmployees,
+        bookings: nextBookings,
+        about: nextAbout,
+        contact: nextContact,
+      }),
+    });
+    if (!res.ok) {
+      const msg = await res.text().catch(() => '');
+      alert(`Could not save to cloud (${res.status}). ${msg || 'Check S3 env vars on the server.'}`);
+    }
+  };
+
+  // Load: S3 CMS when configured, else localStorage (gallery stays local until step 5)
   useEffect(() => {
     migrateLegacyStoredContactAddress();
+    let cancelled = false;
 
-    const savedServices = localStorage.getItem('admin-services');
-    const savedGallery = localStorage.getItem('admin-gallery');
-    const savedBookings = localStorage.getItem('admin-bookings');
-    const savedEmployees = localStorage.getItem('admin-employees');
-    const savedAbout = localStorage.getItem('admin-about');
-    const savedContact = localStorage.getItem('admin-contact');
-    
-    if (savedServices) setServices(JSON.parse(savedServices));
-    if (savedGallery) setGalleryImages(JSON.parse(savedGallery));
-    if (savedBookings) setBookings(JSON.parse(savedBookings));
-    if (savedEmployees) setEmployees(JSON.parse(savedEmployees));
-    if (savedAbout) setAboutContent(JSON.parse(savedAbout));
-    if (savedContact) setContactContent(JSON.parse(savedContact));
+    (async () => {
+      try {
+        const r = await fetch('/api/cms/site');
+        const data = await r.json();
+        if (cancelled) return;
+
+        if (data.configured === true && data.site && !data.error) {
+          const s = data.site;
+          setUseCms(true);
+          if (Array.isArray(s.services)) setServices(s.services);
+          if (Array.isArray(s.employees)) setEmployees(s.employees);
+          if (Array.isArray(s.bookings)) setBookings(s.bookings);
+          if (s.about && typeof s.about === 'object') {
+            setAboutContent((prev) => ({ ...prev, ...s.about }));
+          }
+          if (s.contact && typeof s.contact === 'object') {
+            const c = s.contact as typeof contactContent;
+            setContactContent((prev) => ({
+              ...prev,
+              ...c,
+              socialMedia: { ...prev.socialMedia, ...(c.socialMedia || {}) },
+            }));
+          }
+        } else {
+          const savedServices = localStorage.getItem('admin-services');
+          const savedBookings = localStorage.getItem('admin-bookings');
+          const savedEmployees = localStorage.getItem('admin-employees');
+          const savedAbout = localStorage.getItem('admin-about');
+          const savedContact = localStorage.getItem('admin-contact');
+          if (savedServices) setServices(JSON.parse(savedServices));
+          if (savedBookings) setBookings(JSON.parse(savedBookings));
+          if (savedEmployees) setEmployees(JSON.parse(savedEmployees));
+          if (savedAbout) setAboutContent(JSON.parse(savedAbout));
+          if (savedContact) setContactContent(JSON.parse(savedContact));
+        }
+      } catch {
+        if (!cancelled) {
+          const savedServices = localStorage.getItem('admin-services');
+          const savedBookings = localStorage.getItem('admin-bookings');
+          const savedEmployees = localStorage.getItem('admin-employees');
+          const savedAbout = localStorage.getItem('admin-about');
+          const savedContact = localStorage.getItem('admin-contact');
+          if (savedServices) setServices(JSON.parse(savedServices));
+          if (savedBookings) setBookings(JSON.parse(savedBookings));
+          if (savedEmployees) setEmployees(JSON.parse(savedEmployees));
+          if (savedAbout) setAboutContent(JSON.parse(savedAbout));
+          if (savedContact) setContactContent(JSON.parse(savedContact));
+        }
+      }
+
+      if (cancelled) return;
+      const savedGallery = localStorage.getItem('admin-gallery');
+      if (savedGallery) setGalleryImages(JSON.parse(savedGallery));
+    })();
+
+    return () => {
+      cancelled = true;
+    };
   }, []);
 
   const handleLogout = async () => {
@@ -161,7 +260,7 @@ export default function AdminPage() {
           : s
       );
       setServices(updated);
-      localStorage.setItem('admin-services', JSON.stringify(updated));
+      void persistSiteSnapshot({ services: updated });
       setEditingService(null);
     } else {
       const newService: Service = {
@@ -174,7 +273,7 @@ export default function AdminPage() {
       };
       const updated = [...services, newService];
       setServices(updated);
-      localStorage.setItem('admin-services', JSON.stringify(updated));
+      void persistSiteSnapshot({ services: updated });
     }
     setServiceForm({ name: '', description: '', price: '', category: '', duration: '45' });
     setNewCategory('');
@@ -198,7 +297,7 @@ export default function AdminPage() {
     if (confirm('Are you sure you want to delete this service?')) {
       const updated = services.filter(s => s.id !== id);
       setServices(updated);
-      localStorage.setItem('admin-services', JSON.stringify(updated));
+      void persistSiteSnapshot({ services: updated });
     }
   };
 
@@ -216,7 +315,7 @@ export default function AdminPage() {
           : e
       );
       setEmployees(updated);
-      localStorage.setItem('admin-employees', JSON.stringify(updated));
+      void persistSiteSnapshot({ employees: updated });
       setEditingEmployee(null);
     } else {
       const newEmployee: Employee = {
@@ -227,7 +326,7 @@ export default function AdminPage() {
       };
       const updated = [...employees, newEmployee];
       setEmployees(updated);
-      localStorage.setItem('admin-employees', JSON.stringify(updated));
+      void persistSiteSnapshot({ employees: updated });
     }
     setEmployeeForm({ name: '', role: '', phone: '' });
   };
@@ -245,19 +344,19 @@ export default function AdminPage() {
     if (confirm('Are you sure you want to delete this employee?')) {
       const updated = employees.filter(e => e.id !== id);
       setEmployees(updated);
-      localStorage.setItem('admin-employees', JSON.stringify(updated));
+      void persistSiteSnapshot({ employees: updated });
     }
   };
 
   // About Management
   const saveAbout = () => {
-    localStorage.setItem('admin-about', JSON.stringify(aboutContent));
+    void persistSiteSnapshot({ about: aboutContent });
     alert('About page updated successfully!');
   };
 
   // Contact Management
   const saveContact = () => {
-    localStorage.setItem('admin-contact', JSON.stringify(contactContent));
+    void persistSiteSnapshot({ contact: contactContent });
     alert('Contact page updated successfully!');
   };
 
@@ -266,7 +365,7 @@ export default function AdminPage() {
     if (confirm('Are you sure you want to delete this booking?')) {
       const updated = bookings.filter(b => b.id !== id);
       setBookings(updated);
-      localStorage.setItem('admin-bookings', JSON.stringify(updated));
+      void persistSiteSnapshot({ bookings: updated });
     }
   };
 
@@ -279,6 +378,11 @@ export default function AdminPage() {
             <div>
               <h1 className="text-3xl font-bold text-white">Admin Dashboard</h1>
               <p className="text-pink-100 mt-2">Manage your nail salon website</p>
+              {useCms && (
+                <p className="text-pink-50 text-sm mt-1">
+                  Site data (services, staff, bookings, about, contact) is saved to Amazon S3.
+                </p>
+              )}
             </div>
             <button
               onClick={handleLogout}

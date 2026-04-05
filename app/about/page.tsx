@@ -3,15 +3,36 @@
 import { useState, useEffect } from 'react';
 import Breadcrumbs from '../components/Breadcrumbs';
 import Link from 'next/link';
+import { fetchCmsSite } from '../lib/cmsSiteClient';
 
 export default function About() {
   const [aboutContent, setAboutContent] = useState({ title: 'About Us', content: '' });
 
   useEffect(() => {
-    const savedAbout = localStorage.getItem('admin-about');
-    if (savedAbout) {
-      setAboutContent(JSON.parse(savedAbout));
-    }
+    let cancelled = false;
+    (async () => {
+      try {
+        const data = await fetchCmsSite();
+        if (cancelled) return;
+        if (data.configured && data.site?.about && !data.error) {
+          const a = data.site.about;
+          setAboutContent({
+            title: a.title || 'About Us',
+            content: a.content || '',
+          });
+          return;
+        }
+      } catch {
+        /* local fallback */
+      }
+      if (!cancelled) {
+        const savedAbout = localStorage.getItem('admin-about');
+        if (savedAbout) setAboutContent(JSON.parse(savedAbout));
+      }
+    })();
+    return () => {
+      cancelled = true;
+    };
   }, []);
 
   // Generate comprehensive structured data for SEO

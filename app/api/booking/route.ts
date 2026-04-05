@@ -1,4 +1,10 @@
-import { NextResponse } from "next/server";
+import { NextResponse } from 'next/server';
+import type { CmsBooking } from '@/lib/cmsSiteTypes';
+import {
+  isS3CmsConfigured,
+  readCmsSiteFromS3,
+  writeCmsSiteToS3,
+} from '@/lib/s3CmsSite';
 
 export async function POST(req: Request) {
   const data = await req.formData();
@@ -17,18 +23,28 @@ export async function POST(req: Request) {
 
   // In a real app, you'd save to a database
   // For now, we'll return the booking data and the client will save it
-  const booking = {
+  const booking: CmsBooking = {
     id: Date.now().toString(),
     name,
     phone,
     service,
-    employee,
+    employee: employee || undefined,
     date: bookingDate.toISOString(),
     timeSlot,
-    duration: parseInt(duration) || 45,
+    duration: parseInt(duration, 10) || 45,
   };
 
-  console.log("Booking:", booking);
+  if (isS3CmsConfigured()) {
+    try {
+      const site = await readCmsSiteFromS3();
+      if (site) {
+        site.bookings = [...site.bookings, booking];
+        await writeCmsSiteToS3(site);
+      }
+    } catch (e) {
+      console.error('Append booking to S3 failed:', e);
+    }
+  }
 
   return NextResponse.json({ success: true, booking });
 }

@@ -3,6 +3,7 @@
 import { useState, useEffect } from 'react';
 import Link from 'next/link';
 import Breadcrumbs from '../components/Breadcrumbs';
+import { fetchCmsSite } from '../lib/cmsSiteClient';
 
 interface Service {
   id: string;
@@ -18,17 +19,37 @@ export default function Services() {
   const [categories, setCategories] = useState<string[]>([]);
 
   useEffect(() => {
-    const savedServices = localStorage.getItem('admin-services');
-    if (savedServices) {
-      const servicesList: Service[] = JSON.parse(savedServices);
-      setServices(servicesList);
-      
-      // Extract unique categories
-      const uniqueCategories = Array.from(
-        new Set(servicesList.map(s => s.category || 'Other'))
-      ).filter(cat => cat.trim() !== '');
-      setCategories(uniqueCategories);
-    }
+    let cancelled = false;
+    (async () => {
+      try {
+        const data = await fetchCmsSite();
+        if (cancelled) return;
+        if (data.configured && data.site && Array.isArray(data.site.services) && !data.error) {
+          const servicesList = data.site.services as Service[];
+          setServices(servicesList);
+          const uniqueCategories = Array.from(
+            new Set(servicesList.map((s) => s.category || 'Other'))
+          ).filter((cat) => cat.trim() !== '');
+          setCategories(uniqueCategories);
+          return;
+        }
+      } catch {
+        /* local fallback */
+      }
+      if (cancelled) return;
+      const savedServices = localStorage.getItem('admin-services');
+      if (savedServices) {
+        const servicesList: Service[] = JSON.parse(savedServices);
+        setServices(servicesList);
+        const uniqueCategories = Array.from(
+          new Set(servicesList.map((s) => s.category || 'Other'))
+        ).filter((cat) => cat.trim() !== '');
+        setCategories(uniqueCategories);
+      }
+    })();
+    return () => {
+      cancelled = true;
+    };
   }, []);
 
   // Group services by category
