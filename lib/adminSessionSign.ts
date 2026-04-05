@@ -1,12 +1,13 @@
 /** Node-only: sign admin session JWT (login route only). */
 
 import { createHmac } from 'crypto';
+import { adminSigningSecretFromEnv } from './runtimeEnv';
 import { ADMIN_SESSION_COOKIE } from './adminSessionVerify';
 
 export { ADMIN_SESSION_COOKIE };
 
 function getSecret(): string {
-  return process.env.ADMIN_SESSION_SECRET || process.env.ADMIN_PASSWORD || '';
+  return adminSigningSecretFromEnv() || '';
 }
 
 export function signAdminToken(): string | null {

@@ -78,7 +78,8 @@ export default function AdminLogin() {
         </form>
 
         <p className="mt-6 text-center text-sm text-gray-500">
-          Password is set in server configuration (<code className="text-xs bg-gray-100 px-1 rounded">ADMIN_PASSWORD</code>).
+          Password is the <code className="text-xs bg-gray-100 px-1 rounded">ADMIN_PASSWORD</code> variable on your host
+          (e.g. Render → your service → <strong>Environment</strong>).
         </p>
       </div>
     </div>

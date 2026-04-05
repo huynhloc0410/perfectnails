@@ -1,12 +1,16 @@
 import { NextRequest, NextResponse } from 'next/server';
 import { timingSafePasswordEqual } from '@/lib/adminPassword';
 import { ADMIN_SESSION_COOKIE, signAdminToken } from '@/lib/adminSessionSign';
+import { adminPasswordFromEnv } from '@/lib/runtimeEnv';
 
 export async function POST(req: NextRequest) {
-  const configured = process.env.ADMIN_PASSWORD;
+  const configured = adminPasswordFromEnv();
   if (!configured) {
     return NextResponse.json(
-      { error: 'Server is not configured for admin login (missing ADMIN_PASSWORD).' },
+      {
+        error:
+          'Admin login is not configured: ADMIN_PASSWORD is missing at runtime. On Render: Web Service → Environment → add ADMIN_PASSWORD (exact name) → Save → Manual Deploy. If it still fails, clear build cache and redeploy.',
+      },
       { status: 503 }
     );
   }

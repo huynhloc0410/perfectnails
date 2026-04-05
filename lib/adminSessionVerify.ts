@@ -1,9 +1,11 @@
 /** Edge-safe session verification (middleware + API routes). */
 
+import { adminSigningSecretFromEnv } from './runtimeEnv';
+
 export const ADMIN_SESSION_COOKIE = 'admin_session';
 
 function getSecret(): string {
-  return process.env.ADMIN_SESSION_SECRET || process.env.ADMIN_PASSWORD || '';
+  return adminSigningSecretFromEnv() || '';
 }
 
 function b64urlToBytes(b64url: string): Uint8Array {
