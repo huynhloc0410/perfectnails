@@ -131,7 +131,7 @@ export default function HomeContent() {
           <div className="grid w-full grid-cols-2 gap-3 sm:gap-4">
             <a
               href={callHref}
-              className="cta-flash-btn cta-call-primary relative z-0 flex min-h-[4.25rem] flex-col items-center justify-center gap-0.5 rounded-full bg-gradient-to-br from-champagne-500 to-champagne-600 px-3 py-3 text-center shadow-lg ring-1 ring-champagne-400/60 sm:min-h-[4.5rem] sm:px-5"
+              className="cta-flash-btn cta-call-primary relative z-0 flex min-h-[4.25rem] flex-col items-center justify-center gap-0.5 rounded-full bg-gradient-to-br from-champagne-600 to-champagne-700 px-3 py-3 text-center shadow-lg ring-1 ring-champagne-500/55 sm:min-h-[4.5rem] sm:px-5"
             >
               <span className="relative z-[2] flex items-center gap-2 text-sm font-bold text-white sm:text-base">
                 <PhoneIcon className="h-5 w-5 shrink-0 opacity-95 sm:h-[1.35rem] sm:w-[1.35rem]" />

@@ -29,7 +29,7 @@ export default function SiteHeader() {
   }, [pathname]);
 
   return (
-    <header className="font-nav sticky top-0 z-50 w-full border-b border-champagne-200/90 bg-white/90 shadow-[0_1px_0_rgba(197,168,92,0.22)] backdrop-blur-md">
+    <header className="font-nav sticky top-0 z-50 w-full border-b border-champagne-400/45 bg-white/90 shadow-[0_1px_0_rgba(118,93,34,0.2)] backdrop-blur-md">
       <div className="relative">
         <nav
           className="container mx-auto flex max-w-6xl items-center gap-3 px-4 py-3 sm:px-6 sm:py-3.5"
@@ -99,7 +99,7 @@ export default function SiteHeader() {
 
         <div
           id="mobile-nav-panel"
-          className={`absolute left-0 right-0 top-full z-50 max-h-[min(75vh,calc(100dvh-3.5rem))] overflow-y-auto border-t border-champagne-200/80 bg-white/98 shadow-lg backdrop-blur-md md:hidden ${
+          className={`absolute left-0 right-0 top-full z-50 max-h-[min(75vh,calc(100dvh-3.5rem))] overflow-y-auto border-t border-champagne-400/40 bg-white/98 shadow-lg backdrop-blur-md md:hidden ${
             open ? 'block' : 'hidden'
           }`}
           aria-hidden={!open}

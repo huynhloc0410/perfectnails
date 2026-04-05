@@ -2,6 +2,7 @@
 
 import { useState, useEffect } from 'react';
 import Breadcrumbs from '../components/Breadcrumbs';
+import PageHeroRule from '../components/PageHeroRule';
 import { fetchCmsSite } from '../lib/cmsSiteClient';
 
 interface Service {
@@ -353,7 +354,7 @@ export default function Booking() {
   return (
     <div>
       {/* Hero Section */}
-      <section className="relative bg-gradient-to-br from-champagne-50 via-stone-100 to-champagne-100 py-1.5 overflow-hidden">
+      <section className="relative border-b border-champagne-400/35 bg-gradient-to-br from-champagne-50 via-stone-100 to-champagne-100 py-3 overflow-hidden">
         <div className="absolute inset-0 opacity-5">
           <div className="absolute top-10 left-10 w-64 h-64 bg-champagne-300 rounded-full blur-3xl"></div>
           <div className="absolute bottom-10 right-10 w-48 h-48 bg-champagne-200/50 rounded-full blur-3xl"></div>
@@ -362,14 +363,15 @@ export default function Booking() {
           <Breadcrumbs items={[{ label: 'Booking' }]} />
           <div className="text-center mb-1 mt-0.5">
             <h2 className="text-xl md:text-2xl font-bold text-gray-900 mb-0.5">Book an Appointment</h2>
-            <p className="text-sm text-gray-600 max-w-2xl mx-auto">
+            <PageHeroRule />
+            <p className="text-sm text-gray-600 max-w-2xl mx-auto mt-3">
               Schedule your nail service with our expert technicians
             </p>
           </div>
         </div>
       </section>
 
-      <div className="container mx-auto px-6 py-10">
+      <div className="container mx-auto px-6 py-10 border-t border-champagne-300/25">
       <div className="max-w-4xl mx-auto">
         
         {submitted && (
@@ -378,7 +380,10 @@ export default function Booking() {
           </div>
         )}
 
-        <form onSubmit={handleSubmit} className="bg-white rounded-lg shadow-md p-6 space-y-6">
+        <form
+          onSubmit={handleSubmit}
+          className="space-y-6 rounded-lg border border-champagne-300/45 bg-white p-6 shadow-md ring-1 ring-champagne-100/50"
+        >
           <div>
             <label className="block text-sm font-medium text-gray-700 mb-1">Your Name *</label>
             <input

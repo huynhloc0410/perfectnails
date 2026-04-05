@@ -2,6 +2,7 @@
 
 import { useState, useEffect } from 'react';
 import Breadcrumbs from '../components/Breadcrumbs';
+import PageHeroRule from '../components/PageHeroRule';
 import Link from 'next/link';
 import { fetchCmsSite } from '../lib/cmsSiteClient';
 
@@ -145,7 +146,7 @@ export default function About() {
   return (
     <div>
       {/* Hero Section */}
-      <section className="relative bg-gradient-to-br from-champagne-50 via-stone-100 to-champagne-100 py-1.5 overflow-hidden">
+      <section className="relative border-b border-champagne-400/35 bg-gradient-to-br from-champagne-50 via-stone-100 to-champagne-100 py-3 overflow-hidden">
         <div className="absolute inset-0 opacity-5">
           <div className="absolute top-10 right-10 w-64 h-64 bg-champagne-300 rounded-full blur-3xl"></div>
           <div className="absolute bottom-10 left-10 w-48 h-48 bg-champagne-200/50 rounded-full blur-3xl"></div>
@@ -156,14 +157,15 @@ export default function About() {
             <h1 className="text-xl md:text-2xl font-bold text-gray-900 mb-0.5">
               {aboutContent.title || 'About Us'}
             </h1>
+            <PageHeroRule />
           </div>
         </div>
       </section>
 
-      <div className="container mx-auto px-6 py-10">
+      <div className="container mx-auto px-6 py-10 border-t border-champagne-300/25">
         <div className="max-w-4xl mx-auto">
           {/* Main Content */}
-          <article className="bg-white rounded-lg shadow-md p-8 mb-8">
+          <article className="mb-8 rounded-lg border border-champagne-300/45 bg-white p-8 shadow-md ring-1 ring-champagne-100/50">
             {aboutContent.content ? (
               <div className="prose prose-lg max-w-none">
                 <div className="whitespace-pre-line text-gray-700 leading-relaxed">
@@ -200,7 +202,7 @@ export default function About() {
           </article>
 
           {/* Our Story Section */}
-          <section className="bg-white rounded-lg shadow-md p-8 mb-8">
+          <section className="mb-8 rounded-lg border border-champagne-300/45 bg-white p-8 shadow-md ring-1 ring-champagne-100/50">
             <h2 className="text-2xl font-bold text-gray-900 mb-4">Our Story</h2>
             <p className="text-gray-700 mb-4 leading-relaxed">
               <strong>Perfect Nails</strong> was founded with a passion for bringing beautiful, professional nail care to the 
@@ -215,7 +217,7 @@ export default function About() {
           </section>
 
           {/* Why Choose Us Section */}
-          <section className="bg-white rounded-lg shadow-md p-8 mb-8">
+          <section className="mb-8 rounded-lg border border-champagne-300/45 bg-white p-8 shadow-md ring-1 ring-champagne-100/50">
             <h2 className="text-2xl font-bold text-gray-900 mb-4">Why Choose Perfect Nails?</h2>
             <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
               <div>
@@ -250,7 +252,7 @@ export default function About() {
           </section>
 
           {/* Services Overview */}
-          <section className="bg-white rounded-lg shadow-md p-8 mb-8">
+          <section className="mb-8 rounded-lg border border-champagne-300/45 bg-white p-8 shadow-md ring-1 ring-champagne-100/50">
             <h2 className="text-2xl font-bold text-gray-900 mb-4">Our Services</h2>
             <p className="text-gray-700 mb-4 leading-relaxed">
               At <strong>Perfect Nails</strong>, we offer a comprehensive range of professional nail care services:
@@ -272,7 +274,7 @@ export default function About() {
           </section>
 
           {/* CTA Section */}
-          <section className="bg-gradient-to-br from-champagne-50 to-stone-100 rounded-lg shadow-md p-8 text-center">
+          <section className="rounded-lg border border-champagne-400/35 bg-gradient-to-br from-champagne-50 to-stone-100 p-8 text-center shadow-md ring-1 ring-champagne-200/40">
             <h2 className="text-2xl font-bold text-gray-900 mb-4">Ready to Experience Perfect Nails?</h2>
             <p className="text-gray-700 mb-6">
               Book your appointment today and discover why we're <strong>Phoenix's premier nail salon</strong>.

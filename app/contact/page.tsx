@@ -2,6 +2,7 @@
 
 import { useState, useEffect } from 'react';
 import Breadcrumbs from '../components/Breadcrumbs';
+import PageHeroRule from '../components/PageHeroRule';
 import {
   SITE_DEFAULT_ADDRESS,
   migrateLegacyStoredContactAddress,
@@ -125,7 +126,7 @@ export default function Contact() {
   return (
     <div>
       {/* Hero Section */}
-      <section className="relative bg-gradient-to-br from-champagne-50 via-stone-100 to-champagne-100 py-1.5 overflow-hidden">
+      <section className="relative border-b border-champagne-400/35 bg-gradient-to-br from-champagne-50 via-stone-100 to-champagne-100 py-3 overflow-hidden">
         <div className="absolute inset-0 opacity-5">
           <div className="absolute top-10 right-10 w-64 h-64 bg-champagne-300 rounded-full blur-3xl"></div>
           <div className="absolute bottom-10 left-10 w-48 h-48 bg-champagne-200/50 rounded-full blur-3xl"></div>
@@ -134,18 +135,19 @@ export default function Contact() {
           <Breadcrumbs items={[{ label: 'Contact' }]} />
           <div className="text-center mb-1 mt-0.5">
             <h2 className="text-xl md:text-2xl font-bold text-gray-900 mb-0.5">Contact Us</h2>
-            <p className="text-sm text-gray-600 max-w-2xl mx-auto">
+            <PageHeroRule />
+            <p className="text-sm text-gray-600 max-w-2xl mx-auto mt-3">
               Get in touch with us - we'd love to hear from you
             </p>
           </div>
         </div>
       </section>
 
-      <div className="container mx-auto px-6 py-10">
+      <div className="container mx-auto px-6 py-10 border-t border-champagne-300/25">
       <div className="max-w-4xl mx-auto">
       
       <div className="grid grid-cols-1 md:grid-cols-2 gap-8">
-        <div className="bg-white rounded-lg shadow-md p-6">
+        <div className="rounded-lg border border-champagne-300/45 bg-white p-6 shadow-md ring-1 ring-champagne-100/50">
           <h3 className="text-xl font-semibold text-gray-800 mb-4">Get in Touch</h3>
           
           <div className="mb-4">
@@ -208,7 +210,7 @@ export default function Contact() {
           )}
         </div>
 
-        <div className="bg-white rounded-lg shadow-md p-6">
+        <div className="rounded-lg border border-champagne-300/45 bg-white p-6 shadow-md ring-1 ring-champagne-100/50">
           <h3 className="text-xl font-semibold text-gray-800 mb-4">Follow Us</h3>
           
           <div className="space-y-3">
@@ -265,7 +267,7 @@ export default function Contact() {
       </div>
 
       {/* Map Section */}
-      <div className="mt-8 bg-white rounded-lg shadow-md overflow-hidden">
+      <div className="mt-8 overflow-hidden rounded-lg border border-champagne-300/45 bg-white shadow-md ring-1 ring-champagne-100/50">
         <h3 className="text-xl font-semibold text-gray-800 mb-4 p-6 pb-0">Find Us</h3>
         <div className="w-full h-96 relative">
           <iframe
