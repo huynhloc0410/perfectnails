@@ -1,5 +1,8 @@
 /** Client fetch for GET /api/cms/site (public). */
 
+/** Fire on `window` after admin saves (localStorage or S3) so footer/contact UIs can refetch. */
+export const SITE_DATA_UPDATED_EVENT = 'perfectnails-site-updated';
+
 export interface CmsSiteApiShape {
   configured?: boolean;
   site?: {
@@ -20,6 +23,9 @@ export interface CmsSiteApiShape {
 }
 
 export async function fetchCmsSite(): Promise<CmsSiteApiShape> {
-  const r = await fetch('/api/cms/site', { credentials: 'same-origin' });
+  const r = await fetch('/api/cms/site', {
+    credentials: 'same-origin',
+    cache: 'no-store',
+  });
   return r.json() as Promise<CmsSiteApiShape>;
 }

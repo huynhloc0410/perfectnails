@@ -1,8 +1,8 @@
 'use client';
 
 import Link from 'next/link';
-import { useEffect, useState } from 'react';
-import { fetchCmsSite } from '../lib/cmsSiteClient';
+import { useCallback, useEffect, useRef, useState } from 'react';
+import { fetchCmsSite, SITE_DATA_UPDATED_EVENT } from '../lib/cmsSiteClient';
 import {
   SITE_DEFAULT_ADDRESS,
   SITE_PHONE_DISPLAY,
@@ -13,47 +13,83 @@ import {
   toTelHref,
 } from '../lib/siteContact';
 
+function applyLocalContact(
+  c: { address?: string; phone?: string } | null | undefined,
+  setAddress: (v: string) => void,
+  setPhoneDisplay: (v: string) => void,
+  setPhoneHref: (v: string) => void
+) {
+  if (!c) return;
+  setAddress(effectiveContactAddress(c.address));
+  setPhoneDisplay(formatPhoneDisplay(c.phone));
+  setPhoneHref(toTelHref(c.phone));
+}
+
 export default function SiteFooter() {
   const year = new Date().getFullYear();
+  const mountedRef = useRef(true);
   const [address, setAddress] = useState(SITE_DEFAULT_ADDRESS);
   const [phoneDisplay, setPhoneDisplay] = useState(SITE_PHONE_DISPLAY);
   const [phoneHref, setPhoneHref] = useState(SITE_PHONE_HREF);
 
-  useEffect(() => {
+  const refreshContact = useCallback(async () => {
     migrateLegacyStoredContactAddress();
-    let cancelled = false;
-    (async () => {
-      try {
-        const data = await fetchCmsSite();
-        if (cancelled) return;
-        if (data.configured && data.site?.contact && !data.error) {
-          const c = data.site.contact;
-          setAddress(effectiveContactAddress(c.address));
-          setPhoneDisplay(formatPhoneDisplay(c.phone));
-          setPhoneHref(toTelHref(c.phone));
+    try {
+      const data = await fetchCmsSite();
+      if (!mountedRef.current) return;
+      if (data.configured && data.site?.contact && !data.error) {
+        const c = data.site.contact;
+        const hasAddr = !!(c.address && String(c.address).trim());
+        const hasPhone = !!(c.phone && String(c.phone).trim());
+        if (hasAddr || hasPhone) {
+          applyLocalContact(c, setAddress, setPhoneDisplay, setPhoneHref);
           return;
         }
+      }
+    } catch {
+      /* fallback below */
+    }
+    if (!mountedRef.current) return;
+    const raw = localStorage.getItem('admin-contact');
+    if (raw) {
+      try {
+        applyLocalContact(JSON.parse(raw) as { address?: string; phone?: string }, setAddress, setPhoneDisplay, setPhoneHref);
       } catch {
-        /* local fallback */
+        /* keep previous */
       }
-      if (!cancelled) {
-        const raw = localStorage.getItem('admin-contact');
-        if (raw) {
-          try {
-            const c = JSON.parse(raw) as { address?: string; phone?: string };
-            setAddress(effectiveContactAddress(c.address));
-            setPhoneDisplay(formatPhoneDisplay(c.phone));
-            setPhoneHref(toTelHref(c.phone));
-          } catch {
-            /* keep defaults */
-          }
-        }
-      }
-    })();
-    return () => {
-      cancelled = true;
-    };
+    }
   }, []);
+
+  useEffect(() => {
+    mountedRef.current = true;
+    void refreshContact();
+
+    const onSiteDataUpdated = () => {
+      void refreshContact();
+    };
+    const onStorage = (e: StorageEvent) => {
+      if (e.key === 'admin-contact') void refreshContact();
+    };
+    const onFocus = () => {
+      void refreshContact();
+    };
+    const onVisible = () => {
+      if (document.visibilityState === 'visible') void refreshContact();
+    };
+
+    window.addEventListener(SITE_DATA_UPDATED_EVENT, onSiteDataUpdated);
+    window.addEventListener('storage', onStorage);
+    window.addEventListener('focus', onFocus);
+    document.addEventListener('visibilitychange', onVisible);
+
+    return () => {
+      mountedRef.current = false;
+      window.removeEventListener(SITE_DATA_UPDATED_EVENT, onSiteDataUpdated);
+      window.removeEventListener('storage', onStorage);
+      window.removeEventListener('focus', onFocus);
+      document.removeEventListener('visibilitychange', onVisible);
+    };
+  }, [refreshContact]);
 
   const mapsUrl = `https://www.google.com/maps/search/?api=1&query=${encodeURIComponent(address)}`;
 

@@ -3,6 +3,7 @@
 import { useState, useEffect } from 'react';
 import { useRouter } from 'next/navigation';
 import { migrateLegacyStoredContactAddress } from '../lib/siteContact';
+import { SITE_DATA_UPDATED_EVENT } from '../lib/cmsSiteClient';
 
 interface Service {
   id: string;
@@ -94,6 +95,9 @@ export default function AdminPage() {
       if (partial.gallery !== undefined) {
         localStorage.setItem('admin-gallery', JSON.stringify(nextGallery));
       }
+      if (partial.contact !== undefined) {
+        window.dispatchEvent(new Event(SITE_DATA_UPDATED_EVENT));
+      }
       return;
     }
 
@@ -114,6 +118,15 @@ export default function AdminPage() {
     if (!res.ok) {
       const msg = await res.text().catch(() => '');
       alert(`Could not save to cloud (${res.status}). ${msg || 'Check S3 env vars on the server.'}`);
+      return;
+    }
+    if (partial.contact !== undefined) {
+      try {
+        localStorage.setItem('admin-contact', JSON.stringify(nextContact));
+      } catch {
+        /* ignore */
+      }
+      window.dispatchEvent(new Event(SITE_DATA_UPDATED_EVENT));
     }
   };
 
