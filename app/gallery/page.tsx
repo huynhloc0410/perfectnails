@@ -70,7 +70,7 @@ export default function Gallery() {
             <h2 className="text-xl md:text-2xl font-bold text-gray-900 mb-0.5">Gallery</h2>
             <PageHeroRule />
             <p className="text-sm text-gray-600 max-w-2xl mx-auto mt-[0.525rem]">
-              Tap a photo to view it larger, zoom with +/−, and use the arrows to browse.
+              Tap a photo to enlarge it. Swipe left or right, or use the arrows, to browse.
             </p>
           </div>
         </div>

@@ -1,8 +1,8 @@
 'use client';
 
-import { useCallback, useEffect, useState } from 'react';
+import { useCallback, useEffect, useRef } from 'react';
 
-const ZOOM_LEVELS = [1, 1.5, 2.25] as const;
+const SWIPE_THRESHOLD_PX = 48;
 
 type Props = {
   images: string[];
@@ -19,17 +19,12 @@ export default function GalleryLightbox({
   onClose,
   onIndexChange,
 }: Props) {
-  const [zoomStep, setZoomStep] = useState(0);
+  const pointerStartX = useRef<number | null>(null);
 
   const open = openIndex !== null && images.length > 0;
   const index = openIndex ?? 0;
-  const zoom = ZOOM_LEVELS[zoomStep] ?? 1;
   const src = open ? resolveSrc(images[index] || '') : '';
   const canNav = images.length > 1;
-
-  useEffect(() => {
-    setZoomStep(0);
-  }, [index]);
 
   useEffect(() => {
     if (!open) return;
@@ -61,8 +56,36 @@ export default function GalleryLightbox({
     return () => window.removeEventListener('keydown', onKey);
   }, [open, onClose, goPrev, goNext]);
 
-  const zoomIn = () => setZoomStep((s) => Math.min(s + 1, ZOOM_LEVELS.length - 1));
-  const zoomOut = () => setZoomStep((s) => Math.max(s - 1, 0));
+  const onPointerDown = (e: React.PointerEvent) => {
+    if (!canNav) return;
+    pointerStartX.current = e.clientX;
+    try {
+      (e.currentTarget as HTMLElement).setPointerCapture(e.pointerId);
+    } catch {
+      /* ignore */
+    }
+  };
+
+  const endSwipe = (clientX: number) => {
+    if (pointerStartX.current === null || !canNav) return;
+    const dx = clientX - pointerStartX.current;
+    pointerStartX.current = null;
+    if (dx < -SWIPE_THRESHOLD_PX) goNext();
+    else if (dx > SWIPE_THRESHOLD_PX) goPrev();
+  };
+
+  const onPointerUp = (e: React.PointerEvent) => {
+    endSwipe(e.clientX);
+    try {
+      (e.currentTarget as HTMLElement).releasePointerCapture(e.pointerId);
+    } catch {
+      /* ignore */
+    }
+  };
+
+  const onPointerCancel = () => {
+    pointerStartX.current = null;
+  };
 
   if (!open) return null;
 
@@ -84,57 +107,33 @@ export default function GalleryLightbox({
         <div className="mb-2 flex shrink-0 items-center justify-between gap-2 px-1">
           <p className="truncate text-sm text-champagne-200/90">
             {index + 1} / {images.length}
+            {canNav && (
+              <span className="hidden sm:inline text-champagne-300/70"> · Swipe or use arrows</span>
+            )}
           </p>
-          <div className="flex items-center gap-1.5">
-            <span className="hidden text-xs text-champagne-300/80 sm:inline">Zoom</span>
-            <button
-              type="button"
-              onClick={zoomOut}
-              disabled={zoomStep <= 0}
-              className="rounded-md border border-champagne-600/50 bg-neutral-900/80 px-2 py-1 text-sm font-medium text-champagne-100 transition hover:bg-neutral-800 disabled:opacity-35"
-              aria-label="Zoom out"
-            >
-              −
-            </button>
-            <span className="min-w-[2.75rem] text-center text-xs tabular-nums text-champagne-200">
-              {Math.round(zoom * 100)}%
-            </span>
-            <button
-              type="button"
-              onClick={zoomIn}
-              disabled={zoomStep >= ZOOM_LEVELS.length - 1}
-              className="rounded-md border border-champagne-600/50 bg-neutral-900/80 px-2 py-1 text-sm font-medium text-champagne-100 transition hover:bg-neutral-800 disabled:opacity-35"
-              aria-label="Zoom in"
-            >
-              +
-            </button>
-            <button
-              type="button"
-              onClick={onClose}
-              className="ml-2 rounded-md border border-champagne-600/40 bg-neutral-900/90 px-3 py-1.5 text-sm font-semibold text-champagne-100 transition hover:bg-champagne-900/50"
-            >
-              Close
-            </button>
-          </div>
+          <button
+            type="button"
+            onClick={onClose}
+            className="rounded-md border border-champagne-600/40 bg-neutral-900/90 px-3 py-1.5 text-sm font-semibold text-champagne-100 transition hover:bg-champagne-900/50"
+          >
+            Close
+          </button>
         </div>
 
         <div className="relative min-h-0 flex-1 overflow-hidden rounded-lg border border-champagne-600/35 bg-neutral-950 shadow-[0_0_0_1px_rgba(0,0,0,0.4)]">
-          <div className="h-[min(75vh,680px)] w-full overflow-auto overscroll-contain">
-            <div
-              className="flex min-h-full min-w-full items-center justify-center p-4"
-              style={{ cursor: zoom > 1 ? 'grab' : 'default' }}
-            >
-              <img
-                src={src}
-                alt={`Gallery image ${index + 1} — enlarged view`}
-                className="max-h-[min(75vh,680px)] max-w-full object-contain select-none motion-safe:transition-transform motion-safe:duration-200 motion-safe:ease-out"
-                style={{
-                  transform: `scale(${zoom})`,
-                  transformOrigin: 'center center',
-                }}
-                draggable={false}
-              />
-            </div>
+          <div
+            className="relative flex h-[min(75vh,680px)] w-full touch-pan-y cursor-grab active:cursor-grabbing items-center justify-center p-4"
+            onPointerDown={onPointerDown}
+            onPointerUp={onPointerUp}
+            onPointerCancel={onPointerCancel}
+            style={{ touchAction: canNav ? 'none' : 'auto' }}
+          >
+            <img
+              src={src}
+              alt={`Gallery image ${index + 1} — enlarged view`}
+              className="pointer-events-none max-h-full max-w-full object-contain select-none"
+              draggable={false}
+            />
           </div>
 
           {canNav && (
