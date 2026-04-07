@@ -50,6 +50,7 @@ export default function Booking() {
   const [services, setServices] = useState<Service[]>([]);
   const [employees, setEmployees] = useState<Employee[]>([]);
   const [bookings, setBookings] = useState<Booking[]>([]);
+  const [selectedCategory, setSelectedCategory] = useState<string>('');
   const [formData, setFormData] = useState({ 
     name: '', 
     phone: '', 
@@ -103,6 +104,7 @@ export default function Booking() {
     if (!fromUrl || services.length === 0) return;
     const match = services.find((s) => s.name === fromUrl);
     if (!match) return;
+    setSelectedCategory(match.category || '');
     setFormData((prev) => {
       if (prev.service === match.name) return prev;
       return { ...prev, service: match.name, employee: '', date: '', timeSlot: '' };
@@ -288,6 +290,16 @@ export default function Booking() {
 
   const selectedService = services.find(s => s.name === formData.service);
   const selectedEmployee = employees.find(e => e.id === formData.employee);
+  const categories = Array.from(
+    new Set(
+      services
+        .map((s) => (s.category || '').trim())
+        .filter((c) => c.length > 0),
+    ),
+  ).sort((a, b) => a.localeCompare(b));
+  const filteredServices = selectedCategory
+    ? services.filter((s) => (s.category || '').trim() === selectedCategory)
+    : [];
 
   // Calendar functions
   const getDaysInMonth = (date: Date): (Date | null)[] => {
@@ -426,17 +438,54 @@ export default function Booking() {
           </div>
 
           <div>
+            <label className="block text-sm font-medium text-gray-700 mb-1">Select Category *</label>
+            {categories.length > 0 ? (
+              <select
+                name="category"
+                value={selectedCategory}
+                onChange={(e) => {
+                  const next = e.target.value;
+                  setSelectedCategory(next);
+                  setFormData((prev) => ({
+                    ...prev,
+                    service: '',
+                    employee: '',
+                    date: '',
+                    timeSlot: '',
+                  }));
+                }}
+                className="w-full px-4 py-2 border border-gray-300 rounded-md focus:ring-champagne-500 focus:border-champagne-500"
+                required
+              >
+                <option value="">Select a category</option>
+                {categories.map((category) => (
+                  <option key={category} value={category}>
+                    {category}
+                  </option>
+                ))}
+              </select>
+            ) : (
+              <p className="text-gray-500 text-sm">No categories available. Please contact us directly.</p>
+            )}
+          </div>
+
+          <div>
             <label className="block text-sm font-medium text-gray-700 mb-1">Select Service *</label>
             {services.length > 0 ? (
               <select
                 name="service"
                 value={formData.service}
-                onChange={(e) => setFormData({ ...formData, service: e.target.value, employee: '', date: '', timeSlot: '' })}
-                className="w-full px-4 py-2 border border-gray-300 rounded-md focus:ring-champagne-500 focus:border-champagne-500"
+                onChange={(e) =>
+                  setFormData({ ...formData, service: e.target.value, employee: '', date: '', timeSlot: '' })
+                }
+                className="w-full px-4 py-2 border border-gray-300 rounded-md focus:ring-champagne-500 focus:border-champagne-500 disabled:bg-gray-50 disabled:text-gray-500"
                 required
+                disabled={!selectedCategory}
               >
-                <option value="">Select a service</option>
-                {services.map((service) => (
+                <option value="">
+                  {selectedCategory ? 'Select a service' : 'Please select a category first'}
+                </option>
+                {filteredServices.map((service) => (
                   <option key={service.id} value={service.name}>
                     {service.name} - ${service.price.toFixed(2)}
                     {service.duration !== 0 ? ` (${schedulingMinutes(service.duration)} min)` : ''}

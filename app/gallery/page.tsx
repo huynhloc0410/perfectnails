@@ -91,17 +91,29 @@ export default function Gallery() {
                   key={`${src}-${index}`}
                   type="button"
                   onClick={() => setLightboxIndex(index)}
-                  className="group relative block w-full overflow-hidden rounded-lg border border-champagne-400/30 bg-white text-left shadow-sm ring-1 ring-champagne-200/40 transition hover:border-champagne-500/45 hover:ring-champagne-400/50 focus:outline-none focus-visible:ring-2 focus-visible:ring-champagne-600 focus-visible:ring-offset-2"
+                  className="group relative block w-full rounded-xl border border-champagne-400/35 bg-gradient-to-b from-white to-stone-50/60 p-2 text-left shadow-sm ring-1 ring-champagne-200/40 transition hover:-translate-y-0.5 hover:border-champagne-500/50 hover:shadow-md hover:ring-champagne-400/50 focus:outline-none focus-visible:ring-2 focus-visible:ring-champagne-600 focus-visible:ring-offset-2"
                 >
                   <span className="sr-only">Open image {index + 1} in viewer</span>
-                  <img
-                    src={src}
-                    alt=""
-                    className="h-64 w-full object-cover transition-transform duration-300 group-hover:scale-105 motion-reduce:group-hover:scale-100 bg-stone-100"
-                    loading="lazy"
-                  />
+                  <div className="relative overflow-hidden rounded-lg bg-stone-100 shadow-[inset_0_0_0_1px_rgba(0,0,0,0.06)]">
+                    <div className="aspect-[4/5] w-full">
+                      <img
+                        src={src}
+                        alt=""
+                        className="h-full w-full object-cover transition-transform duration-300 group-hover:scale-[1.04] motion-reduce:group-hover:scale-100"
+                        loading="lazy"
+                      />
+                    </div>
+                    <div
+                      className="pointer-events-none absolute inset-0 shadow-[inset_0_0_0_1px_rgba(255,255,255,0.45)]"
+                      aria-hidden
+                    />
+                    <div
+                      className="pointer-events-none absolute inset-0 bg-gradient-to-t from-neutral-950/15 via-transparent to-white/10 opacity-70 transition group-hover:opacity-90"
+                      aria-hidden
+                    />
+                  </div>
                   <span
-                    className="pointer-events-none absolute bottom-2 right-2 flex h-8 w-8 items-center justify-center rounded-full border border-champagne-500/40 bg-neutral-950/55 text-champagne-200 shadow-md backdrop-blur-sm opacity-90 transition group-hover:bg-neutral-950/75"
+                    className="pointer-events-none absolute bottom-3 right-3 flex h-8 w-8 items-center justify-center rounded-full border border-champagne-500/40 bg-neutral-950/60 text-champagne-200 shadow-md backdrop-blur-sm opacity-90 transition group-hover:bg-neutral-950/80"
                     aria-hidden
                   >
                     <svg className="h-4 w-4" fill="none" stroke="currentColor" viewBox="0 0 24 24" aria-hidden>
