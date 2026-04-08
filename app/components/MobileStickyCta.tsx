@@ -56,13 +56,13 @@ export default function MobileStickyCta() {
       <div className="mx-auto flex max-w-lg gap-2">
         <a
           href={phoneHref}
-          className="flex flex-1 items-center justify-center rounded-xl border border-champagne-500/50 bg-white py-3 text-sm font-semibold text-neutral-900 shadow-sm active:scale-[0.98]"
+          className="flex min-w-0 flex-[1.25] items-center justify-center rounded-xl bg-gradient-to-br from-champagne-600 to-champagne-700 py-3.5 text-sm font-bold text-white shadow-md ring-1 ring-champagne-500/45 active:scale-[0.98] sm:text-base"
         >
           Call
         </a>
         <Link
           href="/booking"
-          className="flex flex-1 items-center justify-center rounded-xl bg-gradient-to-br from-champagne-600 to-champagne-700 py-3 text-sm font-semibold text-white shadow-md ring-1 ring-champagne-500/50 active:scale-[0.98]"
+          className="flex min-w-0 flex-1 items-center justify-center rounded-xl border-2 border-champagne-600/45 bg-white py-3.5 text-sm font-semibold text-champagne-900 shadow-sm active:scale-[0.98]"
         >
           Book
         </Link>

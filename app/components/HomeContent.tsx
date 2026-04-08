@@ -13,6 +13,7 @@ import {
 } from '../lib/siteContact';
 import { fetchCmsSite } from '../lib/cmsSiteClient';
 import {
+  SITE_HERO_APPOINTMENT_LINE,
   SITE_HERO_SERVICE_LINE,
   SITE_HOURS_FALLBACK_SUMMARY,
   SITE_PRIMARY_AREA,
@@ -174,37 +175,41 @@ export default function HomeContent() {
             <p className="mt-2 max-w-md text-[13px] font-medium uppercase tracking-[0.18em] text-champagne-200/95 sm:text-sm">
               {SITE_PRIMARY_AREA}
             </p>
-            <p className="mt-4 max-w-lg px-1 text-[15px] leading-relaxed text-white/95 sm:text-base">
+            <p className="mt-5 max-w-xl px-1 text-base font-medium leading-relaxed text-white sm:text-lg md:text-[1.15rem]">
               {SITE_HERO_SERVICE_LINE}
             </p>
-            <p className="mt-2 max-w-md text-xs text-white/80 sm:text-sm">
-              Walk-ins when we can · Request a time online — we’ll confirm by phone or text
+            <p className="mt-3 max-w-xl px-1 text-sm leading-relaxed text-white/90 sm:text-base">
+              {SITE_HERO_APPOINTMENT_LINE}
             </p>
 
-            <div className="mt-8 w-full max-w-md space-y-3 sm:mt-10">
-              <Link
-                href="/booking"
-                className="cta-flash-btn cta-call-primary relative z-0 flex min-h-[3.25rem] w-full items-center justify-center rounded-full bg-gradient-to-br from-champagne-500 to-champagne-700 px-6 text-base font-bold text-white shadow-lg ring-1 ring-champagne-400/60 sm:min-h-[3.5rem] sm:text-lg"
-              >
-                <span className="relative z-[2]">Book your visit</span>
-              </Link>
+            <div className="mt-8 w-full max-w-lg space-y-3 sm:mt-10">
               <a
                 href={callHref}
-                className="relative z-0 flex min-h-[3rem] w-full flex-col items-center justify-center gap-0.5 rounded-full border-2 border-white/90 bg-white/10 px-4 py-2.5 text-center shadow-md backdrop-blur-sm transition hover:bg-white/20 active:scale-[0.98]"
+                className="cta-flash-btn cta-call-primary relative z-0 flex min-h-[3.5rem] w-full flex-col items-center justify-center gap-0.5 rounded-full bg-gradient-to-br from-champagne-500 to-champagne-700 px-6 text-center shadow-lg ring-1 ring-champagne-400/60 sm:min-h-[3.85rem]"
               >
-                <span className="relative z-[2] flex items-center gap-2 text-sm font-semibold text-white sm:text-[15px]">
-                  <PhoneIcon className="h-5 w-5 shrink-0 opacity-95" />
+                <span className="relative z-[2] flex items-center gap-2 text-base font-bold text-white sm:text-lg">
+                  <PhoneIcon className="h-6 w-6 shrink-0 opacity-95 sm:h-7 sm:w-7" />
                   Call {phoneDisplay}
                 </span>
+                <span className="relative z-[2] text-[11px] font-medium text-white/85 sm:text-xs">Best for choosing your time</span>
               </a>
-              <div className="flex flex-wrap items-center justify-center gap-x-5 gap-y-1 pt-1 text-sm font-semibold text-white/95">
-                <Link href="/services" className="underline decoration-champagne-300/80 underline-offset-4 hover:text-champagne-100">
+              <Link
+                href="/booking"
+                className="relative z-0 flex min-h-[3rem] w-full items-center justify-center rounded-full border-2 border-white/90 bg-white/12 px-6 text-center text-[15px] font-semibold text-white shadow-md backdrop-blur-sm transition hover:bg-white/22 active:scale-[0.98] sm:text-base"
+              >
+                <span className="relative z-[2]">Book online</span>
+              </Link>
+              <div className="grid grid-cols-1 gap-2.5 pt-2 sm:grid-cols-2 sm:gap-3">
+                <Link
+                  href="/services"
+                  className="flex min-h-[3rem] items-center justify-center rounded-2xl border-2 border-white/85 bg-white/18 px-4 text-base font-bold text-white shadow-md backdrop-blur-sm transition hover:bg-white/28 sm:min-h-[3.25rem] sm:text-lg"
+                >
                   Services &amp; prices
                 </Link>
-                <span className="text-white/40" aria-hidden>
-                  ·
-                </span>
-                <Link href="/gallery" className="underline decoration-champagne-300/80 underline-offset-4 hover:text-champagne-100">
+                <Link
+                  href="/gallery"
+                  className="flex min-h-[3rem] items-center justify-center rounded-2xl border-2 border-white/85 bg-white/18 px-4 text-base font-bold text-white shadow-md backdrop-blur-sm transition hover:bg-white/28 sm:min-h-[3.25rem] sm:text-lg"
+                >
                   See our work
                 </Link>
               </div>
@@ -242,39 +247,41 @@ export default function HomeContent() {
       </section>
 
       {servicePreview.length > 0 && (
-        <section className="border-t border-champagne-200/60 bg-white py-10 sm:py-12" aria-labelledby="popular-services-heading">
+        <section className="border-t border-champagne-200/60 bg-white py-12 sm:py-14" aria-labelledby="popular-services-heading">
           <div className="container mx-auto max-w-5xl px-5 sm:px-6">
             <div className="flex flex-col items-start justify-between gap-4 sm:flex-row sm:items-end">
               <div>
-                <h2 id="popular-services-heading" className="font-display text-2xl font-semibold text-neutral-900 sm:text-[1.65rem]">
-                  Popular services
+                <h2 id="popular-services-heading" className="font-display text-3xl font-semibold text-neutral-900 sm:text-[2rem]">
+                  Services &amp; prices
                 </h2>
-                <p className="mt-1 text-sm text-gray-600">Transparent pricing — tap Book on any service page.</p>
+                <p className="mt-2 max-w-xl text-base text-gray-600 sm:text-lg">
+                  New here? Browse what we offer and what it costs — every card links to booking if you already know what you want.
+                </p>
               </div>
               <Link
                 href="/services"
-                className="shrink-0 rounded-full border border-champagne-500/50 bg-champagne-50 px-4 py-2 text-sm font-semibold text-champagne-900 transition hover:bg-champagne-100"
+                className="shrink-0 rounded-full border-2 border-champagne-600/40 bg-champagne-50 px-5 py-2.5 text-base font-bold text-champagne-950 transition hover:bg-champagne-100"
               >
                 View all services
               </Link>
             </div>
-            <ul className="mt-8 grid gap-4 sm:grid-cols-2 lg:grid-cols-3">
+            <ul className="mt-10 grid gap-5 sm:grid-cols-2 lg:grid-cols-3">
               {servicePreview.map((s) => (
                 <li
                   key={s.id}
-                  className="flex flex-col justify-between rounded-2xl border border-champagne-200/70 bg-champagne-50/40 p-4 ring-1 ring-champagne-100/60"
+                  className="flex flex-col justify-between rounded-2xl border border-champagne-200/70 bg-champagne-50/50 p-5 shadow-sm ring-1 ring-champagne-100/50 sm:p-6"
                 >
                   <div>
-                    <p className="text-xs font-semibold uppercase tracking-wide text-champagne-800/80">
+                    <p className="text-[11px] font-bold uppercase tracking-wider text-champagne-800/90 sm:text-xs">
                       {(s.category || '').trim() || 'Service'}
                     </p>
-                    <h3 className="mt-1 font-semibold text-neutral-900">{s.name}</h3>
+                    <h3 className="mt-2 text-lg font-bold text-neutral-900 sm:text-xl">{s.name}</h3>
                   </div>
-                  <div className="mt-4 flex items-end justify-between gap-3">
-                    <p className="text-xl font-bold text-champagne-800">${Number(s.price).toFixed(2)}</p>
+                  <div className="mt-5 flex items-end justify-between gap-3">
+                    <p className="text-2xl font-bold text-champagne-800 sm:text-[1.75rem]">${Number(s.price).toFixed(2)}</p>
                     <Link
                       href={`/booking?service=${encodeURIComponent(s.name)}`}
-                      className="rounded-full bg-champagne-600 px-3 py-1.5 text-xs font-bold text-white hover:bg-champagne-700"
+                      className="rounded-full bg-champagne-600 px-4 py-2 text-sm font-bold text-white hover:bg-champagne-700"
                     >
                       Book
                     </Link>
@@ -287,23 +294,25 @@ export default function HomeContent() {
       )}
 
       {(galleryPreview.length > 0 || HERO_BACKGROUNDS.length > 0) && (
-        <section className="border-t border-champagne-200/60 bg-gradient-to-b from-white to-champagne-50/80 py-10 sm:py-12" aria-labelledby="gallery-preview-heading">
+        <section className="border-t border-champagne-200/60 bg-gradient-to-b from-white to-champagne-50/80 py-12 sm:py-14" aria-labelledby="gallery-preview-heading">
           <div className="container mx-auto max-w-5xl px-5 sm:px-6">
             <div className="flex flex-col items-start justify-between gap-4 sm:flex-row sm:items-end">
               <div>
-                <h2 id="gallery-preview-heading" className="font-display text-2xl font-semibold text-neutral-900 sm:text-[1.65rem]">
-                  Fresh from the chair
+                <h2 id="gallery-preview-heading" className="font-display text-3xl font-semibold text-neutral-900 sm:text-[2rem]">
+                  See our work
                 </h2>
-                <p className="mt-1 text-sm text-gray-600">Real sets done in our Phoenix studio.</p>
+                <p className="mt-2 max-w-xl text-base text-gray-600 sm:text-lg">
+                  Real nails from our Phoenix studio — tap through for the full gallery.
+                </p>
               </div>
               <Link
                 href="/gallery"
-                className="shrink-0 rounded-full border border-champagne-500/50 bg-white px-4 py-2 text-sm font-semibold text-champagne-900 transition hover:bg-champagne-50"
+                className="shrink-0 rounded-full border-2 border-champagne-600/40 bg-white px-6 py-3 text-base font-bold text-champagne-950 transition hover:bg-champagne-50"
               >
-                Open gallery
+                Open full gallery
               </Link>
             </div>
-            <div className="mt-8 grid grid-cols-2 gap-3 sm:grid-cols-4">
+            <div className="mt-10 grid grid-cols-2 gap-4 sm:grid-cols-4 sm:gap-5">
               {(galleryPreview.length > 0
                 ? galleryPreview
                 : (HERO_BACKGROUNDS as unknown as string[]).slice(0, 4)
@@ -311,7 +320,7 @@ export default function HomeContent() {
                 <Link
                   key={`${url}-${i}`}
                   href="/gallery"
-                  className="group relative aspect-[4/5] overflow-hidden rounded-xl border border-champagne-200/80 bg-stone-100 shadow-sm ring-1 ring-champagne-100/50"
+                  className="group relative aspect-[4/5] overflow-hidden rounded-2xl border-2 border-champagne-200/70 bg-stone-100 shadow-md ring-1 ring-champagne-100/40 sm:rounded-3xl"
                 >
                   <img
                     src={resolveImageSrc(url)}
@@ -350,12 +359,18 @@ export default function HomeContent() {
               <span className="mt-3 text-sm font-semibold text-champagne-700">Open in Maps →</span>
             </a>
           </div>
-          <div className="mt-8 text-center">
+          <div className="mt-8 flex flex-col items-center justify-center gap-3 sm:flex-row sm:gap-4">
+            <a
+              href={callHref}
+              className="inline-flex w-full min-h-[3.25rem] max-w-sm items-center justify-center rounded-full bg-gradient-to-br from-champagne-600 to-champagne-700 px-8 text-base font-bold text-white shadow-md ring-1 ring-champagne-500/50 sm:w-auto"
+            >
+              Call {phoneDisplay}
+            </a>
             <Link
               href="/booking"
-              className="inline-flex min-h-[3rem] items-center justify-center rounded-full bg-gradient-to-br from-champagne-600 to-champagne-700 px-8 text-sm font-bold text-white shadow-md ring-1 ring-champagne-500/50 sm:text-base"
+              className="inline-flex w-full min-h-[3rem] max-w-sm items-center justify-center rounded-full border-2 border-champagne-600/50 bg-white px-8 text-base font-semibold text-champagne-900 shadow-sm sm:w-auto"
             >
-              Request an appointment
+              Book online
             </Link>
           </div>
         </div>
