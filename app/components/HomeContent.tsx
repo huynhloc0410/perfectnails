@@ -138,15 +138,6 @@ export default function HomeContent() {
 
   const mapsUrl = `https://www.google.com/maps/search/?api=1&query=${encodeURIComponent(heroAddress)}`;
 
-  const heroGalleryThumb =
-    galleryPreview.length > 0 ? galleryPreview[0] : GALLERY_FALLBACK[0];
-  const minServicePrice = (() => {
-    if (servicePreview.length === 0) return null;
-    const nums = servicePreview.map((s) => Number(s.price)).filter((n) => Number.isFinite(n));
-    if (nums.length === 0) return null;
-    return Math.min(...nums);
-  })();
-
   return (
     <>
       <section
@@ -185,49 +176,32 @@ export default function HomeContent() {
               {SITE_HERO_APPOINTMENT_LINE}
             </p>
 
-            {/* First-look discovery: prices + visual proof before phone / booking */}
-            <div className="mt-10 w-full max-w-lg sm:mt-11">
-              <p className="mb-3 text-[10px] font-semibold uppercase tracking-[0.32em] text-champagne-400/90">
-                Explore first
-              </p>
-              <div className="grid grid-cols-2 gap-3 sm:gap-4">
-                <Link
-                  href="/services"
-                  className="group flex flex-col border border-champagne-400/45 bg-lux-espresso/40 px-4 py-4 text-left backdrop-blur-md transition hover:border-champagne-300/70 hover:bg-lux-espresso/55 sm:px-5 sm:py-5"
+            <div className="mt-10 flex w-full max-w-lg flex-col gap-3 sm:mt-11 sm:max-w-2xl sm:flex-row sm:justify-center sm:gap-4">
+              <Link
+                href="/services"
+                className="group relative flex min-h-[3.35rem] flex-1 items-center justify-center overflow-hidden rounded-md border-2 border-champagne-400/65 bg-lux-espresso/35 px-5 py-3 text-center shadow-[0_0_0_1px_rgba(255,255,255,0.06)_inset] backdrop-blur-md transition duration-300 hover:border-champagne-300/90 hover:bg-lux-espresso/50 active:scale-[0.99] sm:min-h-[3.5rem] sm:px-8"
+              >
+                <span className="font-display text-[0.95rem] font-medium tracking-[0.03em] text-white sm:text-[1.05rem]">
+                  Services &amp; prices
+                </span>
+                <span
+                  className="pointer-events-none absolute inset-0 opacity-0 transition duration-300 group-hover:opacity-100"
+                  aria-hidden
                 >
-                  <span className="text-[10px] font-semibold uppercase tracking-[0.28em] text-champagne-400/95">Menu</span>
-                  <span className="font-display mt-2 text-[1.05rem] font-medium leading-snug text-white sm:text-lg">
-                    Services &amp; pricing
-                  </span>
-                  {minServicePrice !== null && Number.isFinite(minServicePrice) && (
-                    <span className="mt-2 text-xs font-light text-white/70">From ${minServicePrice.toFixed(0)}</span>
-                  )}
-                  <span className="mt-auto pt-3 text-[11px] font-medium text-champagne-200/90 transition group-hover:text-white">
-                    View prices →
-                  </span>
-                </Link>
-                <Link
-                  href="/gallery"
-                  className="group relative flex min-h-[7.5rem] flex-col overflow-hidden border border-champagne-400/45 bg-lux-espresso/30 text-left backdrop-blur-sm transition hover:border-champagne-300/70 sm:min-h-[8.25rem]"
-                >
-                  <img
-                    src={resolveImageSrc(heroGalleryThumb)}
-                    alt=""
-                    className="absolute inset-0 h-full w-full object-cover opacity-45 transition duration-500 group-hover:scale-[1.03] group-hover:opacity-55 motion-reduce:group-hover:scale-100"
-                  />
-                  <div
-                    className="absolute inset-0 bg-gradient-to-t from-lux-espresso/90 via-lux-espresso/45 to-transparent"
-                    aria-hidden
-                  />
-                  <div className="relative z-10 flex flex-1 flex-col justify-end p-4 sm:p-5">
-                    <span className="text-[10px] font-semibold uppercase tracking-[0.28em] text-champagne-300/95">Work</span>
-                    <span className="font-display mt-1.5 text-[1.05rem] font-medium leading-snug text-white sm:text-lg">Gallery</span>
-                    <span className="mt-2 text-[11px] font-medium text-champagne-200/90 transition group-hover:text-white">
-                      See photos →
-                    </span>
-                  </div>
-                </Link>
-              </div>
+                  <span className="absolute inset-x-0 top-0 h-px bg-gradient-to-r from-transparent via-champagne-300/50 to-transparent" />
+                </span>
+              </Link>
+              <Link
+                href="/gallery"
+                className="group relative flex min-h-[3.35rem] flex-1 items-center justify-center overflow-hidden rounded-md border-2 border-champagne-400/65 bg-lux-espresso/35 px-5 py-3 text-center shadow-[0_0_0_1px_rgba(255,255,255,0.06)_inset] backdrop-blur-md transition duration-300 hover:border-champagne-300/90 hover:bg-lux-espresso/50 active:scale-[0.99] sm:min-h-[3.5rem] sm:px-8"
+              >
+                <span className="font-display text-[0.95rem] font-medium tracking-[0.03em] text-white sm:text-[1.05rem]">
+                  Gallery
+                </span>
+                <span className="pointer-events-none absolute inset-0 opacity-0 transition duration-300 group-hover:opacity-100" aria-hidden>
+                  <span className="absolute inset-x-0 top-0 h-px bg-gradient-to-r from-transparent via-champagne-300/50 to-transparent" />
+                </span>
+              </Link>
             </div>
 
             <div className="mt-10 w-full max-w-md space-y-4 sm:mt-12">
