@@ -41,29 +41,29 @@ export default function AdminLogin() {
   };
 
   return (
-    <div className="min-h-screen bg-gradient-to-br from-champagne-50 to-champagne-100 flex items-center justify-center px-4">
-      <div className="bg-white rounded-lg shadow-xl p-8 w-full max-w-md">
-        <div className="text-center mb-8">
-          <h1 className="text-3xl font-bold text-champagne-600 mb-2">Admin Login</h1>
-          <p className="text-gray-600">Perfect Nails - Admin Dashboard</p>
+    <div className="flex min-h-screen items-center justify-center bg-gradient-to-br from-champagne-50 via-lux-cream/70 to-champagne-100 px-4">
+      <div className="w-full max-w-md rounded-xl border border-champagne-300/35 bg-white p-8 shadow-xl ring-1 ring-champagne-100/60">
+        <div className="mb-8 text-center">
+          <h1 className="mb-2 font-display text-3xl font-semibold text-lux-espresso">Admin Login</h1>
+          <p className="text-lux-espressoLight/90">Perfect Nails · Admin Dashboard</p>
         </div>
 
         <form onSubmit={handleLogin} className="space-y-6">
           {error && (
-            <div className="bg-red-50 border border-red-200 text-red-700 px-4 py-3 rounded">
+            <div className="rounded-xl border border-red-200 bg-red-50 px-4 py-3 text-red-800">
               {error}
             </div>
           )}
 
           <div>
-            <label className="block text-sm font-medium text-gray-700 mb-2">
+            <label className="mb-2 block text-sm font-medium text-lux-espresso">
               Password
             </label>
             <input
               type="password"
               value={password}
               onChange={(e) => setPassword(e.target.value)}
-              className="w-full px-4 py-2 border border-gray-300 rounded-md focus:ring-champagne-500 focus:border-champagne-500"
+              className="w-full rounded-md border border-champagne-300/70 px-4 py-2 focus:border-champagne-500 focus:ring-champagne-500"
               placeholder="Admin password"
               required
               autoComplete="current-password"
@@ -73,15 +73,15 @@ export default function AdminLogin() {
           <button
             type="submit"
             disabled={loading}
-            className="w-full bg-champagne-500 text-white py-2 px-4 rounded-md hover:bg-champagne-600 transition font-semibold disabled:opacity-60"
+            className="w-full rounded-xl bg-champagne-600 py-2.5 px-4 font-semibold text-white transition hover:bg-champagne-700 disabled:opacity-60"
           >
             {loading ? 'Signing in…' : 'Login'}
           </button>
         </form>
 
-        <p className="mt-6 text-center text-sm text-gray-500">
-          Password is the <code className="text-xs bg-gray-100 px-1 rounded">ADMIN_PASSWORD</code> variable on your host
-          (e.g. Render → your service → <strong>Environment</strong>).
+        <p className="mt-6 text-center text-sm text-lux-espressoLight/80">
+          Password is the <code className="rounded bg-lux-mist/80 px-1.5 py-0.5 text-xs text-lux-espresso">ADMIN_PASSWORD</code> variable on your host
+          (e.g. Render → your service → <strong className="text-lux-espresso">Environment</strong>).
         </p>
       </div>
     </div>

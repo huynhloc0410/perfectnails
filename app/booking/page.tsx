@@ -2,8 +2,7 @@
 
 import { useState, useEffect } from 'react';
 import { useSearchParams } from 'next/navigation';
-import Breadcrumbs from '../components/Breadcrumbs';
-import PageHeroRule from '../components/PageHeroRule';
+import InnerPageHero from '../components/InnerPageHero';
 import { fetchCmsSite } from '../lib/cmsSiteClient';
 
 interface Service {
@@ -384,36 +383,24 @@ export default function Booking() {
 
   return (
     <div>
-      {/* Hero Section */}
-      <section className="relative border-b border-champagne-400/35 bg-gradient-to-br from-champagne-50 via-stone-100 to-champagne-100 py-[0.525rem] overflow-hidden">
-        <div className="absolute inset-0 opacity-5">
-          <div className="absolute top-10 left-10 w-64 h-64 bg-champagne-300 rounded-full blur-3xl"></div>
-          <div className="absolute bottom-10 right-10 w-48 h-48 bg-champagne-200/50 rounded-full blur-3xl"></div>
-        </div>
-        <div className="container mx-auto px-6 relative z-10">
-          <Breadcrumbs items={[{ label: 'Booking' }]} />
-          <div className="text-center mb-[0.175rem] mt-[0.175rem]">
-            <h2 className="text-xl md:text-2xl font-bold text-gray-900 mb-0.5">Book an Appointment</h2>
-            <PageHeroRule />
-            <p className="text-sm text-gray-600 max-w-2xl mx-auto mt-[0.525rem]">
-              Request a time — we&apos;ll confirm by phone or text. Most appointments need just a minute to send.
-            </p>
-          </div>
-        </div>
-      </section>
+      <InnerPageHero
+        breadcrumbLabel="Booking"
+        title="Book an Appointment"
+        subtitle="Request a time — we'll confirm by phone or text. Most requests take just a minute to send."
+      />
 
-      <div className="container mx-auto px-6 py-10 border-t border-champagne-300/25">
+      <div className="container mx-auto border-t border-lux-line/35 px-6 py-10">
       <div className="max-w-4xl mx-auto">
         
         {submitted && (
-          <div className="bg-green-50 border border-green-200 text-green-700 px-4 py-3 rounded mb-6">
-            Thank you! Your booking has been submitted. We'll contact you soon.
+          <div className="mb-6 rounded-xl border border-emerald-200/80 bg-emerald-50/90 px-4 py-3 text-emerald-900">
+            Thank you! Your booking has been submitted. We&apos;ll contact you soon.
           </div>
         )}
 
         <form
           onSubmit={handleSubmit}
-          className="space-y-6 rounded-lg border border-champagne-300/45 bg-white p-6 shadow-md ring-1 ring-champagne-100/50"
+          className="space-y-6 rounded-xl border border-champagne-300/45 bg-white p-6 shadow-md ring-1 ring-champagne-100/50"
         >
           <ol className="flex flex-wrap gap-2 border-b border-champagne-200/80 pb-4" aria-label="Booking steps">
             {(['Service', 'Stylist', 'Date', 'Details'] as const).map((label, i) => {
@@ -428,14 +415,14 @@ export default function Booking() {
                         ? 'bg-champagne-600 text-white'
                         : active
                           ? 'bg-champagne-100 text-champagne-900 ring-2 ring-champagne-500/50'
-                          : 'bg-stone-100 text-stone-500'
+                          : 'bg-lux-mist/80 text-lux-espressoLight/80'
                     }`}
                   >
                     {done ? '✓' : n}
                   </span>
-                  <span className={active || done ? 'text-neutral-900' : 'text-stone-500'}>{label}</span>
+                  <span className={active || done ? 'text-lux-espresso' : 'text-lux-espressoLight/75'}>{label}</span>
                   {i < 3 && (
-                    <span className="mx-1 hidden text-stone-300 sm:inline" aria-hidden>
+                    <span className="mx-1 hidden text-lux-line sm:inline" aria-hidden>
                       /
                     </span>
                   )}
@@ -447,7 +434,7 @@ export default function Booking() {
           {bookingStep === 1 && (
             <>
           <div>
-            <label className="block text-sm font-medium text-gray-700 mb-1">Select Category *</label>
+            <label className="block mb-1 text-sm font-medium text-lux-espresso">Select Category *</label>
             {categories.length > 0 ? (
               <select
                 name="category"
@@ -463,7 +450,7 @@ export default function Booking() {
                     timeSlot: '',
                   }));
                 }}
-                className="w-full px-4 py-2 border border-gray-300 rounded-md focus:ring-champagne-500 focus:border-champagne-500"
+                className="w-full rounded-md border border-champagne-300/70 px-4 py-2 focus:border-champagne-500 focus:ring-champagne-500"
                 required
               >
                 <option value="">Select a category</option>
@@ -474,12 +461,12 @@ export default function Booking() {
                 ))}
               </select>
             ) : (
-              <p className="text-gray-500 text-sm">No categories available. Please contact us directly.</p>
+              <p className="text-sm text-lux-espressoLight/75">No categories available. Please contact us directly.</p>
             )}
           </div>
 
           <div>
-            <label className="block text-sm font-medium text-gray-700 mb-1">Select Service *</label>
+            <label className="block mb-1 text-sm font-medium text-lux-espresso">Select Service *</label>
             {services.length > 0 ? (
               <select
                 name="service"
@@ -487,7 +474,7 @@ export default function Booking() {
                 onChange={(e) =>
                   setFormData({ ...formData, service: e.target.value, employee: '', date: '', timeSlot: '' })
                 }
-                className="w-full px-4 py-2 border border-gray-300 rounded-md focus:ring-champagne-500 focus:border-champagne-500 disabled:bg-gray-50 disabled:text-gray-500"
+                className="w-full rounded-md border border-champagne-300/70 px-4 py-2 focus:border-champagne-500 focus:ring-champagne-500 disabled:bg-lux-mist/50 disabled:text-lux-espressoLight/60"
                 required
                 disabled={!selectedCategory}
               >
@@ -502,10 +489,10 @@ export default function Booking() {
                 ))}
               </select>
             ) : (
-              <p className="text-gray-500 text-sm">No services available. Please contact us directly.</p>
+              <p className="text-sm text-lux-espressoLight/75">No services available. Please contact us directly.</p>
             )}
             {selectedService && selectedService.duration !== 0 && (
-              <p className="mt-1 text-xs text-gray-500">
+              <p className="mt-1 text-xs text-lux-espressoLight/75">
                 Duration: {schedulingMinutes(selectedService.duration)} minutes
               </p>
             )}
@@ -518,7 +505,7 @@ export default function Booking() {
                   if (selectedCategory && formData.service) setBookingStep(2);
                 }}
                 disabled={!selectedCategory || !formData.service}
-                className="rounded-lg bg-champagne-600 px-5 py-2.5 text-sm font-semibold text-white hover:bg-champagne-700 disabled:cursor-not-allowed disabled:bg-gray-300"
+                className="rounded-xl bg-champagne-600 px-5 py-2.5 text-sm font-semibold text-white hover:bg-champagne-700 disabled:cursor-not-allowed disabled:bg-champagne-200/80 disabled:text-lux-espresso/50"
               >
                 Continue
               </button>
@@ -529,8 +516,8 @@ export default function Booking() {
           {bookingStep === 2 && (
             <>
               <div>
-                <label className="block text-sm font-medium text-gray-700 mb-1">Preferred nail technician *</label>
-                <p className="mb-2 text-xs text-gray-500">
+                <label className="block mb-1 text-sm font-medium text-lux-espresso">Preferred nail technician *</label>
+                <p className="mb-2 text-xs text-lux-espressoLight/75">
                   Choose someone you love — our team is scheduled by specialty so you get the right fit.
                 </p>
                 {availableEmployees.length > 0 ? (
@@ -538,7 +525,7 @@ export default function Booking() {
                     name="employee"
                     value={formData.employee}
                     onChange={(e) => setFormData({ ...formData, employee: e.target.value, date: '', timeSlot: '' })}
-                    className="w-full px-4 py-2 border border-gray-300 rounded-md focus:ring-champagne-500 focus:border-champagne-500"
+                    className="w-full rounded-md border border-champagne-300/70 px-4 py-2 focus:border-champagne-500 focus:ring-champagne-500"
                     required
                     disabled={!formData.service}
                   >
@@ -556,7 +543,7 @@ export default function Booking() {
                     No team members are available for this service in the schedule yet. Try another service or call us.
                   </div>
                 ) : (
-                  <p className="text-gray-500 text-sm">Please select a service first</p>
+                  <p className="text-lux-espressoLight/75 text-sm">Please select a service first</p>
                 )}
               </div>
 
@@ -564,7 +551,7 @@ export default function Booking() {
                 <button
                   type="button"
                   onClick={() => setBookingStep(1)}
-                  className="rounded-lg border border-gray-300 bg-white px-5 py-2.5 text-sm font-semibold text-gray-800 hover:bg-gray-50"
+                  className="rounded-xl border border-champagne-300/70 bg-white px-5 py-2.5 text-sm font-semibold text-lux-espresso hover:bg-champagne-50/70"
                 >
                   Back
                 </button>
@@ -574,7 +561,7 @@ export default function Booking() {
                     if (formData.employee) setBookingStep(3);
                   }}
                   disabled={!formData.employee}
-                  className="rounded-lg bg-champagne-600 px-5 py-2.5 text-sm font-semibold text-white hover:bg-champagne-700 disabled:cursor-not-allowed disabled:bg-gray-300"
+                  className="rounded-xl bg-champagne-600 px-5 py-2.5 text-sm font-semibold text-white hover:bg-champagne-700 disabled:cursor-not-allowed disabled:bg-champagne-200/80 disabled:text-lux-espresso/50"
                 >
                   Continue
                 </button>
@@ -584,12 +571,12 @@ export default function Booking() {
 
           {bookingStep === 3 && formData.service && formData.employee && (
             <div>
-              <label className="block text-sm font-medium text-gray-700 mb-3">Select Date *</label>
+              <label className="block mb-3 text-sm font-medium text-lux-espresso">Select Date *</label>
               
               {/* Calendar */}
-              <div className="border border-gray-200 rounded-lg overflow-hidden w-full max-w-md mx-auto">
+              <div className="mx-auto w-full max-w-md overflow-hidden rounded-xl border border-champagne-200/70">
                 {/* Month Navigation */}
-                <div className="bg-champagne-50 px-2 py-1.5 flex justify-between items-center border-b border-gray-200">
+                <div className="flex items-center justify-between border-b border-champagne-200/70 bg-champagne-50 px-2 py-1.5">
                   <button
                     type="button"
                     onClick={() => navigateMonth('prev')}
@@ -597,7 +584,7 @@ export default function Booking() {
                   >
                     ←
                   </button>
-                  <h3 className="text-sm font-semibold text-gray-800">
+                  <h3 className="text-sm font-semibold text-lux-espresso">
                     {formatMonthYear(currentMonth)}
                   </h3>
                   <button
@@ -623,7 +610,7 @@ export default function Booking() {
                     }}
                   >
                     {['S', 'M', 'T', 'W', 'T', 'F', 'S'].map((day, idx) => (
-                      <div key={idx} className="text-center text-[10px] font-semibold text-gray-600 py-0.5">
+                      <div key={idx} className="py-0.5 text-center text-[10px] font-semibold text-lux-espressoLight">
                         {day}
                       </div>
                     ))}
@@ -665,12 +652,12 @@ export default function Booking() {
                           className={`
                             rounded text-[11px] font-medium transition flex items-center justify-center
                             ${!isSelectable 
-                              ? 'text-gray-300 cursor-not-allowed bg-gray-50' 
+                              ? 'cursor-not-allowed bg-lux-mist/60 text-lux-line' 
                               : isSelected
                               ? 'bg-champagne-600 text-white shadow-sm font-semibold'
                               : isTodayDate
                               ? 'bg-champagne-100 text-champagne-700 hover:bg-champagne-200 font-semibold border border-champagne-400'
-                              : 'bg-white text-gray-700 hover:bg-champagne-50 hover:text-champagne-600 border border-gray-200'
+                              : 'border border-champagne-200/80 bg-white text-lux-espresso hover:bg-champagne-50/80 hover:text-champagne-700'
                             }
                           `}
                           style={{ height: '28px', width: '100%' }}
@@ -684,7 +671,7 @@ export default function Booking() {
               </div>
 
               {formData.date && (
-                <div className="mt-2 text-sm text-gray-600">
+                <div className="mt-2 text-sm text-lux-espressoLight">
                   <span className="font-medium text-champagne-600">✓</span> {formatDate(new Date(formData.date))}
                 </div>
               )}
@@ -693,7 +680,7 @@ export default function Booking() {
                 <button
                   type="button"
                   onClick={() => setBookingStep(2)}
-                  className="rounded-lg border border-gray-300 bg-white px-5 py-2.5 text-sm font-semibold text-gray-800 hover:bg-gray-50"
+                  className="rounded-xl border border-champagne-300/70 bg-white px-5 py-2.5 text-sm font-semibold text-lux-espresso hover:bg-champagne-50/70"
                 >
                   Back
                 </button>
@@ -703,7 +690,7 @@ export default function Booking() {
                     if (formData.date) setBookingStep(4);
                   }}
                   disabled={!formData.date}
-                  className="rounded-lg bg-champagne-600 px-5 py-2.5 text-sm font-semibold text-white hover:bg-champagne-700 disabled:cursor-not-allowed disabled:bg-gray-300"
+                  className="rounded-xl bg-champagne-600 px-5 py-2.5 text-sm font-semibold text-white hover:bg-champagne-700 disabled:cursor-not-allowed disabled:bg-champagne-200/80 disabled:text-lux-espresso/50"
                 >
                   Continue
                 </button>
@@ -713,19 +700,19 @@ export default function Booking() {
 
           {bookingStep === 4 && formData.date && formData.service && formData.employee && (
             <div>
-              <label className="block text-sm font-medium text-gray-700 mb-3">Select Time *</label>
+              <label className="block mb-3 text-sm font-medium text-lux-espresso">Select Time *</label>
               
               {/* Time slots table - organized by hours */}
               {availableTimeSlots.length > 0 ? (
-                <div className="border border-gray-200 rounded-lg overflow-hidden">
+                <div className="overflow-hidden rounded-xl border border-champagne-200/70">
                   <table className="w-full">
-                    <thead className="bg-gray-50">
+                    <thead className="bg-lux-mist/70">
                       <tr>
-                        <th className="px-4 py-2 text-left text-xs font-medium text-gray-500 uppercase">Hour</th>
-                        <th className="px-4 py-2 text-left text-xs font-medium text-gray-500 uppercase">Available Times</th>
+                        <th className="px-4 py-2 text-left text-xs font-medium uppercase text-lux-espressoLight">Hour</th>
+                        <th className="px-4 py-2 text-left text-xs font-medium uppercase text-lux-espressoLight">Available Times</th>
                       </tr>
                     </thead>
-                    <tbody className="bg-white divide-y divide-gray-200">
+                    <tbody className="divide-y divide-champagne-200/60 bg-white">
                       {(() => {
                         // Group time slots by hour
                         const slotsByHour: Record<number, string[]> = {};
@@ -741,9 +728,9 @@ export default function Booking() {
                           .map(Number)
                           .sort((a, b) => a - b)
                           .map(hour => (
-                            <tr key={hour} className="hover:bg-gray-50">
-                              <td className="px-4 py-3 whitespace-nowrap">
-                                <span className="text-sm font-semibold text-gray-700">
+                            <tr key={hour} className="hover:bg-champagne-50/40">
+                              <td className="whitespace-nowrap px-4 py-3">
+                                <span className="text-sm font-semibold text-lux-espresso">
                                   {hour}:00
                                 </span>
                               </td>
@@ -760,7 +747,7 @@ export default function Booking() {
                                           px-3 py-1.5 rounded-md text-sm font-medium transition min-w-[60px]
                                           ${isSelected
                                             ? 'bg-champagne-600 text-white shadow-md'
-                                            : 'bg-gray-100 text-gray-700 hover:bg-champagne-100 hover:text-champagne-700 border border-gray-200'
+                                            : 'border border-champagne-200/80 bg-lux-mist/40 text-lux-espresso hover:bg-champagne-100 hover:text-champagne-700'
                                           }
                                         `}
                                       >
@@ -783,7 +770,7 @@ export default function Booking() {
               )}
 
               {formData.timeSlot && (
-                <div className="mt-2 text-sm text-gray-600">
+                <div className="mt-2 text-sm text-lux-espressoLight">
                   <span className="font-medium text-champagne-600">✓</span> {formData.timeSlot}
                   {selectedService?.duration !== 0 && (
                     <span> ({schedulingMinutes(selectedService?.duration)} min)</span>
@@ -792,30 +779,30 @@ export default function Booking() {
               )}
 
               <div className="mt-8 border-t border-champagne-200/80 pt-6">
-                <h3 className="text-sm font-semibold text-gray-900">Your contact info</h3>
-                <p className="mt-1 text-xs text-gray-500">We&apos;ll use this to confirm your appointment.</p>
+                <h3 className="font-display text-base font-medium text-lux-espresso">Your contact info</h3>
+                <p className="mt-1 text-xs text-lux-espressoLight/75">We&apos;ll use this to confirm your appointment.</p>
                 <div className="mt-4 space-y-4">
                   <div>
-                    <label className="block text-sm font-medium text-gray-700 mb-1">Your name *</label>
+                    <label className="block mb-1 text-sm font-medium text-lux-espresso">Your name *</label>
                     <input
                       type="text"
                       name="name"
                       value={formData.name}
                       onChange={(e) => setFormData({ ...formData, name: e.target.value })}
                       placeholder="First and last name"
-                      className="w-full px-4 py-2 border border-gray-300 rounded-md focus:ring-champagne-500 focus:border-champagne-500"
+                      className="w-full rounded-md border border-champagne-300/70 px-4 py-2 focus:border-champagne-500 focus:ring-champagne-500"
                       required
                     />
                   </div>
                   <div>
-                    <label className="block text-sm font-medium text-gray-700 mb-1">Phone number *</label>
+                    <label className="block mb-1 text-sm font-medium text-lux-espresso">Phone number *</label>
                     <input
                       type="tel"
                       name="phone"
                       value={formData.phone}
                       onChange={(e) => setFormData({ ...formData, phone: e.target.value })}
                       placeholder="Mobile number"
-                      className="w-full px-4 py-2 border border-gray-300 rounded-md focus:ring-champagne-500 focus:border-champagne-500"
+                      className="w-full rounded-md border border-champagne-300/70 px-4 py-2 focus:border-champagne-500 focus:ring-champagne-500"
                       required
                     />
                   </div>
@@ -826,13 +813,13 @@ export default function Booking() {
                 <button
                   type="button"
                   onClick={() => setBookingStep(3)}
-                  className="rounded-lg border border-gray-300 bg-white px-5 py-2.5 text-sm font-semibold text-gray-800 hover:bg-gray-50 sm:order-1"
+                  className="rounded-xl border border-champagne-300/70 bg-white px-5 py-2.5 text-sm font-semibold text-lux-espresso hover:bg-champagne-50/70 sm:order-1"
                 >
                   Back
                 </button>
                 <button
                   type="submit"
-                  className="w-full rounded-lg bg-champagne-600 px-5 py-3 text-sm font-semibold text-white shadow-sm hover:bg-champagne-700 disabled:cursor-not-allowed disabled:bg-gray-300 sm:ml-auto sm:w-auto sm:min-w-[12rem] sm:order-2"
+                  className="w-full rounded-xl bg-champagne-600 px-5 py-3 text-sm font-semibold text-white shadow-sm hover:bg-champagne-700 disabled:cursor-not-allowed disabled:bg-champagne-200/80 disabled:text-lux-espresso/50 sm:ml-auto sm:w-auto sm:min-w-[12rem] sm:order-2"
                   disabled={
                     !formData.employee ||
                     !formData.service ||
