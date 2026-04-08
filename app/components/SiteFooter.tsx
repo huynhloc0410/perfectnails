@@ -94,7 +94,7 @@ export default function SiteFooter() {
   const mapsUrl = `https://www.google.com/maps/search/?api=1&query=${encodeURIComponent(address)}`;
 
   return (
-    <footer className="font-nav mt-auto border-t border-champagne-400/45 bg-gradient-to-b from-white to-champagne-50/90">
+    <footer className="font-nav mt-auto border-t border-lux-line/40 bg-gradient-to-b from-lux-paper to-lux-cream/50">
       <div className="mx-auto max-w-3xl px-4 py-5 text-center sm:px-6 sm:py-6">
         <Link
           href="/"

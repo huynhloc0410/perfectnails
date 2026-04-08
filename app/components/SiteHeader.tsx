@@ -86,7 +86,7 @@ export default function SiteHeader() {
           id="mobile-nav-panel"
           role="navigation"
           aria-label="Mobile menu"
-          className="fixed left-0 right-0 bottom-0 z-[299] flex min-h-0 flex-col border-t border-champagne-400/50 bg-white shadow-[0_-8px_32px_rgba(0,0,0,0.12)] md:hidden"
+          className="fixed left-0 right-0 bottom-0 z-[299] flex min-h-0 flex-col border-t border-lux-line/40 bg-lux-paper shadow-[0_-8px_32px_rgba(42,36,28,0.08)] md:hidden"
           style={{ top: menuTopPx }}
         >
           <p className="shrink-0 border-b border-champagne-200/80 px-4 py-2.5 text-center text-xs font-semibold uppercase tracking-wide text-champagne-800 sm:px-6">
@@ -119,11 +119,11 @@ export default function SiteHeader() {
       : null;
 
   return (
-    <header className="font-nav sticky top-0 z-[300] w-full border-b border-champagne-400/45 bg-white/95 shadow-[0_1px_0_rgba(118,93,34,0.2)] backdrop-blur-md">
+    <header className="font-nav sticky top-0 z-[300] w-full border-b border-lux-line/35 bg-lux-paper/92 shadow-[0_1px_0_rgba(42,36,28,0.06)] backdrop-blur-md">
       <div className="relative">
         <nav
           ref={navRef}
-          className="relative z-[320] container mx-auto flex max-w-6xl items-center gap-3 bg-white/95 px-4 py-3 backdrop-blur-md sm:px-6 sm:py-3.5"
+          className="relative z-[320] container mx-auto flex max-w-6xl items-center gap-3 bg-transparent px-4 py-3 sm:px-6 sm:py-3.5"
           aria-label="Main navigation"
         >
           <button

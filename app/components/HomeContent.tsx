@@ -18,11 +18,14 @@ import {
   SITE_HOURS_FALLBACK_SUMMARY,
   SITE_PRIMARY_AREA,
   SITE_TRUST_POINTS,
+  SITE_TRUST_SECTION_LABEL,
 } from '../lib/siteBranding';
 
-const HERO_BACKGROUNDS = ['/images/nail0.webp', '/images/nail1.webp', '/images/nail2.jpeg'] as const;
+/** Single still hero — luxury direction: one focal visual, no carousel. */
+const HERO_IMAGE = '/images/nail0.webp';
 
-const HERO_ROTATE_MS = 7000;
+/** Fallback thumbnails when CMS gallery empty */
+const GALLERY_FALLBACK = ['/images/nail0.webp', '/images/nail1.webp', '/images/nail2.jpeg'] as const;
 
 type PreviewService = {
   id: string;
@@ -58,23 +61,12 @@ function summarizeHours(raw: string | undefined): string {
 }
 
 export default function HomeContent() {
-  const [heroIndex, setHeroIndex] = useState(0);
   const [callHref, setCallHref] = useState(SITE_PHONE_HREF);
   const [phoneDisplay, setPhoneDisplay] = useState(SITE_PHONE_DISPLAY);
   const [heroAddress, setHeroAddress] = useState(SITE_DEFAULT_ADDRESS);
   const [hoursSummary, setHoursSummary] = useState(SITE_HOURS_FALLBACK_SUMMARY);
   const [servicePreview, setServicePreview] = useState<PreviewService[]>([]);
   const [galleryPreview, setGalleryPreview] = useState<string[]>([]);
-
-  useEffect(() => {
-    if (typeof window === 'undefined') return;
-    const mq = window.matchMedia('(prefers-reduced-motion: reduce)');
-    if (mq.matches) return;
-    const id = window.setInterval(() => {
-      setHeroIndex((i) => (i + 1) % HERO_BACKGROUNDS.length);
-    }, HERO_ROTATE_MS);
-    return () => window.clearInterval(id);
-  }, []);
 
   useEffect(() => {
     let cancelled = false;
@@ -148,98 +140,104 @@ export default function HomeContent() {
 
   return (
     <>
-      <section className="relative isolate min-h-[72svh] w-full overflow-hidden" aria-labelledby="hero-heading">
-        {HERO_BACKGROUNDS.map((src, i) => (
-          <img
-            key={src}
-            src={src}
-            alt=""
-            className={`absolute inset-0 h-full w-full object-cover object-center transition-opacity duration-1000 ease-in-out motion-reduce:transition-none ${
-              i === heroIndex ? 'z-[1] opacity-100' : 'z-0 opacity-0 pointer-events-none'
-            }`}
-            style={{ transform: 'translateZ(0)' }}
-            aria-hidden
-            fetchPriority={i === 0 ? 'high' : 'low'}
-          />
-        ))}
-        <div className="absolute inset-0 z-[2] bg-gradient-to-t from-black/60 via-black/30 to-black/40" aria-hidden />
+      <section
+        className="relative isolate min-h-[min(88svh,820px)] w-full overflow-hidden bg-lux-espresso"
+        aria-labelledby="hero-heading"
+      >
+        <img
+          src={HERO_IMAGE}
+          alt=""
+          className="absolute inset-0 h-full w-full object-cover object-center"
+          fetchPriority="high"
+        />
+        <div
+          className="absolute inset-0 z-[2] bg-gradient-to-t from-lux-espresso/95 via-lux-espresso/35 to-lux-espresso/25"
+          aria-hidden
+        />
+        <div className="pointer-events-none absolute inset-x-0 top-0 z-[2] h-px bg-gradient-to-r from-transparent via-champagne-400/35 to-transparent" aria-hidden />
 
-        <div className="relative z-10 mx-auto flex min-h-[72svh] w-full max-w-2xl flex-col px-5 pb-10 pt-[calc(4.5rem+env(safe-area-inset-top,0px))] sm:pb-12 sm:pt-[calc(5rem+env(safe-area-inset-top,0px))] md:min-h-[78svh]">
+        <div className="relative z-10 mx-auto flex min-h-[min(88svh,820px)] w-full max-w-3xl flex-col px-6 pb-16 pt-[calc(4.75rem+env(safe-area-inset-top,0px))] sm:max-w-4xl sm:px-10 sm:pb-20 sm:pt-[calc(5.25rem+env(safe-area-inset-top,0px))] md:pb-24">
           <div className="flex w-full flex-1 flex-col items-center justify-center text-center">
+            <p className="max-w-lg text-[10px] font-medium uppercase tracking-[0.38em] text-champagne-300/95 sm:text-[11px]">
+              Nail studio · {SITE_PRIMARY_AREA}
+            </p>
             <h1
               id="hero-heading"
-              className="font-display max-w-xl text-3xl font-semibold leading-tight tracking-wide text-white drop-shadow-[0_2px_10px_rgba(0,0,0,0.5)] sm:text-4xl md:text-[2.85rem]"
+              className="font-display mt-8 max-w-2xl text-[2.125rem] font-medium leading-[1.15] tracking-[0.02em] text-white sm:mt-10 sm:text-5xl md:text-[3.25rem]"
             >
               Perfect Nails
             </h1>
-            <p className="mt-2 max-w-md text-[13px] font-medium uppercase tracking-[0.18em] text-champagne-200/95 sm:text-sm">
-              {SITE_PRIMARY_AREA}
-            </p>
-            <p className="mt-5 max-w-xl px-1 text-base font-medium leading-relaxed text-white sm:text-lg md:text-[1.15rem]">
+            <div className="mx-auto mt-8 h-px w-14 bg-gradient-to-r from-transparent via-champagne-400/70 to-transparent sm:mt-9 sm:w-16" aria-hidden />
+
+            <p className="mt-8 max-w-md font-light leading-[1.75] text-white/90 sm:mt-10 sm:max-w-lg sm:text-[1.0625rem]">
               {SITE_HERO_SERVICE_LINE}
             </p>
-            <p className="mt-3 max-w-xl px-1 text-sm leading-relaxed text-white/90 sm:text-base">
+            <p className="mt-5 max-w-md font-light leading-relaxed text-white/75 sm:text-base">
               {SITE_HERO_APPOINTMENT_LINE}
             </p>
 
-            <div className="mt-8 w-full max-w-lg space-y-3 sm:mt-10">
+            <div className="mt-12 w-full max-w-md space-y-4 sm:mt-14">
               <a
                 href={callHref}
-                className="cta-flash-btn cta-call-primary relative z-0 flex min-h-[3.5rem] w-full flex-col items-center justify-center gap-0.5 rounded-full bg-gradient-to-br from-champagne-500 to-champagne-700 px-6 text-center shadow-lg ring-1 ring-champagne-400/60 sm:min-h-[3.85rem]"
+                className="cta-call-primary flex w-full flex-col items-center justify-center gap-1 border-2 border-champagne-400/85 bg-lux-espresso/45 px-8 py-4 text-center backdrop-blur-md transition hover:border-champagne-300 hover:bg-lux-espresso/55"
               >
-                <span className="relative z-[2] flex items-center gap-2 text-base font-bold text-white sm:text-lg">
-                  <PhoneIcon className="h-6 w-6 shrink-0 opacity-95 sm:h-7 sm:w-7" />
-                  Call {phoneDisplay}
+                <span className="flex items-center gap-3 text-[11px] font-semibold uppercase tracking-[0.28em] text-champagne-200">
+                  <PhoneIcon className="h-4 w-4 text-champagne-300" />
+                  Call
                 </span>
-                <span className="relative z-[2] text-[11px] font-medium text-white/85 sm:text-xs">Best for choosing your time</span>
+                <span className="font-display text-lg font-medium text-white sm:text-xl">{phoneDisplay}</span>
               </a>
               <Link
                 href="/booking"
-                className="relative z-0 flex min-h-[3rem] w-full items-center justify-center rounded-full border-2 border-white/90 bg-white/12 px-6 text-center text-[15px] font-semibold text-white shadow-md backdrop-blur-sm transition hover:bg-white/22 active:scale-[0.98] sm:text-base"
+                className="flex min-h-[3.25rem] w-full items-center justify-center border border-lux-espresso/20 bg-champagne-800/95 px-8 py-3.5 text-center text-[13px] font-medium uppercase tracking-[0.18em] text-champagne-50 shadow-lg transition hover:bg-champagne-800 active:scale-[0.99]"
               >
-                <span className="relative z-[2]">Book online</span>
+                Request an appointment
               </Link>
-              <div className="grid grid-cols-1 gap-2.5 pt-2 sm:grid-cols-2 sm:gap-3">
+              <div className="flex flex-wrap items-center justify-center gap-x-10 gap-y-2 pt-4 text-[13px] font-medium tracking-wide text-white/85">
                 <Link
                   href="/services"
-                  className="flex min-h-[3rem] items-center justify-center rounded-2xl border-2 border-white/85 bg-white/18 px-4 text-base font-bold text-white shadow-md backdrop-blur-sm transition hover:bg-white/28 sm:min-h-[3.25rem] sm:text-lg"
+                  className="border-b border-champagne-400/50 pb-0.5 transition hover:border-champagne-300 hover:text-white"
                 >
                   Services &amp; prices
                 </Link>
                 <Link
                   href="/gallery"
-                  className="flex min-h-[3rem] items-center justify-center rounded-2xl border-2 border-white/85 bg-white/18 px-4 text-base font-bold text-white shadow-md backdrop-blur-sm transition hover:bg-white/28 sm:min-h-[3.25rem] sm:text-lg"
+                  className="border-b border-champagne-400/50 pb-0.5 transition hover:border-champagne-300 hover:text-white"
                 >
-                  See our work
+                  Gallery
                 </Link>
               </div>
             </div>
 
-            <address className="mx-auto mt-8 w-full max-w-md not-italic sm:mt-10">
+            <address className="mx-auto mt-14 w-full max-w-md not-italic sm:mt-16">
               <a
                 href={mapsUrl}
                 target="_blank"
                 rel="noopener noreferrer"
-                className="flex w-full flex-col items-center justify-center gap-1 rounded-2xl border border-white/35 bg-black/25 px-4 py-3.5 text-center backdrop-blur-sm transition hover:bg-black/35"
+                className="flex w-full flex-col items-center gap-2 border border-white/15 bg-black/25 px-6 py-5 text-center backdrop-blur-md transition hover:border-white/25 hover:bg-black/35"
               >
-                <span className="text-xs font-semibold uppercase tracking-wide text-champagne-200/90">Visit us</span>
-                <span className="max-w-[32ch] text-sm font-medium leading-snug text-white">{heroAddress}</span>
+                <span className="text-[10px] font-semibold uppercase tracking-[0.3em] text-champagne-400/90">Visit</span>
+                <span className="max-w-[32ch] text-sm font-light leading-relaxed text-white/95">{heroAddress}</span>
               </a>
             </address>
           </div>
         </div>
       </section>
 
-      <section className="border-t border-champagne-200/80 bg-gradient-to-b from-champagne-50 to-white py-10 sm:py-12" aria-label="Why book with us">
-        <div className="container mx-auto max-w-5xl px-5 sm:px-6">
-          <div className="grid gap-6 sm:grid-cols-3">
+      <section className="border-t border-lux-line/40 bg-lux-paper py-16 sm:py-20" aria-labelledby="trust-heading">
+        <div className="container mx-auto max-w-5xl px-6 sm:px-10">
+          <div className="mx-auto max-w-2xl text-center">
+            <p className="text-[10px] font-semibold uppercase tracking-[0.35em] text-lux-bronze">{SITE_TRUST_SECTION_LABEL}</p>
+            <h2 id="trust-heading" className="font-display mt-4 text-2xl font-medium text-lux-espresso sm:text-[1.75rem]">
+              Thoughtful care, every visit
+            </h2>
+            <div className="mx-auto mt-6 h-px w-12 bg-lux-line" aria-hidden />
+          </div>
+          <div className="mt-14 grid gap-10 sm:mt-16 sm:grid-cols-3 sm:gap-8">
             {SITE_TRUST_POINTS.map((item) => (
-              <div
-                key={item.title}
-                className="rounded-2xl border border-champagne-200/60 bg-white/80 p-5 shadow-sm ring-1 ring-champagne-100/50"
-              >
-                <h2 className="font-display text-lg font-semibold text-neutral-900">{item.title}</h2>
-                <p className="mt-2 text-sm leading-relaxed text-gray-600">{item.body}</p>
+              <div key={item.title} className="border-t border-lux-line/60 bg-lux-cream/50 px-2 pt-8 sm:px-4">
+                <h3 className="font-display text-lg font-medium text-lux-espresso">{item.title}</h3>
+                <p className="mt-3 text-sm font-light leading-relaxed text-lux-espressoLight/90">{item.body}</p>
               </div>
             ))}
           </div>
@@ -247,41 +245,45 @@ export default function HomeContent() {
       </section>
 
       {servicePreview.length > 0 && (
-        <section className="border-t border-champagne-200/60 bg-white py-12 sm:py-14" aria-labelledby="popular-services-heading">
-          <div className="container mx-auto max-w-5xl px-5 sm:px-6">
-            <div className="flex flex-col items-start justify-between gap-4 sm:flex-row sm:items-end">
+        <section
+          className="border-t border-lux-line/30 bg-lux-cream/40 py-16 sm:py-20"
+          aria-labelledby="popular-services-heading"
+        >
+          <div className="container mx-auto max-w-5xl px-6 sm:px-10">
+            <div className="flex flex-col items-start justify-between gap-8 border-b border-lux-line/40 pb-10 sm:flex-row sm:items-end">
               <div>
-                <h2 id="popular-services-heading" className="font-display text-3xl font-semibold text-neutral-900 sm:text-[2rem]">
-                  Services &amp; prices
+                <p className="text-[10px] font-semibold uppercase tracking-[0.32em] text-lux-bronze">Menu</p>
+                <h2 id="popular-services-heading" className="font-display mt-4 text-3xl font-medium text-lux-espresso sm:text-[2.125rem]">
+                  Services &amp; pricing
                 </h2>
-                <p className="mt-2 max-w-xl text-base text-gray-600 sm:text-lg">
-                  New here? Browse what we offer and what it costs — every card links to booking if you already know what you want.
+                <p className="mt-4 max-w-xl font-light leading-relaxed text-lux-espressoLight sm:text-[1.0625rem]">
+                  A selection of our offerings. Full menu and detail on the services page.
                 </p>
               </div>
               <Link
                 href="/services"
-                className="shrink-0 rounded-full border-2 border-champagne-600/40 bg-champagne-50 px-5 py-2.5 text-base font-bold text-champagne-950 transition hover:bg-champagne-100"
+                className="shrink-0 border border-lux-espresso/25 bg-lux-paper px-6 py-3 text-xs font-semibold uppercase tracking-[0.2em] text-lux-espresso transition hover:border-lux-bronze/50 hover:bg-white"
               >
-                View all services
+                View all
               </Link>
             </div>
-            <ul className="mt-10 grid gap-5 sm:grid-cols-2 lg:grid-cols-3">
+            <ul className="mt-12 grid gap-8 sm:grid-cols-2 lg:grid-cols-3 lg:gap-10">
               {servicePreview.map((s) => (
                 <li
                   key={s.id}
-                  className="flex flex-col justify-between rounded-2xl border border-champagne-200/70 bg-champagne-50/50 p-5 shadow-sm ring-1 ring-champagne-100/50 sm:p-6"
+                  className="flex flex-col justify-between border border-lux-line/50 bg-lux-paper/80 px-6 py-7 sm:px-7 sm:py-8"
                 >
                   <div>
-                    <p className="text-[11px] font-bold uppercase tracking-wider text-champagne-800/90 sm:text-xs">
+                    <p className="text-[10px] font-semibold uppercase tracking-[0.28em] text-lux-bronze/90">
                       {(s.category || '').trim() || 'Service'}
                     </p>
-                    <h3 className="mt-2 text-lg font-bold text-neutral-900 sm:text-xl">{s.name}</h3>
+                    <h3 className="font-display mt-3 text-xl font-medium text-lux-espresso">{s.name}</h3>
                   </div>
-                  <div className="mt-5 flex items-end justify-between gap-3">
-                    <p className="text-2xl font-bold text-champagne-800 sm:text-[1.75rem]">${Number(s.price).toFixed(2)}</p>
+                  <div className="mt-8 flex items-end justify-between gap-4 border-t border-lux-line/40 pt-6">
+                    <p className="font-display text-2xl font-medium text-lux-espresso">${Number(s.price).toFixed(2)}</p>
                     <Link
                       href={`/booking?service=${encodeURIComponent(s.name)}`}
-                      className="rounded-full bg-champagne-600 px-4 py-2 text-sm font-bold text-white hover:bg-champagne-700"
+                      className="text-[11px] font-semibold uppercase tracking-[0.2em] text-lux-bronze underline decoration-lux-line decoration-1 underline-offset-4 hover:text-lux-espresso"
                     >
                       Book
                     </Link>
@@ -293,39 +295,40 @@ export default function HomeContent() {
         </section>
       )}
 
-      {(galleryPreview.length > 0 || HERO_BACKGROUNDS.length > 0) && (
-        <section className="border-t border-champagne-200/60 bg-gradient-to-b from-white to-champagne-50/80 py-12 sm:py-14" aria-labelledby="gallery-preview-heading">
-          <div className="container mx-auto max-w-5xl px-5 sm:px-6">
-            <div className="flex flex-col items-start justify-between gap-4 sm:flex-row sm:items-end">
+      {(galleryPreview.length > 0 || GALLERY_FALLBACK.length > 0) && (
+        <section
+          className="border-t border-lux-line/30 bg-lux-paper py-16 sm:py-20"
+          aria-labelledby="gallery-preview-heading"
+        >
+          <div className="container mx-auto max-w-5xl px-6 sm:px-10">
+            <div className="flex flex-col items-start justify-between gap-8 sm:flex-row sm:items-end">
               <div>
-                <h2 id="gallery-preview-heading" className="font-display text-3xl font-semibold text-neutral-900 sm:text-[2rem]">
-                  See our work
+                <p className="text-[10px] font-semibold uppercase tracking-[0.32em] text-lux-bronze">Portfolio</p>
+                <h2 id="gallery-preview-heading" className="font-display mt-4 text-3xl font-medium text-lux-espresso sm:text-[2.125rem]">
+                  Recent work
                 </h2>
-                <p className="mt-2 max-w-xl text-base text-gray-600 sm:text-lg">
-                  Real nails from our Phoenix studio — tap through for the full gallery.
+                <p className="mt-4 max-w-xl font-light leading-relaxed text-lux-espressoLight sm:text-[1.0625rem]">
+                  Work produced in our Phoenix studio.
                 </p>
               </div>
               <Link
                 href="/gallery"
-                className="shrink-0 rounded-full border-2 border-champagne-600/40 bg-white px-6 py-3 text-base font-bold text-champagne-950 transition hover:bg-champagne-50"
+                className="shrink-0 border border-lux-espresso/25 bg-transparent px-6 py-3 text-xs font-semibold uppercase tracking-[0.2em] text-lux-espresso transition hover:border-lux-bronze"
               >
-                Open full gallery
+                Full gallery
               </Link>
             </div>
-            <div className="mt-10 grid grid-cols-2 gap-4 sm:grid-cols-4 sm:gap-5">
-              {(galleryPreview.length > 0
-                ? galleryPreview
-                : (HERO_BACKGROUNDS as unknown as string[]).slice(0, 4)
-              ).map((url, i) => (
+            <div className="mt-12 grid grid-cols-2 gap-4 sm:grid-cols-4 sm:gap-5">
+              {(galleryPreview.length > 0 ? galleryPreview : [...GALLERY_FALLBACK]).slice(0, 4).map((url, i) => (
                 <Link
                   key={`${url}-${i}`}
                   href="/gallery"
-                  className="group relative aspect-[4/5] overflow-hidden rounded-2xl border-2 border-champagne-200/70 bg-stone-100 shadow-md ring-1 ring-champagne-100/40 sm:rounded-3xl"
+                  className="group relative aspect-[4/5] overflow-hidden border border-lux-line/50 bg-lux-mist ring-1 ring-lux-line/20"
                 >
                   <img
                     src={resolveImageSrc(url)}
                     alt=""
-                    className="h-full w-full object-cover transition duration-300 group-hover:scale-[1.03] motion-reduce:group-hover:scale-100"
+                    className="h-full w-full object-cover transition duration-500 group-hover:scale-[1.02] motion-reduce:group-hover:scale-100"
                     loading="lazy"
                   />
                 </Link>
@@ -335,42 +338,46 @@ export default function HomeContent() {
         </section>
       )}
 
-      <section className="border-t border-champagne-300/35 bg-white py-10 sm:py-12" aria-labelledby="hours-location-heading">
-        <div className="container mx-auto max-w-5xl px-5 sm:px-6">
-          <h2 id="hours-location-heading" className="font-display text-2xl font-semibold text-neutral-900 sm:text-[1.65rem]">
-            Hours &amp; location
+      <section className="border-t border-lux-line/40 bg-lux-cream/30 py-16 sm:py-20" aria-labelledby="hours-location-heading">
+        <div className="container mx-auto max-w-5xl px-6 sm:px-10">
+          <p className="text-[10px] font-semibold uppercase tracking-[0.32em] text-lux-bronze">Hours &amp; directions</p>
+          <h2 id="hours-location-heading" className="font-display mt-4 text-3xl font-medium text-lux-espresso sm:text-[2rem]">
+            Visit us
           </h2>
-          <div className="mt-6 grid gap-6 md:grid-cols-2">
-            <div className="rounded-2xl border border-champagne-200/70 bg-champagne-50/50 p-5">
-              <h3 className="text-sm font-bold uppercase tracking-wide text-champagne-900/90">Today&apos;s hours</h3>
-              <p className="mt-2 text-sm leading-relaxed text-gray-800">{hoursSummary}</p>
-              <Link href="/contact" className="mt-4 inline-block text-sm font-semibold text-champagne-800 underline underline-offset-4">
-                Full details &amp; contact
+          <div className="mt-10 grid gap-8 md:grid-cols-2 md:gap-10">
+            <div className="border border-lux-line/50 bg-lux-paper/90 p-8">
+              <h3 className="text-[10px] font-semibold uppercase tracking-[0.28em] text-lux-bronze">Hours</h3>
+              <p className="mt-4 font-light leading-relaxed text-lux-espressoLight">{hoursSummary}</p>
+              <Link
+                href="/contact"
+                className="mt-6 inline-block text-xs font-semibold uppercase tracking-[0.2em] text-lux-espresso underline decoration-lux-line underline-offset-4"
+              >
+                Contact
               </Link>
             </div>
             <a
               href={mapsUrl}
               target="_blank"
               rel="noopener noreferrer"
-              className="flex flex-col justify-center rounded-2xl border border-champagne-300/50 bg-white p-5 shadow-sm transition hover:border-champagne-500/60 hover:shadow-md"
+              className="flex flex-col justify-center border border-lux-line/50 bg-lux-paper/90 p-8 transition hover:border-lux-bronze/40"
             >
-              <h3 className="text-sm font-bold uppercase tracking-wide text-champagne-900/90">Directions</h3>
-              <p className="mt-2 text-sm leading-relaxed text-gray-800">{heroAddress}</p>
-              <span className="mt-3 text-sm font-semibold text-champagne-700">Open in Maps →</span>
+              <h3 className="text-[10px] font-semibold uppercase tracking-[0.28em] text-lux-bronze">Address</h3>
+              <p className="mt-4 font-light leading-relaxed text-lux-espressoLight">{heroAddress}</p>
+              <span className="mt-6 text-xs font-semibold uppercase tracking-[0.2em] text-lux-bronze">Maps →</span>
             </a>
           </div>
-          <div className="mt-8 flex flex-col items-center justify-center gap-3 sm:flex-row sm:gap-4">
+          <div className="mt-12 flex flex-col items-stretch justify-center gap-4 sm:flex-row sm:items-center sm:justify-center sm:gap-6">
             <a
               href={callHref}
-              className="inline-flex w-full min-h-[3.25rem] max-w-sm items-center justify-center rounded-full bg-gradient-to-br from-champagne-600 to-champagne-700 px-8 text-base font-bold text-white shadow-md ring-1 ring-champagne-500/50 sm:w-auto"
+              className="cta-call-primary inline-flex min-h-[3.5rem] items-center justify-center border-2 border-lux-bronze/70 bg-lux-paper px-10 text-sm font-semibold uppercase tracking-[0.22em] text-lux-espresso transition hover:bg-lux-cream"
             >
               Call {phoneDisplay}
             </a>
             <Link
               href="/booking"
-              className="inline-flex w-full min-h-[3rem] max-w-sm items-center justify-center rounded-full border-2 border-champagne-600/50 bg-white px-8 text-base font-semibold text-champagne-900 shadow-sm sm:w-auto"
+              className="inline-flex min-h-[3.25rem] items-center justify-center border border-lux-espresso/20 bg-lux-espresso px-10 text-sm font-medium uppercase tracking-[0.2em] text-lux-paper transition hover:bg-lux-espressoLight"
             >
-              Book online
+              Request appointment
             </Link>
           </div>
         </div>

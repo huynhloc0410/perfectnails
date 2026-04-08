@@ -52,17 +52,17 @@ export default function MobileStickyCta() {
   if (pathname.startsWith('/admin')) return null;
 
   return (
-    <div className="fixed bottom-0 left-0 right-0 z-[250] border-t border-champagne-400/40 bg-white/95 px-3 py-2 backdrop-blur-md md:hidden pb-[max(0.5rem,env(safe-area-inset-bottom,0px))]">
+    <div className="fixed bottom-0 left-0 right-0 z-[250] border-t border-lux-line/40 bg-lux-paper/97 px-3 py-2 backdrop-blur-md md:hidden pb-[max(0.5rem,env(safe-area-inset-bottom,0px))]">
       <div className="mx-auto flex max-w-lg gap-2">
         <a
           href={phoneHref}
-          className="flex min-w-0 flex-[1.25] items-center justify-center rounded-xl bg-gradient-to-br from-champagne-600 to-champagne-700 py-3.5 text-sm font-bold text-white shadow-md ring-1 ring-champagne-500/45 active:scale-[0.98] sm:text-base"
+          className="flex min-w-0 flex-[1.2] items-center justify-center border-2 border-lux-bronze/60 bg-lux-paper py-3.5 text-xs font-semibold uppercase tracking-[0.16em] text-lux-espresso active:scale-[0.98] sm:text-sm"
         >
           Call
         </a>
         <Link
           href="/booking"
-          className="flex min-w-0 flex-1 items-center justify-center rounded-xl border-2 border-champagne-600/45 bg-white py-3.5 text-sm font-semibold text-champagne-900 shadow-sm active:scale-[0.98]"
+          className="flex min-w-0 flex-1 items-center justify-center border border-lux-espresso/15 bg-lux-espresso py-3.5 text-xs font-semibold uppercase tracking-[0.14em] text-lux-paper active:scale-[0.98] sm:text-sm"
         >
           Book
         </Link>

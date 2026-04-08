@@ -3,6 +3,16 @@ module.exports = {
   theme: {
     extend: {
       colors: {
+        /** Luxury salon: espresso, warm paper, bronze accent (homepage Style A) */
+        lux: {
+          paper: "#faf8f4",
+          cream: "#f3efe8",
+          espresso: "#2a241c",
+          espressoLight: "#3d352c",
+          bronze: "#9a835c",
+          line: "#c9b896",
+          mist: "#e8e2d6",
+        },
         champagne: {
           50: "#f7f3e8",
           100: "#ebe3d0",

@@ -13,22 +13,30 @@ export const SITE_SCHEMA_POSTAL_ADDRESS = {
 const _siteUrl = process.env.NEXT_PUBLIC_SITE_URL?.trim().replace(/\/$/, '');
 export const SITE_PUBLIC_URL = (_siteUrl && _siteUrl.startsWith('http') ? _siteUrl : 'https://perfectnails.com') as string;
 
-/** One line under the hero H1 — services + why new clients should look at prices & gallery. */
+/** Luxury tone: quiet, confident; serif H1 carries the brand. */
 export const SITE_HERO_SERVICE_LINE =
-  'Manicures, pedicures, gel, acrylic & nail art — honest pricing and real photos of our work.';
+  'Manicures, gel, and enhancements — meticulous work, transparent pricing, and a calm studio experience.';
 
-/** Walk-ins vs appointments — friendly, clear English. */
+/** Appointments + walk-ins — restrained copy. */
 export const SITE_HERO_APPOINTMENT_LINE =
-  'Walk-ins are always welcome when we have space. Calling or booking ahead is best — that way we save the time that works for you.';
+  'By appointment preferred. Walk-ins always welcome when we have availability.';
 
 /** Short hours fallback when CMS hours are empty. */
 export const SITE_HOURS_FALLBACK_SUMMARY = 'Mon–Fri 9am–7pm · Sat–Sun 10am–6pm';
 
+export const SITE_TRUST_SECTION_LABEL = 'Our standard';
+
 export const SITE_TRUST_POINTS = [
-  { title: 'Sanitation first', body: 'Sterilized tools and a clean bench for every guest.' },
-  { title: 'Skilled technicians', body: 'Experienced with natural nails, enhancements, and art.' },
   {
-    title: 'Your time matters',
-    body: 'Call or book ahead so we can hold the slot you want — walk-ins welcome when we can fit you in.',
+    title: 'Discretion & hygiene',
+    body: 'A clean station and properly prepared tools for every guest — non-negotiable.',
+  },
+  {
+    title: 'Craft, not rush',
+    body: 'Experienced hands across natural nails, gel systems, enhancements, and art.',
+  },
+  {
+    title: 'Respect for your time',
+    body: 'Reserve ahead for the slot you want; we’ll happily seat walk-ins when the schedule allows.',
   },
 ] as const;
