@@ -1,13 +1,15 @@
 'use client';
 
 import { useState } from 'react';
-import { useRouter } from 'next/navigation';
+import { usePathname, useRouter } from 'next/navigation';
+import { adminDashboardBaseFromPathname } from '../../lib/adminPublicPath';
 
 export default function AdminLogin() {
   const [password, setPassword] = useState('');
   const [error, setError] = useState('');
   const [loading, setLoading] = useState(false);
   const router = useRouter();
+  const pathname = usePathname();
 
   const handleLogin = async (e: React.FormEvent) => {
     e.preventDefault();
@@ -29,7 +31,7 @@ export default function AdminLogin() {
         return;
       }
 
-      router.push('/admin');
+      router.push(adminDashboardBaseFromPathname(pathname));
       router.refresh();
     } catch {
       setError('Network error');

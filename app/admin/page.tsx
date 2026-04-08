@@ -1,7 +1,8 @@
 'use client';
 
 import { useState, useEffect } from 'react';
-import { useRouter } from 'next/navigation';
+import { usePathname, useRouter } from 'next/navigation';
+import { adminLoginPathFromPathname } from '../lib/adminPublicPath';
 import { migrateLegacyStoredContactAddress } from '../lib/siteContact';
 import { SITE_DATA_UPDATED_EVENT } from '../lib/cmsSiteClient';
 
@@ -34,6 +35,7 @@ interface Booking {
 
 export default function AdminPage() {
   const router = useRouter();
+  const pathname = usePathname();
   const [activeTab, setActiveTab] = useState<'gallery' | 'services' | 'about' | 'contact' | 'bookings' | 'employees'>('gallery');
   const [services, setServices] = useState<Service[]>([]);
   const [galleryImages, setGalleryImages] = useState<string[]>([]);
@@ -264,7 +266,7 @@ export default function AdminPage() {
     } catch {
       /* still navigate away */
     }
-    router.push('/admin/login');
+    router.push(adminLoginPathFromPathname(pathname));
     router.refresh();
   };
 

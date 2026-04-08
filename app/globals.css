@@ -101,11 +101,12 @@ body {
   }
 }
 
+/* Primary actions: calm default; optional hover sheen (no infinite “sale” pulse). */
 .cta-flash-btn {
   position: relative;
   overflow: hidden;
   isolation: isolate;
-  animation: cta-flash-glow 2.4s ease-in-out infinite;
+  box-shadow: 0 4px 16px rgba(0, 0, 0, 0.14);
 }
 
 .cta-flash-btn::after {
@@ -119,19 +120,23 @@ body {
     100deg,
     transparent 0%,
     rgba(255, 255, 255, 0) 25%,
-    rgba(255, 255, 255, 0.65) 50%,
+    rgba(255, 255, 255, 0.55) 50%,
     rgba(255, 255, 255, 0) 75%,
     transparent 100%
   );
-  animation: cta-flash-sheen 3.2s ease-in-out infinite;
+  opacity: 0;
+  transform: translateX(-130%) skewX(-12deg);
   pointer-events: none;
   z-index: 1;
+  transition: opacity 0.2s ease;
+}
+
+.cta-flash-btn:hover::after {
+  opacity: 0.85;
+  animation: cta-flash-sheen 1.05s ease-in-out 1;
 }
 
 @media (prefers-reduced-motion: reduce) {
-  .cta-flash-btn {
-    animation: none;
-  }
   .cta-flash-btn::after {
     display: none;
   }

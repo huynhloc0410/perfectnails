@@ -1,8 +1,10 @@
 import "./globals.css";
 import SiteHeader from "./components/SiteHeader";
 import SiteFooter from "./components/SiteFooter";
+import MobileStickyCta from "./components/MobileStickyCta";
 import { Cormorant_Garamond, Outfit, Poppins } from "next/font/google";
 import type { Metadata, Viewport } from "next";
+import { SITE_PUBLIC_URL } from "./lib/siteBranding";
 
 const poppins = Poppins({
   subsets: ["latin"],
@@ -25,11 +27,19 @@ const outfit = Outfit({
 
 export const metadata: Metadata = {
   title: {
-    default: "Perfect Nails - Premium Nail Salon in Glendale, Arizona",
+    default: "Perfect Nails - Nail Salon in Phoenix, AZ | Manicures & Pedicures",
     template: "%s | Perfect Nails"
   },
-  description: "Professional nail salon in Glendale, AZ offering manicures, pedicures, nail art, and premium nail care services. Book your appointment today.",
-  keywords: ["nail salon Glendale AZ", "manicure Glendale", "pedicure Glendale", "nail art Glendale", "nail salon near me", "best nail salon Arizona"],
+  description:
+    "Professional nail salon in Phoenix, AZ — manicures, pedicures, gel, acrylic, nail art. Book online or call. Clean, relaxing studio near Bell Rd.",
+  keywords: [
+    "nail salon Phoenix AZ",
+    "manicure Phoenix",
+    "pedicure Phoenix",
+    "gel nails Phoenix",
+    "nail salon near me",
+    "Bell Rd nail salon",
+  ],
   authors: [{ name: "Perfect Nails" }],
   creator: "Perfect Nails",
   publisher: "Perfect Nails",
@@ -38,31 +48,33 @@ export const metadata: Metadata = {
     address: false,
     telephone: false,
   },
-  metadataBase: new URL('https://perfectnails.com'),
+  metadataBase: new URL(SITE_PUBLIC_URL),
   alternates: {
     canonical: '/',
   },
   openGraph: {
     type: 'website',
     locale: 'en_US',
-    url: 'https://perfectnails.com',
+    url: SITE_PUBLIC_URL,
     siteName: 'Perfect Nails',
-    title: 'Perfect Nails - Premium Nail Salon in Glendale, Arizona',
-    description: 'Professional nail salon offering manicures, pedicures, nail art, and premium nail care services.',
+    title: 'Perfect Nails - Nail Salon in Phoenix, AZ',
+    description:
+      'Manicures, pedicures, gel & acrylic in Phoenix, AZ. Book online or call Perfect Nails today.',
     images: [
       {
-        url: 'https://perfectnails.com/og-image.jpg',
+        url: `${SITE_PUBLIC_URL}/og-image.jpg`,
         width: 1200,
         height: 630,
-        alt: 'Perfect Nails - Premium Nail Salon in Glendale, Arizona',
+        alt: 'Perfect Nails - Nail salon in Phoenix, Arizona',
       },
     ],
   },
   twitter: {
     card: 'summary_large_image',
-    title: 'Perfect Nails - Premium Nail Salon in Glendale, Arizona',
-    description: 'Professional nail salon offering manicures, pedicures, nail art, and premium nail care services.',
-    images: ['https://perfectnails.com/og-image.jpg'],
+    title: 'Perfect Nails - Nail Salon in Phoenix, AZ',
+    description:
+      'Manicures, pedicures, gel & acrylic in Phoenix, AZ. Book online or call today.',
+    images: [`${SITE_PUBLIC_URL}/og-image.jpg`],
   },
   robots: {
     index: true,
@@ -74,9 +86,6 @@ export const metadata: Metadata = {
       'max-image-preview': 'large',
       'max-snippet': -1,
     },
-  },
-  verification: {
-    google: 'your-google-verification-code',
   },
 };
 
@@ -95,7 +104,9 @@ export default function RootLayout({ children }: { children: React.ReactNode }) 
       >
         <SiteHeader />
 
-        <main className="w-full flex-1 overflow-x-hidden">{children}</main>
+        <main className="w-full flex-1 overflow-x-hidden pb-[4.75rem] md:pb-0">{children}</main>
+
+        <MobileStickyCta />
 
         <SiteFooter />
       </body>

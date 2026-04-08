@@ -5,18 +5,16 @@ import { usePathname } from 'next/navigation';
 import { useCallback, useEffect, useRef, useState } from 'react';
 import { createPortal } from 'react-dom';
 
-const navLinks: { href: string; label: string; admin?: boolean }[] = [
+const navLinks: { href: string; label: string }[] = [
   { href: '/', label: 'Home' },
   { href: '/gallery', label: 'Gallery' },
   { href: '/services', label: 'Services' },
   { href: '/about', label: 'About' },
   { href: '/booking', label: 'Booking' },
   { href: '/contact', label: 'Contact' },
-  { href: '/admin', label: 'Admin', admin: true },
 ];
 
 function navItemActive(href: string, pathname: string): boolean {
-  if (href === '/admin') return pathname.startsWith('/admin');
   if (href === '/') return pathname === '/';
   return pathname === href || pathname.startsWith(`${href}/`);
 }
@@ -95,20 +93,16 @@ export default function SiteHeader() {
             Menu
           </p>
           <ul className="container mx-auto flex min-h-0 flex-1 flex-col gap-1 overflow-y-auto overscroll-y-contain px-4 py-3 sm:px-6 sm:py-4 pb-[max(1.25rem,env(safe-area-inset-bottom,0px))]">
-            {navLinks.map(({ href, label, admin }) => {
+            {navLinks.map(({ href, label }) => {
               const active = navItemActive(href, pathname);
               return (
                 <li key={href}>
                   <Link
                     href={href}
                     className={`block rounded-xl border border-transparent px-4 py-4 text-[17px] font-semibold text-gray-900 transition active:scale-[0.99] ${
-                      admin
-                        ? active
-                          ? 'bg-gray-100 text-gray-800'
-                          : 'text-gray-600 hover:border-gray-200 hover:bg-gray-50 hover:text-gray-900'
-                        : active
-                          ? 'border-champagne-400/70 bg-champagne-100 text-neutral-950'
-                          : 'text-gray-900 hover:border-champagne-200 hover:bg-champagne-50 hover:text-champagne-950'
+                      active
+                        ? 'border-champagne-400/70 bg-champagne-100 text-neutral-950'
+                        : 'text-gray-900 hover:border-champagne-200 hover:bg-champagne-50 hover:text-champagne-950'
                     }`}
                     onClick={() => setOpen(false)}
                   >
@@ -159,24 +153,8 @@ export default function SiteHeader() {
           </Link>
 
           <ul className="hidden flex-1 items-center justify-center gap-0.5 lg:gap-1 md:flex">
-            {navLinks.map(({ href, label, admin }) => {
+            {navLinks.map(({ href, label }) => {
               const active = navItemActive(href, pathname);
-              if (admin) {
-                return (
-                  <li key={href}>
-                    <Link
-                      href={href}
-                      className={`ml-2 rounded-lg px-2.5 py-1.5 text-sm transition lg:ml-3 ${
-                        active
-                          ? 'font-medium text-gray-800'
-                          : 'text-gray-500 hover:text-gray-800'
-                      }`}
-                    >
-                      {label}
-                    </Link>
-                  </li>
-                );
-              }
               return (
                 <li key={href}>
                   <Link

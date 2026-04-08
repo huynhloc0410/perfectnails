@@ -63,6 +63,8 @@ export default function Booking() {
   const [availableEmployees, setAvailableEmployees] = useState<Employee[]>([]);
   const [availableTimeSlots, setAvailableTimeSlots] = useState<string[]>([]);
   const [currentMonth, setCurrentMonth] = useState(new Date());
+  /** 1 = service, 2 = stylist, 3 = date, 4 = time + contact + submit */
+  const [bookingStep, setBookingStep] = useState(1);
 
   useEffect(() => {
     let cancelled = false;
@@ -109,6 +111,7 @@ export default function Booking() {
       if (prev.service === match.name) return prev;
       return { ...prev, service: match.name, employee: '', date: '', timeSlot: '' };
     });
+    setBookingStep(2);
   }, [services, serviceFromQuery]);
 
   // Filter employees based on selected service
@@ -278,6 +281,8 @@ export default function Booking() {
         
         setSubmitted(true);
         setFormData({ name: '', phone: '', service: '', employee: '', date: '', timeSlot: '' });
+        setSelectedCategory('');
+        setBookingStep(1);
         setAvailableTimeSlots([]);
         
         setTimeout(() => setSubmitted(false), 5000);
@@ -289,7 +294,6 @@ export default function Booking() {
   };
 
   const selectedService = services.find(s => s.name === formData.service);
-  const selectedEmployee = employees.find(e => e.id === formData.employee);
   const categories = Array.from(
     new Set(
       services
@@ -392,7 +396,7 @@ export default function Booking() {
             <h2 className="text-xl md:text-2xl font-bold text-gray-900 mb-0.5">Book an Appointment</h2>
             <PageHeroRule />
             <p className="text-sm text-gray-600 max-w-2xl mx-auto mt-[0.525rem]">
-              Schedule your nail service with our expert technicians
+              Request a time — we&apos;ll confirm by phone or text. Most appointments need just a minute to send.
             </p>
           </div>
         </div>
@@ -411,32 +415,37 @@ export default function Booking() {
           onSubmit={handleSubmit}
           className="space-y-6 rounded-lg border border-champagne-300/45 bg-white p-6 shadow-md ring-1 ring-champagne-100/50"
         >
-          <div>
-            <label className="block text-sm font-medium text-gray-700 mb-1">Your Name *</label>
-            <input
-              type="text"
-              name="name"
-              value={formData.name}
-              onChange={(e) => setFormData({ ...formData, name: e.target.value })}
-              placeholder="Your Name"
-              className="w-full px-4 py-2 border border-gray-300 rounded-md focus:ring-champagne-500 focus:border-champagne-500"
-              required
-            />
-          </div>
+          <ol className="flex flex-wrap gap-2 border-b border-champagne-200/80 pb-4" aria-label="Booking steps">
+            {(['Service', 'Stylist', 'Date', 'Details'] as const).map((label, i) => {
+              const n = i + 1;
+              const active = bookingStep === n;
+              const done = bookingStep > n;
+              return (
+                <li key={label} className="flex items-center gap-1.5 text-xs font-semibold sm:text-sm">
+                  <span
+                    className={`flex h-7 w-7 shrink-0 items-center justify-center rounded-full text-xs sm:h-8 sm:w-8 ${
+                      done
+                        ? 'bg-champagne-600 text-white'
+                        : active
+                          ? 'bg-champagne-100 text-champagne-900 ring-2 ring-champagne-500/50'
+                          : 'bg-stone-100 text-stone-500'
+                    }`}
+                  >
+                    {done ? '✓' : n}
+                  </span>
+                  <span className={active || done ? 'text-neutral-900' : 'text-stone-500'}>{label}</span>
+                  {i < 3 && (
+                    <span className="mx-1 hidden text-stone-300 sm:inline" aria-hidden>
+                      /
+                    </span>
+                  )}
+                </li>
+              );
+            })}
+          </ol>
 
-          <div>
-            <label className="block text-sm font-medium text-gray-700 mb-1">Phone Number *</label>
-            <input
-              type="tel"
-              name="phone"
-              value={formData.phone}
-              onChange={(e) => setFormData({ ...formData, phone: e.target.value })}
-              placeholder="Phone Number"
-              className="w-full px-4 py-2 border border-gray-300 rounded-md focus:ring-champagne-500 focus:border-champagne-500"
-              required
-            />
-          </div>
-
+          {bookingStep === 1 && (
+            <>
           <div>
             <label className="block text-sm font-medium text-gray-700 mb-1">Select Category *</label>
             {categories.length > 0 ? (
@@ -502,41 +511,78 @@ export default function Booking() {
             )}
           </div>
 
-          <div>
-            <label className="block text-sm font-medium text-gray-700 mb-1">Select Employee *</label>
-            {availableEmployees.length > 0 ? (
-              <select
-                name="employee"
-                value={formData.employee}
-                onChange={(e) => setFormData({ ...formData, employee: e.target.value, date: '', timeSlot: '' })}
-                className="w-full px-4 py-2 border border-gray-300 rounded-md focus:ring-champagne-500 focus:border-champagne-500"
-                required
-                disabled={!formData.service}
+            <div className="flex flex-wrap gap-3 pt-2">
+              <button
+                type="button"
+                onClick={() => {
+                  if (selectedCategory && formData.service) setBookingStep(2);
+                }}
+                disabled={!selectedCategory || !formData.service}
+                className="rounded-lg bg-champagne-600 px-5 py-2.5 text-sm font-semibold text-white hover:bg-champagne-700 disabled:cursor-not-allowed disabled:bg-gray-300"
               >
-                <option value="">
-                  {formData.service ? 'Select an employee' : 'Please select a service first'}
-                </option>
-                {availableEmployees.map((employee) => (
-                  <option key={employee.id} value={employee.id}>
-                    {employee.name} - {employee.role}
-                  </option>
-                ))}
-              </select>
-            ) : formData.service ? (
-              <div className="px-4 py-2 border border-yellow-300 bg-yellow-50 rounded-md text-yellow-700 text-sm">
-                No employees available for this service. Please select a different service.
-              </div>
-            ) : (
-              <p className="text-gray-500 text-sm">Please select a service first</p>
-            )}
-            {selectedEmployee && (
-              <p className="text-xs text-gray-500 mt-1">
-                Role: {selectedEmployee.role}
-              </p>
-            )}
-          </div>
+                Continue
+              </button>
+            </div>
+            </>
+          )}
 
-          {formData.service && formData.employee && (
+          {bookingStep === 2 && (
+            <>
+              <div>
+                <label className="block text-sm font-medium text-gray-700 mb-1">Preferred nail technician *</label>
+                <p className="mb-2 text-xs text-gray-500">
+                  Choose someone you love — our team is scheduled by specialty so you get the right fit.
+                </p>
+                {availableEmployees.length > 0 ? (
+                  <select
+                    name="employee"
+                    value={formData.employee}
+                    onChange={(e) => setFormData({ ...formData, employee: e.target.value, date: '', timeSlot: '' })}
+                    className="w-full px-4 py-2 border border-gray-300 rounded-md focus:ring-champagne-500 focus:border-champagne-500"
+                    required
+                    disabled={!formData.service}
+                  >
+                    <option value="">
+                      {formData.service ? 'Select a team member' : 'Please select a service first'}
+                    </option>
+                    {availableEmployees.map((employee) => (
+                      <option key={employee.id} value={employee.id}>
+                        {employee.name}
+                      </option>
+                    ))}
+                  </select>
+                ) : formData.service ? (
+                  <div className="px-4 py-2 border border-yellow-300 bg-yellow-50 rounded-md text-yellow-700 text-sm">
+                    No team members are available for this service in the schedule yet. Try another service or call us.
+                  </div>
+                ) : (
+                  <p className="text-gray-500 text-sm">Please select a service first</p>
+                )}
+              </div>
+
+              <div className="flex flex-wrap gap-3 pt-2">
+                <button
+                  type="button"
+                  onClick={() => setBookingStep(1)}
+                  className="rounded-lg border border-gray-300 bg-white px-5 py-2.5 text-sm font-semibold text-gray-800 hover:bg-gray-50"
+                >
+                  Back
+                </button>
+                <button
+                  type="button"
+                  onClick={() => {
+                    if (formData.employee) setBookingStep(3);
+                  }}
+                  disabled={!formData.employee}
+                  className="rounded-lg bg-champagne-600 px-5 py-2.5 text-sm font-semibold text-white hover:bg-champagne-700 disabled:cursor-not-allowed disabled:bg-gray-300"
+                >
+                  Continue
+                </button>
+              </div>
+            </>
+          )}
+
+          {bookingStep === 3 && formData.service && formData.employee && (
             <div>
               <label className="block text-sm font-medium text-gray-700 mb-3">Select Date *</label>
               
@@ -642,10 +688,30 @@ export default function Booking() {
                   <span className="font-medium text-champagne-600">✓</span> {formatDate(new Date(formData.date))}
                 </div>
               )}
+
+              <div className="flex flex-wrap gap-3 pt-4">
+                <button
+                  type="button"
+                  onClick={() => setBookingStep(2)}
+                  className="rounded-lg border border-gray-300 bg-white px-5 py-2.5 text-sm font-semibold text-gray-800 hover:bg-gray-50"
+                >
+                  Back
+                </button>
+                <button
+                  type="button"
+                  onClick={() => {
+                    if (formData.date) setBookingStep(4);
+                  }}
+                  disabled={!formData.date}
+                  className="rounded-lg bg-champagne-600 px-5 py-2.5 text-sm font-semibold text-white hover:bg-champagne-700 disabled:cursor-not-allowed disabled:bg-gray-300"
+                >
+                  Continue
+                </button>
+              </div>
             </div>
           )}
 
-          {formData.date && formData.service && formData.employee && (
+          {bookingStep === 4 && formData.date && formData.service && formData.employee && (
             <div>
               <label className="block text-sm font-medium text-gray-700 mb-3">Select Time *</label>
               
@@ -724,16 +790,63 @@ export default function Booking() {
                   )}
                 </div>
               )}
+
+              <div className="mt-8 border-t border-champagne-200/80 pt-6">
+                <h3 className="text-sm font-semibold text-gray-900">Your contact info</h3>
+                <p className="mt-1 text-xs text-gray-500">We&apos;ll use this to confirm your appointment.</p>
+                <div className="mt-4 space-y-4">
+                  <div>
+                    <label className="block text-sm font-medium text-gray-700 mb-1">Your name *</label>
+                    <input
+                      type="text"
+                      name="name"
+                      value={formData.name}
+                      onChange={(e) => setFormData({ ...formData, name: e.target.value })}
+                      placeholder="First and last name"
+                      className="w-full px-4 py-2 border border-gray-300 rounded-md focus:ring-champagne-500 focus:border-champagne-500"
+                      required
+                    />
+                  </div>
+                  <div>
+                    <label className="block text-sm font-medium text-gray-700 mb-1">Phone number *</label>
+                    <input
+                      type="tel"
+                      name="phone"
+                      value={formData.phone}
+                      onChange={(e) => setFormData({ ...formData, phone: e.target.value })}
+                      placeholder="Mobile number"
+                      className="w-full px-4 py-2 border border-gray-300 rounded-md focus:ring-champagne-500 focus:border-champagne-500"
+                      required
+                    />
+                  </div>
+                </div>
+              </div>
+
+              <div className="mt-6 flex flex-col gap-3 sm:flex-row sm:flex-wrap">
+                <button
+                  type="button"
+                  onClick={() => setBookingStep(3)}
+                  className="rounded-lg border border-gray-300 bg-white px-5 py-2.5 text-sm font-semibold text-gray-800 hover:bg-gray-50 sm:order-1"
+                >
+                  Back
+                </button>
+                <button
+                  type="submit"
+                  className="w-full rounded-lg bg-champagne-600 px-5 py-3 text-sm font-semibold text-white shadow-sm hover:bg-champagne-700 disabled:cursor-not-allowed disabled:bg-gray-300 sm:ml-auto sm:w-auto sm:min-w-[12rem] sm:order-2"
+                  disabled={
+                    !formData.employee ||
+                    !formData.service ||
+                    !formData.date ||
+                    !formData.timeSlot ||
+                    !formData.name.trim() ||
+                    !formData.phone.trim()
+                  }
+                >
+                  Request appointment
+                </button>
+              </div>
             </div>
           )}
-
-          <button
-            type="submit"
-            className="w-full bg-champagne-500 text-white px-4 py-2 rounded-md hover:bg-champagne-600 transition font-semibold disabled:bg-gray-300 disabled:cursor-not-allowed"
-            disabled={!formData.employee || !formData.service || !formData.date || !formData.timeSlot}
-          >
-            Book Now
-          </button>
         </form>
       </div>
       </div>
