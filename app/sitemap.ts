@@ -1,7 +1,8 @@
 import { MetadataRoute } from 'next';
+import { SITE_PUBLIC_URL } from './lib/siteBranding';
 
 export default function sitemap(): MetadataRoute.Sitemap {
-  const baseUrl = 'https://perfectnails.com';
+  const baseUrl = SITE_PUBLIC_URL;
   
   return [
     {

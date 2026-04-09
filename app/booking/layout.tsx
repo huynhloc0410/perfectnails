@@ -1,5 +1,6 @@
 import { Metadata } from 'next';
 import { Suspense } from 'react';
+import { siteAbsoluteUrl } from '../lib/siteBranding';
 
 export const metadata: Metadata = {
   title: 'Book an Appointment - Schedule Your Nail Service | Perfect Nails',
@@ -11,7 +12,7 @@ export const metadata: Metadata = {
     type: 'website',
     images: [
       {
-        url: 'https://perfectnails.com/og-booking.jpg',
+        url: siteAbsoluteUrl('/og-booking.jpg'),
         width: 1200,
         height: 630,
         alt: 'Book an Appointment at Perfect Nails',

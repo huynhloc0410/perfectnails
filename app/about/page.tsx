@@ -4,6 +4,7 @@ import { useState, useEffect } from 'react';
 import InnerPageHero from '../components/InnerPageHero';
 import Link from 'next/link';
 import { fetchCmsSite } from '../lib/cmsSiteClient';
+import { SITE_PUBLIC_URL, siteAbsoluteUrl } from '../lib/siteBranding';
 
 export default function About() {
   const [aboutContent, setAboutContent] = useState({ title: 'About Us', content: '' });
@@ -45,7 +46,7 @@ export default function About() {
       '@type': 'AboutPage',
       name: 'About Perfect Nails',
       description: 'Learn about Perfect Nails, Phoenix\'s premier nail salon. Discover our story, commitment to quality, and expert team dedicated to making you look and feel your best.',
-      url: 'https://perfectnails.com/about',
+      url: siteAbsoluteUrl('/about'),
       mainEntity: {
         '@type': 'Organization',
         name: 'Perfect Nails',
@@ -58,7 +59,7 @@ export default function About() {
           postalCode: '85032',
           addressCountry: 'US',
         },
-        url: 'https://perfectnails.com',
+        url: SITE_PUBLIC_URL,
         telephone: '+1-623-302-2156',
         priceRange: '$$',
         openingHours: 'Mo-Fr 09:00-19:00, Sa-Su 10:00-18:00',

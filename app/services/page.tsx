@@ -4,6 +4,7 @@ import { useState, useEffect } from 'react';
 import Link from 'next/link';
 import InnerPageHero from '../components/InnerPageHero';
 import { fetchCmsSite } from '../lib/cmsSiteClient';
+import { siteAbsoluteUrl } from '../lib/siteBranding';
 
 interface Service {
   id: string;
@@ -166,7 +167,7 @@ export default function Services() {
     '@type': 'BeautySalon',
     name: 'Perfect Nails',
     description: 'Professional nail salon services in Glendale, Arizona',
-    url: 'https://perfectnails.com/services',
+    url: siteAbsoluteUrl('/services'),
     hasOfferCatalog: {
       '@type': 'OfferCatalog',
       name: 'Nail Services',

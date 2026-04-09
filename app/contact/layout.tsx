@@ -1,4 +1,5 @@
 import { Metadata } from 'next';
+import { siteAbsoluteUrl } from '../lib/siteBranding';
 
 export const metadata: Metadata = {
   title: 'Contact Us - Get in Touch | Perfect Nails Glendale, AZ',
@@ -10,7 +11,7 @@ export const metadata: Metadata = {
     type: 'website',
     images: [
       {
-        url: 'https://perfectnails.com/og-contact.jpg',
+        url: siteAbsoluteUrl('/og-contact.jpg'),
         width: 1200,
         height: 630,
         alt: 'Contact Perfect Nails - Glendale, Arizona',

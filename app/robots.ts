@@ -1,4 +1,5 @@
 import { MetadataRoute } from 'next';
+import { siteAbsoluteUrl } from './lib/siteBranding';
 
 export default function robots(): MetadataRoute.Robots {
   return {
@@ -9,7 +10,7 @@ export default function robots(): MetadataRoute.Robots {
         disallow: ['/admin/', '/api/'],
       },
     ],
-    sitemap: 'https://perfectnails.com/sitemap.xml',
+    sitemap: siteAbsoluteUrl('/sitemap.xml'),
   };
 }
 

@@ -7,6 +7,7 @@ import {
   migrateLegacyStoredContactAddress,
 } from '../lib/siteContact';
 import { fetchCmsSite } from '../lib/cmsSiteClient';
+import { SITE_PUBLIC_URL, siteAbsoluteUrl } from '../lib/siteBranding';
 
 interface ContactContent {
   address: string;
@@ -79,7 +80,7 @@ export default function Contact() {
       '@type': 'BeautySalon',
       name: 'Perfect Nails',
       description: 'Professional nail salon in Phoenix, Arizona offering manicures, pedicures, nail art, and premium nail care services',
-      url: 'https://perfectnails.com',
+      url: SITE_PUBLIC_URL,
       telephone: contact.phone || '+1-623-302-2156',
       email: contact.email || '',
       address: {
@@ -92,7 +93,7 @@ export default function Contact() {
       },
       priceRange: '$$',
       openingHours: contact.hours ? contact.hours.split('\n').map((line: string) => line.trim()).filter((line: string) => line) : ['Mo-Fr 09:00-19:00', 'Sa-Su 10:00-18:00'],
-      image: 'https://perfectnails.com/logo.png',
+      image: siteAbsoluteUrl('/logo.png'),
       sameAs: [
         contact.socialMedia.facebook,
         contact.socialMedia.instagram,

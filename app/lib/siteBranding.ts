@@ -13,6 +13,12 @@ export const SITE_SCHEMA_POSTAL_ADDRESS = {
 const _siteUrl = process.env.NEXT_PUBLIC_SITE_URL?.trim().replace(/\/$/, '');
 export const SITE_PUBLIC_URL = (_siteUrl && _siteUrl.startsWith('http') ? _siteUrl : 'https://perfectnails.com') as string;
 
+/** Absolute URL for a path on this site (path should start with `/`). */
+export function siteAbsoluteUrl(path: string): string {
+  const p = path.startsWith('/') ? path : `/${path}`;
+  return `${SITE_PUBLIC_URL}${p}`;
+}
+
 /** Luxury tone: quiet, confident; serif H1 carries the brand. */
 export const SITE_HERO_SERVICE_LINE =
   'Manicures, gel, and enhancements — meticulous work, transparent pricing, and a calm studio experience.';

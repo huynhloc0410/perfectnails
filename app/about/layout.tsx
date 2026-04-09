@@ -1,4 +1,5 @@
 import { Metadata } from 'next';
+import { siteAbsoluteUrl } from '../lib/siteBranding';
 
 export const metadata: Metadata = {
   title: 'About Us - Perfect Nails | Premier Nail Salon in Phoenix, Arizona',
@@ -18,10 +19,10 @@ export const metadata: Metadata = {
     title: 'About Us - Perfect Nails | Phoenix, Arizona Nail Salon',
     description: 'Learn about Perfect Nails, your premier nail salon in Phoenix, Arizona. Expert technicians, quality services, and a commitment to excellence.',
     type: 'website',
-    url: 'https://perfectnails.com/about',
+    url: siteAbsoluteUrl('/about'),
     images: [
       {
-        url: 'https://perfectnails.com/og-about.jpg',
+        url: siteAbsoluteUrl('/og-about.jpg'),
         width: 1200,
         height: 630,
         alt: 'About Perfect Nails - Phoenix, Arizona Nail Salon',

@@ -1,4 +1,5 @@
 import { Metadata } from 'next';
+import { siteAbsoluteUrl } from '../lib/siteBranding';
 
 export const metadata: Metadata = {
   title: 'Gallery - Nail Art Portfolio | Perfect Nails',
@@ -10,7 +11,7 @@ export const metadata: Metadata = {
     type: 'website',
     images: [
       {
-        url: 'https://perfectnails.com/og-gallery.jpg',
+        url: siteAbsoluteUrl('/og-gallery.jpg'),
         width: 1200,
         height: 630,
         alt: 'Perfect Nails Gallery - Professional Nail Art Portfolio',
