@@ -4,7 +4,7 @@ import { useState, useEffect } from 'react';
 import InnerPageHero from '../components/InnerPageHero';
 import Link from 'next/link';
 import { fetchCmsSite } from '../lib/cmsSiteClient';
-import { SITE_PUBLIC_URL, siteAbsoluteUrl } from '../lib/siteBranding';
+import { SITE_BRAND_NAME, SITE_PUBLIC_URL, siteAbsoluteUrl } from '../lib/siteBranding';
 
 export default function About() {
   const [aboutContent, setAboutContent] = useState({ title: 'About Us', content: '' });
@@ -44,12 +44,12 @@ export default function About() {
     const aboutPageSchema = {
       '@context': 'https://schema.org',
       '@type': 'AboutPage',
-      name: 'About Perfect Nails',
-      description: 'Learn about Perfect Nails, Phoenix\'s premier nail salon. Discover our story, commitment to quality, and expert team dedicated to making you look and feel your best.',
+      name: `About ${SITE_BRAND_NAME}`,
+      description: `Learn about ${SITE_BRAND_NAME}, Phoenix's premier nail salon. Discover our story, commitment to quality, and expert team dedicated to making you look and feel your best.`,
       url: siteAbsoluteUrl('/about'),
       mainEntity: {
         '@type': 'Organization',
-        name: 'Perfect Nails',
+        name: SITE_BRAND_NAME,
         description: 'Premier nail salon in Phoenix, Arizona offering professional manicures, pedicures, and nail art services',
         address: {
           '@type': 'PostalAddress',
@@ -81,31 +81,31 @@ export default function About() {
       mainEntity: [
         {
           '@type': 'Question',
-          name: 'What services does Perfect Nails offer?',
+          name: `What services does ${SITE_BRAND_NAME} offer?`,
           acceptedAnswer: {
             '@type': 'Answer',
-            text: 'Perfect Nails offers a comprehensive range of professional nail care services including manicures, pedicures, Gel X, Gel Builder, Acrylic nails, and custom nail art designs. We serve clients in Phoenix, Arizona and surrounding areas.',
+            text: `${SITE_BRAND_NAME} offers a comprehensive range of professional nail care services including manicures, pedicures, Gel X, Gel Builder, Acrylic nails, and custom nail art designs. We serve clients in Phoenix, Arizona and surrounding areas.`,
           },
         },
         {
           '@type': 'Question',
-          name: 'Where is Perfect Nails located?',
+          name: `Where is ${SITE_BRAND_NAME} located?`,
           acceptedAnswer: {
             '@type': 'Answer',
-            text: 'Perfect Nails is located at 4030 E Bell Rd #110, Phoenix, AZ 85032. We are conveniently located in Phoenix, Arizona.',
+            text: `${SITE_BRAND_NAME} is located at 4030 E Bell Rd #110, Phoenix, AZ 85032. We are conveniently located in Phoenix, Arizona.`,
           },
         },
         {
           '@type': 'Question',
-          name: 'What are Perfect Nails\' business hours?',
+          name: `What are ${SITE_BRAND_NAME}'s business hours?`,
           acceptedAnswer: {
             '@type': 'Answer',
-            text: 'Perfect Nails is open Monday through Friday from 9:00 AM to 7:00 PM, and Saturday through Sunday from 10:00 AM to 6:00 PM.',
+            text: `${SITE_BRAND_NAME} is open Monday through Friday from 9:00 AM to 7:00 PM, and Saturday through Sunday from 10:00 AM to 6:00 PM.`,
           },
         },
         {
           '@type': 'Question',
-          name: 'How do I book an appointment at Perfect Nails?',
+          name: `How do I book an appointment at ${SITE_BRAND_NAME}?`,
           acceptedAnswer: {
             '@type': 'Answer',
             text: 'You can book an appointment online through our website booking page, or contact us directly by phone. We offer easy online scheduling where you can select your service, choose a technician, pick a date and time that works for you.',
@@ -157,9 +157,9 @@ export default function About() {
               </div>
             ) : (
               <>
-                <h2 className="mb-4 font-display text-3xl font-medium text-lux-espresso">Welcome to Perfect Nails</h2>
+                <h2 className="mb-4 font-display text-3xl font-medium text-lux-espresso">Welcome to {SITE_BRAND_NAME}</h2>
                 <p className="mb-4 text-lg leading-relaxed text-lux-espressoLight">
-                  Located in <strong className="text-lux-espresso">Phoenix, Arizona</strong>, <strong className="text-lux-espresso">Perfect Nails</strong> is your premier destination for 
+                  Located in <strong className="text-lux-espresso">Phoenix, Arizona</strong>, <strong className="text-lux-espresso">{SITE_BRAND_NAME}</strong> is your premier destination for 
                   professional nail care services. We combine artistry, quality products, and exceptional 
                   customer service to create the perfect nail experience.
                 </p>
@@ -170,7 +170,7 @@ export default function About() {
                   your vision a reality.
                 </p>
                 <p className="mb-4 leading-relaxed text-lux-espressoLight">
-                  At <strong className="text-lux-espresso">Perfect Nails</strong>, we understand that your nails are a reflection of your personal style. That's why 
+                  At <strong className="text-lux-espresso">{SITE_BRAND_NAME}</strong>, we understand that your nails are a reflection of your personal style. That's why 
                   we offer a comprehensive range of services including <strong className="text-lux-espresso">manicures, pedicures, Gel X, Gel Builder, 
                   Acrylic nails</strong>, and custom nail art designs. We use only the finest products and latest techniques 
                   to ensure lasting results.
@@ -178,7 +178,7 @@ export default function About() {
                 <p className="leading-relaxed text-lux-espressoLight">
                   Visit our <Link href="/services" className="font-semibold text-champagne-700 underline decoration-champagne-300/60 underline-offset-4 hover:text-champagne-800">services page</Link> to 
                   explore our offerings, or <Link href="/booking" className="font-semibold text-champagne-700 underline decoration-champagne-300/60 underline-offset-4 hover:text-champagne-800">book an appointment</Link> today 
-                  to experience the <strong className="text-lux-espresso">Perfect Nails</strong> difference.
+                  to experience the <strong className="text-lux-espresso">{SITE_BRAND_NAME}</strong> difference.
                 </p>
               </>
             )}
@@ -188,7 +188,7 @@ export default function About() {
           <section className="mb-8 rounded-xl border border-champagne-300/45 bg-white p-8 shadow-md ring-1 ring-champagne-100/50">
             <h2 className="mb-4 font-display text-2xl font-medium text-lux-espresso">Our Story</h2>
             <p className="mb-4 leading-relaxed text-lux-espressoLight">
-              <strong className="text-lux-espresso">Perfect Nails</strong> was founded with a passion for bringing beautiful, professional nail care to the 
+              <strong className="text-lux-espresso">{SITE_BRAND_NAME}</strong> was founded with a passion for bringing beautiful, professional nail care to the 
               <strong className="text-lux-espresso">Phoenix, Arizona</strong> community. We believe that everyone deserves to look and feel their best, 
               and our mission is to provide exceptional nail services in a welcoming, comfortable environment.
             </p>
@@ -201,7 +201,7 @@ export default function About() {
 
           {/* Why Choose Us Section */}
           <section className="mb-8 rounded-xl border border-champagne-300/45 bg-white p-8 shadow-md ring-1 ring-champagne-100/50">
-            <h2 className="mb-4 font-display text-2xl font-medium text-lux-espresso">Why Choose Perfect Nails?</h2>
+            <h2 className="mb-4 font-display text-2xl font-medium text-lux-espresso">Why Choose {SITE_BRAND_NAME}?</h2>
             <div className="grid grid-cols-1 gap-6 md:grid-cols-2">
               <div>
                 <h3 className="mb-2 font-display text-xl font-medium text-champagne-800">Expert Technicians</h3>
@@ -238,7 +238,7 @@ export default function About() {
           <section className="mb-8 rounded-xl border border-champagne-300/45 bg-white p-8 shadow-md ring-1 ring-champagne-100/50">
             <h2 className="mb-4 font-display text-2xl font-medium text-lux-espresso">Our Services</h2>
             <p className="mb-4 leading-relaxed text-lux-espressoLight">
-              At <strong className="text-lux-espresso">Perfect Nails</strong>, we offer a comprehensive range of professional nail care services:
+              At <strong className="text-lux-espresso">{SITE_BRAND_NAME}</strong>, we offer a comprehensive range of professional nail care services:
             </p>
             <ul className="mb-4 list-inside list-disc space-y-2 text-lux-espressoLight">
               <li><strong>Manicures</strong> - Classic and gel manicures to keep your hands looking beautiful</li>
@@ -258,7 +258,7 @@ export default function About() {
 
           {/* CTA Section */}
           <section className="rounded-xl border border-champagne-400/35 bg-gradient-to-br from-champagne-50 via-lux-cream/60 to-champagne-100/80 p-8 text-center shadow-md ring-1 ring-champagne-200/40">
-            <h2 className="mb-4 font-display text-2xl font-medium text-lux-espresso">Ready to Experience Perfect Nails?</h2>
+            <h2 className="mb-4 font-display text-2xl font-medium text-lux-espresso">Ready to Experience {SITE_BRAND_NAME}?</h2>
             <p className="mb-6 text-lux-espressoLight">
               Book your appointment today and discover why we're <strong className="text-lux-espresso">Phoenix's premier nail salon</strong>.
             </p>

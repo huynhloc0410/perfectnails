@@ -12,6 +12,7 @@ import {
   migrateLegacyStoredContactAddress,
   toTelHref,
 } from '../lib/siteContact';
+import { SITE_BRAND_NAME } from '../lib/siteBranding';
 
 function applyLocalContact(
   c: { address?: string; phone?: string } | null | undefined,
@@ -100,7 +101,7 @@ export default function SiteFooter() {
           href="/"
           className="font-display footer-animate-in inline-block text-xl font-semibold tracking-tight sm:text-[1.35rem]"
         >
-          <span className="site-brand-gradient">Perfect Nails</span>
+          <span className="site-brand-gradient">{SITE_BRAND_NAME}</span>
         </Link>
         <p className="footer-animate-in footer-animate-in-delay-1 mx-auto mt-1.5 max-w-md text-xs leading-snug text-gray-600 sm:text-sm">
           {address}
@@ -129,7 +130,7 @@ export default function SiteFooter() {
           </Link>
         </div>
         <p className="mt-4 text-[11px] text-gray-500 sm:mt-5 sm:text-xs">
-          © {year} Perfect Nails · Phoenix, Arizona
+          © {year} {SITE_BRAND_NAME} · Phoenix, Arizona
         </p>
       </div>
     </footer>

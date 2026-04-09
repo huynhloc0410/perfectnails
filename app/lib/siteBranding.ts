@@ -1,3 +1,6 @@
+/** Display name for nav, footer, SEO, and JSON-LD (legal/DB names may differ). */
+export const SITE_BRAND_NAME = 'Perfect Nails & Spa';
+
 /** Single source for public-facing city/area copy — aligns with `SITE_DEFAULT_ADDRESS` (Phoenix). */
 export const SITE_PRIMARY_AREA = 'Phoenix, AZ';
 

@@ -1,9 +1,9 @@
 import { Metadata } from 'next';
-import { siteAbsoluteUrl } from '../lib/siteBranding';
+import { SITE_BRAND_NAME, siteAbsoluteUrl } from '../lib/siteBranding';
 
 export const metadata: Metadata = {
-  title: 'About Us - Perfect Nails | Premier Nail Salon in Phoenix, Arizona',
-  description: 'Learn about Perfect Nails, Phoenix\'s premier nail salon at 4030 E Bell Rd #110. Discover our story, expert nail technicians, commitment to quality manicures, pedicures, Gel X, and nail art services. Serving Phoenix, AZ since opening.',
+  title: `About Us - ${SITE_BRAND_NAME} | Premier Nail Salon in Phoenix, Arizona`,
+  description: `Learn about ${SITE_BRAND_NAME}, Phoenix's premier nail salon at 4030 E Bell Rd #110. Discover our story, expert nail technicians, commitment to quality manicures, pedicures, Gel X, and nail art services. Serving Phoenix, AZ since opening.`,
   keywords: [
     'about nail salon Phoenix AZ',
     'nail salon Phoenix Arizona',
@@ -12,12 +12,12 @@ export const metadata: Metadata = {
     'professional nail technicians Phoenix',
     'best nail salon Phoenix',
     'nail salon about us',
-    'Perfect Nails story',
+    `${SITE_BRAND_NAME} story`,
     'Phoenix nail salon history',
   ],
   openGraph: {
-    title: 'About Us - Perfect Nails | Phoenix, Arizona Nail Salon',
-    description: 'Learn about Perfect Nails, your premier nail salon in Phoenix, Arizona. Expert technicians, quality services, and a commitment to excellence.',
+    title: `About Us - ${SITE_BRAND_NAME} | Phoenix, Arizona Nail Salon`,
+    description: `Learn about ${SITE_BRAND_NAME}, your premier nail salon in Phoenix, Arizona. Expert technicians, quality services, and a commitment to excellence.`,
     type: 'website',
     url: siteAbsoluteUrl('/about'),
     images: [
@@ -25,7 +25,7 @@ export const metadata: Metadata = {
         url: siteAbsoluteUrl('/og-about.jpg'),
         width: 1200,
         height: 630,
-        alt: 'About Perfect Nails - Phoenix, Arizona Nail Salon',
+        alt: `About ${SITE_BRAND_NAME} - Phoenix, Arizona Nail Salon`,
       },
     ],
   },

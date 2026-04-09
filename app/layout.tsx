@@ -4,7 +4,7 @@ import SiteFooter from "./components/SiteFooter";
 import MobileStickyCta from "./components/MobileStickyCta";
 import { Cormorant_Garamond, Outfit, Poppins } from "next/font/google";
 import type { Metadata, Viewport } from "next";
-import { SITE_PUBLIC_URL } from "./lib/siteBranding";
+import { SITE_BRAND_NAME, SITE_PUBLIC_URL } from "./lib/siteBranding";
 
 const poppins = Poppins({
   subsets: ["latin"],
@@ -27,8 +27,8 @@ const outfit = Outfit({
 
 export const metadata: Metadata = {
   title: {
-    default: "Perfect Nails - Nail Salon in Phoenix, AZ | Manicures & Pedicures",
-    template: "%s | Perfect Nails"
+    default: `${SITE_BRAND_NAME} - Nail Salon in Phoenix, AZ | Manicures & Pedicures`,
+    template: `%s | ${SITE_BRAND_NAME}`,
   },
   description:
     "Professional nail salon in Phoenix, AZ — manicures, pedicures, gel, acrylic, nail art. Book online or call. Clean, relaxing studio near Bell Rd.",
@@ -40,9 +40,9 @@ export const metadata: Metadata = {
     "nail salon near me",
     "Bell Rd nail salon",
   ],
-  authors: [{ name: "Perfect Nails" }],
-  creator: "Perfect Nails",
-  publisher: "Perfect Nails",
+  authors: [{ name: SITE_BRAND_NAME }],
+  creator: SITE_BRAND_NAME,
+  publisher: SITE_BRAND_NAME,
   formatDetection: {
     email: false,
     address: false,
@@ -56,24 +56,22 @@ export const metadata: Metadata = {
     type: 'website',
     locale: 'en_US',
     url: SITE_PUBLIC_URL,
-    siteName: 'Perfect Nails',
-    title: 'Perfect Nails - Nail Salon in Phoenix, AZ',
-    description:
-      'Manicures, pedicures, gel & acrylic in Phoenix, AZ. Book online or call Perfect Nails today.',
+    siteName: SITE_BRAND_NAME,
+    title: `${SITE_BRAND_NAME} - Nail Salon in Phoenix, AZ`,
+    description: `Manicures, pedicures, gel & acrylic in Phoenix, AZ. Book online or call ${SITE_BRAND_NAME} today.`,
     images: [
       {
         url: `${SITE_PUBLIC_URL}/og-image.jpg`,
         width: 1200,
         height: 630,
-        alt: 'Perfect Nails - Nail salon in Phoenix, Arizona',
+        alt: `${SITE_BRAND_NAME} - Nail salon in Phoenix, Arizona`,
       },
     ],
   },
   twitter: {
     card: 'summary_large_image',
-    title: 'Perfect Nails - Nail Salon in Phoenix, AZ',
-    description:
-      'Manicures, pedicures, gel & acrylic in Phoenix, AZ. Book online or call today.',
+    title: `${SITE_BRAND_NAME} - Nail Salon in Phoenix, AZ`,
+    description: `Manicures, pedicures, gel & acrylic in Phoenix, AZ. Book online or call today.`,
     images: [`${SITE_PUBLIC_URL}/og-image.jpg`],
   },
   robots: {

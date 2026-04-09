@@ -13,6 +13,7 @@ import {
 } from '../lib/siteContact';
 import { fetchCmsSite } from '../lib/cmsSiteClient';
 import {
+  SITE_BRAND_NAME,
   SITE_HERO_APPOINTMENT_LINE,
   SITE_HERO_SERVICE_LINE,
   SITE_HOURS_FALLBACK_SUMMARY,
@@ -165,7 +166,7 @@ export default function HomeContent() {
               id="hero-heading"
               className="font-display mt-8 max-w-2xl text-[2.125rem] font-medium leading-[1.15] tracking-[0.02em] text-white sm:mt-10 sm:text-5xl md:text-[3.25rem]"
             >
-              Perfect Nails
+              {SITE_BRAND_NAME}
             </h1>
             <div className="mx-auto mt-8 h-px w-14 bg-gradient-to-r from-transparent via-champagne-400/70 to-transparent sm:mt-9 sm:w-16" aria-hidden />
 

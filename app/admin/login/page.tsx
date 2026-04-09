@@ -3,6 +3,7 @@
 import { useState } from 'react';
 import { usePathname, useRouter } from 'next/navigation';
 import { adminDashboardBaseFromPathname } from '../../lib/adminPublicPath';
+import { SITE_BRAND_NAME } from '../../lib/siteBranding';
 
 export default function AdminLogin() {
   const [password, setPassword] = useState('');
@@ -45,7 +46,7 @@ export default function AdminLogin() {
       <div className="w-full max-w-md rounded-xl border border-champagne-300/35 bg-white p-8 shadow-xl ring-1 ring-champagne-100/60">
         <div className="mb-8 text-center">
           <h1 className="mb-2 font-display text-3xl font-semibold text-lux-espresso">Admin Login</h1>
-          <p className="text-lux-espressoLight/90">Perfect Nails · Admin Dashboard</p>
+          <p className="text-lux-espressoLight/90">{SITE_BRAND_NAME} · Admin Dashboard</p>
         </div>
 
         <form onSubmit={handleLogin} className="space-y-6">

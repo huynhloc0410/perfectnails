@@ -5,6 +5,7 @@ import { usePathname, useRouter } from 'next/navigation';
 import { adminLoginPathFromPathname } from '../lib/adminPublicPath';
 import { migrateLegacyStoredContactAddress } from '../lib/siteContact';
 import { SITE_DATA_UPDATED_EVENT } from '../lib/cmsSiteClient';
+import { SITE_BRAND_NAME } from '../lib/siteBranding';
 
 interface Service {
   id: string;
@@ -538,7 +539,7 @@ export default function AdminPage() {
                     <div key={index} className="relative group">
                       <img
                         src={url}
-                        alt={`Nail salon gallery image ${index + 1} - Perfect Nails professional nail art work`}
+                        alt={`Nail salon gallery image ${index + 1} - ${SITE_BRAND_NAME} professional nail art work`}
                         className="w-full h-48 object-cover rounded-lg"
                       />
                       <button

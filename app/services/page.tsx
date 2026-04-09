@@ -4,7 +4,7 @@ import { useState, useEffect } from 'react';
 import Link from 'next/link';
 import InnerPageHero from '../components/InnerPageHero';
 import { fetchCmsSite } from '../lib/cmsSiteClient';
-import { siteAbsoluteUrl } from '../lib/siteBranding';
+import { SITE_BRAND_NAME, siteAbsoluteUrl } from '../lib/siteBranding';
 
 interface Service {
   id: string;
@@ -165,7 +165,7 @@ export default function Services() {
   const serviceSchema = {
     '@context': 'https://schema.org',
     '@type': 'BeautySalon',
-    name: 'Perfect Nails',
+    name: SITE_BRAND_NAME,
     description: 'Professional nail salon services in Glendale, Arizona',
     url: siteAbsoluteUrl('/services'),
     hasOfferCatalog: {
@@ -177,10 +177,10 @@ export default function Services() {
         itemOffered: {
           '@type': 'Service',
           name: service.name,
-          description: service.description || `${service.name} service at Perfect Nails`,
+          description: service.description || `${service.name} service at ${SITE_BRAND_NAME}`,
           provider: {
             '@type': 'BeautySalon',
-            name: 'Perfect Nails',
+            name: SITE_BRAND_NAME,
           },
           areaServed: {
             '@type': 'City',

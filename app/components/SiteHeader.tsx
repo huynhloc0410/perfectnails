@@ -4,6 +4,7 @@ import Link from 'next/link';
 import { usePathname } from 'next/navigation';
 import { useCallback, useEffect, useRef, useState } from 'react';
 import { createPortal } from 'react-dom';
+import { SITE_BRAND_NAME } from '../lib/siteBranding';
 
 const navLinks: { href: string; label: string }[] = [
   { href: '/', label: 'Home' },
@@ -149,7 +150,7 @@ export default function SiteHeader() {
             href="/"
             className="font-display min-w-0 flex-1 text-center text-[1.35rem] font-semibold leading-tight tracking-tight text-neutral-900 md:flex-none md:text-left md:text-[1.5rem]"
           >
-            <span className="site-brand-gradient">Perfect Nails</span>
+            <span className="site-brand-gradient">{SITE_BRAND_NAME}</span>
           </Link>
 
           <ul className="hidden flex-1 items-center justify-center gap-0.5 lg:gap-1 md:flex">

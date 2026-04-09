@@ -7,7 +7,7 @@ import {
   migrateLegacyStoredContactAddress,
 } from '../lib/siteContact';
 import { fetchCmsSite } from '../lib/cmsSiteClient';
-import { SITE_PUBLIC_URL, siteAbsoluteUrl } from '../lib/siteBranding';
+import { SITE_BRAND_NAME, SITE_PUBLIC_URL, siteAbsoluteUrl } from '../lib/siteBranding';
 
 interface ContactContent {
   address: string;
@@ -78,7 +78,7 @@ export default function Contact() {
     const localBusinessSchema = {
       '@context': 'https://schema.org',
       '@type': 'BeautySalon',
-      name: 'Perfect Nails',
+      name: SITE_BRAND_NAME,
       description: 'Professional nail salon in Phoenix, Arizona offering manicures, pedicures, nail art, and premium nail care services',
       url: SITE_PUBLIC_URL,
       telephone: contact.phone || '+1-623-302-2156',
