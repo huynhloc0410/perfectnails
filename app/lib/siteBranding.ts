@@ -1,6 +1,26 @@
 /** Display name for nav, footer, SEO, and JSON-LD (legal/DB names may differ). */
 export const SITE_BRAND_NAME = 'Perfect Nails & Spa';
 
+/** Homepage `<title>` — local terms + brand; keep under ~60 chars when possible for SERPs. */
+export const SITE_SEO_HOME_TITLE = `${SITE_BRAND_NAME} | Nail Salon Phoenix · Manicure & Pedicure`;
+
+/** Homepage meta description — used on `/` and as site default in root layout. */
+export const SITE_SEO_HOME_DESCRIPTION =
+  'Professional nail salon in Phoenix, AZ. We offer manicure, pedicure, nail art and more. Book your appointment today!';
+
+/** Declarative keywords (limited ranking value on Google; useful for other tools / consistency). */
+export const SITE_SEO_KEYWORDS = [
+  'nail salon phoenix',
+  'nail salon near me',
+  'manicure phoenix',
+  'pedicure phoenix',
+  'nail salon Phoenix AZ',
+  'Bell Rd nail salon',
+  'gel nails Phoenix',
+  'nail art Phoenix',
+  SITE_BRAND_NAME,
+] as const;
+
 /** Single source for public-facing city/area copy — aligns with `SITE_DEFAULT_ADDRESS` (Phoenix). */
 export const SITE_PRIMARY_AREA = 'Phoenix, AZ';
 

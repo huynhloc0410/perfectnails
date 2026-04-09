@@ -4,7 +4,13 @@ import SiteFooter from "./components/SiteFooter";
 import MobileStickyCta from "./components/MobileStickyCta";
 import { Cormorant_Garamond, Outfit, Poppins } from "next/font/google";
 import type { Metadata, Viewport } from "next";
-import { SITE_BRAND_NAME, SITE_PUBLIC_URL } from "./lib/siteBranding";
+import {
+  SITE_BRAND_NAME,
+  SITE_PUBLIC_URL,
+  SITE_SEO_HOME_DESCRIPTION,
+  SITE_SEO_HOME_TITLE,
+  SITE_SEO_KEYWORDS,
+} from "./lib/siteBranding";
 
 const poppins = Poppins({
   subsets: ["latin"],
@@ -27,19 +33,11 @@ const outfit = Outfit({
 
 export const metadata: Metadata = {
   title: {
-    default: `${SITE_BRAND_NAME} - Nail Salon in Phoenix, AZ | Manicures & Pedicures`,
+    default: SITE_SEO_HOME_TITLE,
     template: `%s | ${SITE_BRAND_NAME}`,
   },
-  description:
-    "Professional nail salon in Phoenix, AZ — manicures, pedicures, gel, acrylic, nail art. Book online or call. Clean, relaxing studio near Bell Rd.",
-  keywords: [
-    "nail salon Phoenix AZ",
-    "manicure Phoenix",
-    "pedicure Phoenix",
-    "gel nails Phoenix",
-    "nail salon near me",
-    "Bell Rd nail salon",
-  ],
+  description: SITE_SEO_HOME_DESCRIPTION,
+  keywords: [...SITE_SEO_KEYWORDS],
   authors: [{ name: SITE_BRAND_NAME }],
   creator: SITE_BRAND_NAME,
   publisher: SITE_BRAND_NAME,
@@ -57,8 +55,8 @@ export const metadata: Metadata = {
     locale: 'en_US',
     url: SITE_PUBLIC_URL,
     siteName: SITE_BRAND_NAME,
-    title: `${SITE_BRAND_NAME} - Nail Salon in Phoenix, AZ`,
-    description: `Manicures, pedicures, gel & acrylic in Phoenix, AZ. Book online or call ${SITE_BRAND_NAME} today.`,
+    title: SITE_SEO_HOME_TITLE,
+    description: SITE_SEO_HOME_DESCRIPTION,
     images: [
       {
         url: `${SITE_PUBLIC_URL}/og-image.jpg`,
@@ -70,8 +68,8 @@ export const metadata: Metadata = {
   },
   twitter: {
     card: 'summary_large_image',
-    title: `${SITE_BRAND_NAME} - Nail Salon in Phoenix, AZ`,
-    description: `Manicures, pedicures, gel & acrylic in Phoenix, AZ. Book online or call today.`,
+    title: SITE_SEO_HOME_TITLE,
+    description: SITE_SEO_HOME_DESCRIPTION,
     images: [`${SITE_PUBLIC_URL}/og-image.jpg`],
   },
   robots: {

@@ -1,14 +1,21 @@
 import { Metadata } from 'next';
 import HomeContent from './components/HomeContent';
-import { SITE_BRAND_NAME, SITE_PUBLIC_URL, SITE_SCHEMA_POSTAL_ADDRESS } from './lib/siteBranding';
+import {
+  SITE_BRAND_NAME,
+  SITE_PUBLIC_URL,
+  SITE_SCHEMA_POSTAL_ADDRESS,
+  SITE_SEO_HOME_DESCRIPTION,
+  SITE_SEO_HOME_TITLE,
+  SITE_SEO_KEYWORDS,
+} from './lib/siteBranding';
 
 export const metadata: Metadata = {
-  title: `${SITE_BRAND_NAME} | Nail Salon in Phoenix, AZ · Manicures & Pedicures`,
-  description: `Book manicures, pedicures, gel, acrylic & nail art at ${SITE_BRAND_NAME} in Phoenix, AZ. Request an appointment online or call — clean studio, skilled technicians.`,
-  keywords: `nail salon Phoenix AZ, manicure Phoenix, pedicure Phoenix, gel nails, Bell Rd nail salon, ${SITE_BRAND_NAME}`,
+  title: SITE_SEO_HOME_TITLE,
+  description: SITE_SEO_HOME_DESCRIPTION,
+  keywords: [...SITE_SEO_KEYWORDS],
   openGraph: {
-    title: `${SITE_BRAND_NAME} | Nail Salon in Phoenix, AZ`,
-    description: `Professional manicures, pedicures, and nail enhancements. Book online or call ${SITE_BRAND_NAME}.`,
+    title: SITE_SEO_HOME_TITLE,
+    description: SITE_SEO_HOME_DESCRIPTION,
     type: 'website',
     locale: 'en_US',
     url: SITE_PUBLIC_URL,
@@ -35,8 +42,7 @@ export default function HomePage() {
     '@context': 'https://schema.org',
     '@type': 'BeautySalon',
     name: SITE_BRAND_NAME,
-    description:
-      'Nail salon in Phoenix, Arizona offering manicures, pedicures, gel, acrylic, and nail art.',
+    description: SITE_SEO_HOME_DESCRIPTION,
     address: {
       '@type': 'PostalAddress',
       streetAddress: SITE_SCHEMA_POSTAL_ADDRESS.streetAddress,
