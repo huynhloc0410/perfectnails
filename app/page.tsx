@@ -2,11 +2,13 @@ import { Metadata } from 'next';
 import HomeContent from './components/HomeContent';
 import {
   SITE_BRAND_NAME,
+  SITE_LOGO_PATH,
   SITE_PUBLIC_URL,
   SITE_SCHEMA_POSTAL_ADDRESS,
   SITE_SEO_HOME_DESCRIPTION,
   SITE_SEO_HOME_TITLE,
   SITE_SEO_KEYWORDS,
+  siteAbsoluteUrl,
 } from './lib/siteBranding';
 
 export const metadata: Metadata = {
@@ -54,6 +56,7 @@ export default function HomePage() {
     url: SITE_PUBLIC_URL,
     telephone: '+1-623-302-2156',
     priceRange: '$$',
+    logo: siteAbsoluteUrl(SITE_LOGO_PATH),
     image: `${SITE_PUBLIC_URL}/og-image.jpg`,
     openingHours: 'Mo-Fr 09:00-19:00, Sa-Su 10:00-18:00',
     servesCuisine: false,

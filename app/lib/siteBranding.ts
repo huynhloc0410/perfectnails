@@ -36,6 +36,12 @@ export const SITE_SCHEMA_POSTAL_ADDRESS = {
 const _siteUrl = process.env.NEXT_PUBLIC_SITE_URL?.trim().replace(/\/$/, '');
 export const SITE_PUBLIC_URL = (_siteUrl && _siteUrl.startsWith('http') ? _siteUrl : 'https://perfectnails.com') as string;
 
+/**
+ * Salon logo served from `public/` (tab icon uses the same asset via `app/icon.png` when kept in sync).
+ * Change this if you replace the file (e.g. `/logo.svg`).
+ */
+export const SITE_LOGO_PATH = '/logo.png';
+
 /** Absolute URL for a path on this site (path should start with `/`). */
 export function siteAbsoluteUrl(path: string): string {
   const p = path.startsWith('/') ? path : `/${path}`;
