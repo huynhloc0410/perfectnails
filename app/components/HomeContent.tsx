@@ -159,28 +159,28 @@ export default function HomeContent() {
 
         <div className="relative z-10 mx-auto flex min-h-[min(88svh,820px)] w-full max-w-3xl flex-col px-6 pb-16 pt-[calc(4.75rem+env(safe-area-inset-top,0px))] sm:max-w-4xl sm:px-10 sm:pb-20 sm:pt-[calc(5.25rem+env(safe-area-inset-top,0px))] md:pb-24">
           <div className="flex w-full flex-1 flex-col items-center justify-center text-center">
-            <p className="max-w-lg text-[10px] font-medium uppercase tracking-[0.38em] text-champagne-300/95 sm:text-[11px]">
+            <p className="hero-eyebrow inline-flex max-w-lg items-center justify-center rounded-full border border-champagne-400/45 bg-black/50 px-4 py-1.5 text-[11px] font-semibold uppercase tracking-[0.28em] text-champagne-100 shadow-[0_2px_16px_rgba(0,0,0,0.35)] backdrop-blur-md sm:text-xs sm:tracking-[0.3em]">
               Nail studio · {SITE_PRIMARY_AREA}
             </p>
             <h1
               id="hero-heading"
-              className="font-display mt-8 max-w-2xl text-[2.125rem] font-medium leading-[1.15] tracking-[0.02em] text-white sm:mt-10 sm:text-5xl md:text-[3.25rem]"
+              className="font-display mt-5 max-w-2xl text-[2.125rem] font-medium leading-[1.15] tracking-[0.02em] text-white sm:mt-6 sm:text-5xl md:text-[3.25rem]"
             >
               {SITE_BRAND_NAME}
             </h1>
-            <div className="mx-auto mt-8 h-px w-14 bg-gradient-to-r from-transparent via-champagne-400/70 to-transparent sm:mt-9 sm:w-16" aria-hidden />
+            <div className="mx-auto mt-4 h-px w-14 bg-gradient-to-r from-transparent via-champagne-400/70 to-transparent sm:mt-5 sm:w-16" aria-hidden />
 
-            <p className="mt-8 max-w-md font-light leading-[1.75] text-white/90 sm:mt-10 sm:max-w-lg sm:text-[1.0625rem]">
+            <p className="mt-4 max-w-md font-light leading-[1.75] text-white/90 sm:mt-5 sm:max-w-lg sm:text-[1.0625rem]">
               {SITE_HERO_SERVICE_LINE}
             </p>
-            <p className="mt-5 max-w-md font-light leading-relaxed text-white/75 sm:text-base">
+            <p className="mt-3 max-w-md font-light leading-relaxed text-white/75 sm:mt-3.5 sm:text-base">
               {SITE_HERO_APPOINTMENT_LINE}
             </p>
 
-            <div className="mt-10 flex w-full max-w-lg flex-col gap-3 sm:mt-11 sm:max-w-2xl sm:flex-row sm:justify-center sm:gap-4">
+            <div className="mt-6 flex w-full max-w-lg flex-col gap-3 sm:mt-7 sm:max-w-2xl sm:flex-row sm:justify-center sm:gap-4">
               <Link
                 href="/services"
-                className="group relative flex min-h-[3.35rem] flex-1 items-center justify-center overflow-hidden rounded-md border-2 border-champagne-400/65 bg-lux-espresso/35 px-5 py-3 text-center shadow-[0_0_0_1px_rgba(255,255,255,0.06)_inset] backdrop-blur-md transition duration-300 hover:border-champagne-300/90 hover:bg-lux-espresso/50 active:scale-[0.99] sm:min-h-[3.5rem] sm:px-8"
+                className="cta-flash-btn hero-cta-pulse group relative flex min-h-[3.35rem] flex-1 items-center justify-center overflow-hidden rounded-md border-2 border-champagne-300/85 bg-lux-espresso/50 px-5 py-3 text-center shadow-[0_0_0_1px_rgba(255,255,255,0.08)_inset,0_0_20px_rgba(168,138,61,0.25)] backdrop-blur-md transition duration-300 hover:border-champagne-200/95 hover:bg-lux-espresso/60 hover:shadow-[0_0_28px_rgba(212,175,55,0.35)] active:scale-[0.99] sm:min-h-[3.5rem] sm:px-8"
               >
                 <span className="font-display text-[0.95rem] font-medium tracking-[0.03em] text-white sm:text-[1.05rem]">
                   Services &amp; prices
@@ -194,7 +194,7 @@ export default function HomeContent() {
               </Link>
               <Link
                 href="/gallery"
-                className="group relative flex min-h-[3.35rem] flex-1 items-center justify-center overflow-hidden rounded-md border-2 border-champagne-400/65 bg-lux-espresso/35 px-5 py-3 text-center shadow-[0_0_0_1px_rgba(255,255,255,0.06)_inset] backdrop-blur-md transition duration-300 hover:border-champagne-300/90 hover:bg-lux-espresso/50 active:scale-[0.99] sm:min-h-[3.5rem] sm:px-8"
+                className="cta-flash-btn hero-cta-pulse group relative flex min-h-[3.35rem] flex-1 items-center justify-center overflow-hidden rounded-md border-2 border-champagne-300/85 bg-lux-espresso/50 px-5 py-3 text-center shadow-[0_0_0_1px_rgba(255,255,255,0.08)_inset,0_0_20px_rgba(168,138,61,0.25)] backdrop-blur-md transition duration-300 hover:border-champagne-200/95 hover:bg-lux-espresso/60 hover:shadow-[0_0_28px_rgba(212,175,55,0.35)] active:scale-[0.99] sm:min-h-[3.5rem] sm:px-8"
               >
                 <span className="font-display text-[0.95rem] font-medium tracking-[0.03em] text-white sm:text-[1.05rem]">
                   Gallery
@@ -205,12 +205,12 @@ export default function HomeContent() {
               </Link>
             </div>
 
-            <div className="mt-10 w-full max-w-md space-y-4 sm:mt-12">
+            <div className="mt-7 w-full max-w-md space-y-3 sm:mt-8 sm:space-y-3.5">
               <a
                 href={callHref}
-                className="cta-call-primary flex w-full flex-col items-center justify-center gap-1 border-2 border-champagne-400/85 bg-lux-espresso/45 px-8 py-4 text-center backdrop-blur-md transition hover:border-champagne-300 hover:bg-lux-espresso/55"
+                className="cta-flash-btn hero-cta-pulse cta-call-primary relative flex w-full flex-col items-center justify-center gap-1 overflow-hidden rounded-md border-2 border-champagne-300/90 bg-lux-espresso/55 px-8 py-4 text-center shadow-[0_0_22px_rgba(168,138,61,0.28)] backdrop-blur-md transition hover:border-champagne-200 hover:bg-lux-espresso/65"
               >
-                <span className="flex items-center gap-3 text-[11px] font-semibold uppercase tracking-[0.28em] text-champagne-200">
+                <span className="flex items-center gap-3 text-[11px] font-semibold uppercase tracking-[0.28em] text-champagne-100">
                   <PhoneIcon className="h-4 w-4 text-champagne-300" />
                   Call
                 </span>
@@ -218,13 +218,13 @@ export default function HomeContent() {
               </a>
               <Link
                 href="/booking"
-                className="flex min-h-[3.25rem] w-full items-center justify-center border border-lux-espresso/20 bg-champagne-800/95 px-8 py-3.5 text-center text-[13px] font-medium uppercase tracking-[0.18em] text-champagne-50 shadow-lg transition hover:bg-champagne-800 active:scale-[0.99]"
+                className="cta-flash-btn hero-cta-pulse relative flex min-h-[3.25rem] w-full items-center justify-center overflow-hidden rounded-md border-2 border-champagne-400/70 bg-gradient-to-b from-champagne-700 to-champagne-900 px-8 py-3.5 text-center text-[13px] font-semibold uppercase tracking-[0.18em] text-champagne-50 shadow-[0_4px_22px_rgba(0,0,0,0.35)] transition hover:border-champagne-300 hover:from-champagne-600 hover:to-champagne-950 active:scale-[0.99]"
               >
                 Request an appointment
               </Link>
             </div>
 
-            <address className="mx-auto mt-14 w-full max-w-md not-italic sm:mt-16">
+            <address className="mx-auto mt-10 w-full max-w-md not-italic sm:mt-12">
               <a
                 href={mapsUrl}
                 target="_blank"
