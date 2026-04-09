@@ -24,7 +24,7 @@ export function siteAbsoluteUrl(path: string): string {
 
 /** Luxury tone: quiet, confident; serif H1 carries the brand. */
 export const SITE_HERO_SERVICE_LINE =
-  'Manicures, gel, and enhancements — meticulous work, transparent pricing, and a calm studio experience.';
+  'Pedicure, manicure, and nail enhancements — meticulous work, transparent pricing, and a calm studio experience.';
 
 /** Appointments + walk-ins — restrained copy. */
 export const SITE_HERO_APPOINTMENT_LINE =
