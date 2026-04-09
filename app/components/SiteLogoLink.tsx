@@ -34,8 +34,8 @@ export default function SiteLogoLink({ variant }: { variant: Variant }) {
         <span
           className={`site-brand-gradient min-w-0 shrink font-semibold leading-tight tracking-tight md:max-w-none ${
             logoFailed
-              ? 'text-center text-[1.35rem] md:text-left md:text-[1.5rem]'
-              : 'overflow-hidden text-ellipsis whitespace-nowrap text-xs sm:text-[0.8125rem] md:overflow-visible md:text-[1.35rem] md:whitespace-normal'
+              ? 'text-center text-[1.625rem] md:text-left md:text-[1.75rem]'
+              : 'overflow-hidden text-ellipsis whitespace-nowrap text-[0.9375rem] sm:text-base md:overflow-visible md:text-[1.625rem] md:whitespace-normal lg:text-[1.75rem]'
           }`}
         >
           {SITE_BRAND_NAME}

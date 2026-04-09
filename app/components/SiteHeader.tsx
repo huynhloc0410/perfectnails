@@ -20,8 +20,8 @@ function navItemActive(href: string, pathname: string): boolean {
   return pathname === href || pathname.startsWith(`${href}/`);
 }
 
-/** Fallback before nav is measured (px); keep ≥ row height with footer-sized logo */
-const MENU_TOP_FALLBACK_PX = 92;
+/** Fallback before nav is measured (px); keep ≥ row height (tight nav py) */
+const MENU_TOP_FALLBACK_PX = 72;
 
 export default function SiteHeader() {
   const [open, setOpen] = useState(false);
@@ -124,7 +124,7 @@ export default function SiteHeader() {
       <div className="relative">
         <nav
           ref={navRef}
-          className="relative z-[320] container mx-auto flex max-w-6xl items-center justify-between gap-2 bg-transparent px-4 py-3 sm:gap-3 sm:px-6 sm:py-3.5 md:justify-start"
+          className="relative z-[320] container mx-auto flex max-w-6xl items-center justify-between gap-2 bg-transparent px-4 py-1 sm:gap-3 sm:px-6 sm:py-1 md:justify-start"
           aria-label="Main navigation"
         >
           <button
@@ -147,7 +147,7 @@ export default function SiteHeader() {
           </button>
 
           {/* Mobile: title + logo centered in header; md+: normal flow next to nav */}
-          <div className="pointer-events-none absolute left-1/2 top-1/2 z-10 max-w-[min(calc(100%-5.5rem),20rem)] -translate-x-1/2 -translate-y-1/2 md:static md:left-auto md:top-auto md:z-auto md:max-w-none md:translate-x-0 md:translate-y-0 md:pointer-events-auto">
+          <div className="pointer-events-none absolute left-1/2 top-1/2 z-10 max-w-[min(calc(100%-5.5rem),22rem)] -translate-x-1/2 -translate-y-1/2 md:static md:left-auto md:top-auto md:z-auto md:max-w-none md:translate-x-0 md:translate-y-0 md:pointer-events-auto">
             <div className="pointer-events-auto">
               <SiteLogoLink variant="header" />
             </div>
