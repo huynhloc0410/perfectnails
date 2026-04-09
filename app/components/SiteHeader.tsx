@@ -124,7 +124,7 @@ export default function SiteHeader() {
       <div className="relative">
         <nav
           ref={navRef}
-          className="relative z-[320] container mx-auto flex max-w-6xl items-center gap-3 bg-transparent px-4 py-3 sm:px-6 sm:py-3.5"
+          className="relative z-[320] container mx-auto flex max-w-6xl items-center gap-2 bg-transparent px-4 py-3 sm:gap-3 sm:px-6 sm:py-3.5"
           aria-label="Main navigation"
         >
           <button
