@@ -124,12 +124,12 @@ export default function SiteHeader() {
       <div className="relative">
         <nav
           ref={navRef}
-          className="relative z-[320] container mx-auto flex max-w-6xl items-center gap-2 bg-transparent px-4 py-3 sm:gap-3 sm:px-6 sm:py-3.5"
+          className="relative z-[320] container mx-auto flex max-w-6xl items-center justify-between gap-2 bg-transparent px-4 py-3 sm:gap-3 sm:px-6 sm:py-3.5 md:justify-start"
           aria-label="Main navigation"
         >
           <button
             type="button"
-            className="inline-flex h-11 w-11 shrink-0 items-center justify-center rounded-xl text-gray-800 transition hover:bg-champagne-50 hover:text-champagne-800 md:hidden"
+            className="relative z-20 inline-flex h-11 w-11 shrink-0 items-center justify-center rounded-xl text-gray-800 transition hover:bg-champagne-50 hover:text-champagne-800 md:hidden"
             aria-expanded={open}
             aria-controls="mobile-nav-panel"
             aria-label={open ? 'Close menu' : 'Open menu'}
@@ -146,12 +146,14 @@ export default function SiteHeader() {
             )}
           </button>
 
-          <SiteLogoLink variant="header" />
+          {/* Mobile: title + logo centered in header; md+: normal flow next to nav */}
+          <div className="pointer-events-none absolute left-1/2 top-1/2 z-10 max-w-[min(calc(100%-5.5rem),20rem)] -translate-x-1/2 -translate-y-1/2 md:static md:left-auto md:top-auto md:z-auto md:max-w-none md:translate-x-0 md:translate-y-0 md:pointer-events-auto">
+            <div className="pointer-events-auto">
+              <SiteLogoLink variant="header" />
+            </div>
+          </div>
 
-          {/* Mobile: pushes menu + brand left; brand is intrinsic width (title + logo), not centered in this gap */}
-          <div className="min-h-0 flex-1 md:hidden" aria-hidden />
-
-          <ul className="hidden flex-1 items-center justify-center gap-0.5 lg:gap-1 md:flex">
+          <ul className="relative z-10 hidden flex-1 items-center justify-center gap-0.5 lg:gap-1 md:flex">
             {navLinks.map(({ href, label }) => {
               const active = navItemActive(href, pathname);
               return (
@@ -168,7 +170,7 @@ export default function SiteHeader() {
             })}
           </ul>
 
-          <div className="w-11 shrink-0 md:hidden" aria-hidden />
+          <div className="relative z-20 w-11 shrink-0 md:hidden" aria-hidden />
         </nav>
 
         {mobileMenu}

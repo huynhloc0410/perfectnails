@@ -29,9 +29,7 @@ export default function SiteLogoLink({ variant }: { variant: Variant }) {
     return (
       <Link
         href="/"
-        className={`font-display relative z-0 flex max-w-full min-w-0 shrink items-center gap-1.5 sm:gap-2 md:ml-6 md:shrink-0 md:gap-3 lg:ml-8 ${
-          logoFailed ? 'justify-center md:justify-start' : 'justify-start'
-        }`}
+        className="font-display relative z-0 flex max-w-full min-w-0 shrink items-center justify-center gap-1.5 sm:gap-2 md:ml-6 md:shrink-0 md:justify-start md:gap-3 lg:ml-8"
       >
         <span
           className={`site-brand-gradient min-w-0 shrink font-semibold leading-tight tracking-tight md:max-w-none ${
