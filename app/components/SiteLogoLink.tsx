@@ -29,21 +29,21 @@ export default function SiteLogoLink({ variant }: { variant: Variant }) {
     return (
       <Link
         href="/"
-        className={`font-display flex min-w-0 flex-1 items-center gap-1.5 sm:gap-2 md:ml-6 md:gap-3 lg:ml-8 ${
+        className={`font-display relative z-0 flex max-w-full min-w-0 shrink items-center gap-1.5 sm:gap-2 md:ml-6 md:shrink-0 md:gap-3 lg:ml-8 ${
           logoFailed ? 'justify-center md:justify-start' : 'justify-start'
         }`}
       >
         <span
-          className={`site-brand-gradient min-w-0 font-semibold leading-tight tracking-tight max-md:whitespace-nowrap ${
+          className={`site-brand-gradient min-w-0 shrink font-semibold leading-tight tracking-tight md:max-w-none ${
             logoFailed
-              ? 'flex-1 text-center text-[1.35rem] md:flex-none md:text-left md:text-[1.5rem]'
-              : 'text-xs sm:text-[0.8125rem] md:max-w-none md:text-[1.35rem] md:whitespace-normal'
+              ? 'text-center text-[1.35rem] md:text-left md:text-[1.5rem]'
+              : 'overflow-hidden text-ellipsis whitespace-nowrap text-xs sm:text-[0.8125rem] md:overflow-visible md:text-[1.35rem] md:whitespace-normal'
           }`}
         >
           {SITE_BRAND_NAME}
         </span>
         {!logoFailed && (
-          <span className={headerBadgeClass}>
+          <span className={`relative z-0 shrink-0 ${headerBadgeClass}`}>
             <img
               src={SITE_LOGO_PATH}
               alt=""

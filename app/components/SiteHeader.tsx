@@ -148,7 +148,7 @@ export default function SiteHeader() {
 
           <SiteLogoLink variant="header" />
 
-          {/* Mobile: space between logo (after menu) and right balance column; desktop: unused */}
+          {/* Mobile: pushes menu + brand left; brand is intrinsic width (title + logo), not centered in this gap */}
           <div className="min-h-0 flex-1 md:hidden" aria-hidden />
 
           <ul className="hidden flex-1 items-center justify-center gap-0.5 lg:gap-1 md:flex">
