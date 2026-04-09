@@ -6,7 +6,7 @@ export const SITE_SEO_HOME_TITLE = `${SITE_BRAND_NAME} | Nail Salon Phoenix · M
 
 /** Homepage meta description — used on `/` and as site default in root layout. */
 export const SITE_SEO_HOME_DESCRIPTION =
-  'Professional nail salon in Phoenix, AZ. We offer manicure, pedicure, nail art and more. Book your appointment today!';
+  'Professional nail salon near Bell Rd, Phoenix, AZ. We offer manicure, pedicure, nail art and more. Book your appointment today — convenient when you need a nail salon near me.';
 
 /** Declarative keywords (limited ranking value on Google; useful for other tools / consistency). */
 export const SITE_SEO_KEYWORDS = [
