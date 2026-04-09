@@ -20,8 +20,8 @@ function navItemActive(href: string, pathname: string): boolean {
   return pathname === href || pathname.startsWith(`${href}/`);
 }
 
-/** Fallback before nav is measured (px); keep ≥ header row height with logo */
-const MENU_TOP_FALLBACK_PX = 84;
+/** Fallback before nav is measured (px); keep ≥ header row height with tall circular logo */
+const MENU_TOP_FALLBACK_PX = 96;
 
 export default function SiteHeader() {
   const [open, setOpen] = useState(false);
@@ -148,7 +148,7 @@ export default function SiteHeader() {
 
           <SiteLogoLink variant="header" />
 
-          <ul className="hidden flex-1 items-center justify-center gap-0.5 lg:gap-1 md:flex">
+          <ul className="my-auto hidden flex-1 items-center justify-center gap-0.5 lg:gap-1 md:flex">
             {navLinks.map(({ href, label }) => {
               const active = navItemActive(href, pathname);
               return (
@@ -165,7 +165,7 @@ export default function SiteHeader() {
             })}
           </ul>
 
-          <div className="w-11 shrink-0 md:hidden" aria-hidden />
+          <div className="my-auto w-11 shrink-0 md:hidden" aria-hidden />
         </nav>
 
         {mobileMenu}
