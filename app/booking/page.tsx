@@ -57,6 +57,42 @@ function parseLocalDateYYYYMMDD(date: string): Date {
   return new Date(year, month - 1, day);
 }
 
+function localDayKey(d: Date): string {
+  return `${d.getFullYear()}-${String(d.getMonth() + 1).padStart(2, '0')}-${String(d.getDate()).padStart(2, '0')}`;
+}
+
+function bookingStartDateTime(booking: Booking): Date | null {
+  // Some legacy bookings may store only the date in `booking.date` and the time in `timeSlot`.
+  // To reliably detect overlaps, reconstruct a local datetime from both fields when possible.
+  let base: Date;
+  if (typeof booking.date === 'string' && /^\d{4}-\d{2}-\d{2}$/.test(booking.date)) {
+    base = parseLocalDateYYYYMMDD(booking.date);
+  } else {
+    base = new Date(booking.date);
+  }
+  if (!Number.isFinite(base.getTime())) return null;
+
+  const t = (booking.timeSlot || '').trim();
+  const m = /^(\d{1,2}):(\d{2})$/.exec(t);
+  if (m) {
+    const hh = parseInt(m[1], 10);
+    const mm = parseInt(m[2], 10);
+    if (Number.isFinite(hh) && Number.isFinite(mm)) {
+      const dt = new Date(base.getFullYear(), base.getMonth(), base.getDate(), hh, mm, 0, 0);
+      return dt;
+    }
+  }
+
+  // Fallback: whatever is in `booking.date` already includes a time.
+  return base;
+}
+
+function bookingDurationMinutes(booking: Booking): number {
+  const raw = (booking as unknown as { duration?: unknown }).duration;
+  const n = typeof raw === 'number' ? raw : parseInt(String(raw ?? ''), 10);
+  return Number.isFinite(n) && n > 0 ? n : 45;
+}
+
 /** Admin can set duration to 0 to hide time on Services; scheduling still uses 45 min. */
 function schedulingMinutes(duration: number | undefined): number {
   if (typeof duration === 'number' && duration > 0) return duration;
@@ -230,11 +266,9 @@ export default function Booking() {
     // Get existing bookings for this employee on this date
     const employeeBookings = bookings.filter(b => {
       if (b.employee !== employeeId) return false;
-      const bookingDate = new Date(b.date);
-      // Compare dates by date string to avoid timezone issues
-      const bookingDateStr = `${bookingDate.getFullYear()}-${String(bookingDate.getMonth() + 1).padStart(2, '0')}-${String(bookingDate.getDate()).padStart(2, '0')}`;
-      const selectedDateStr = `${selectedDateObj.getFullYear()}-${String(selectedDateObj.getMonth() + 1).padStart(2, '0')}-${String(selectedDateObj.getDate()).padStart(2, '0')}`;
-      return bookingDateStr === selectedDateStr;
+      const start = bookingStartDateTime(b);
+      if (!start) return false;
+      return localDayKey(start) === localDayKey(selectedDateObj);
     });
 
     // Booking must start at open and no later than 1 hour before close.
@@ -260,9 +294,10 @@ export default function Booking() {
 
         // Check if slot conflicts with existing bookings
         const isAvailable = !employeeBookings.some(booking => {
-          const bookingTime = new Date(booking.date);
+          const bookingTime = bookingStartDateTime(booking);
+          if (!bookingTime) return false;
           const bookingEndTime = new Date(bookingTime);
-          bookingEndTime.setMinutes(bookingEndTime.getMinutes() + (booking.duration || 45) + BUFFER_TIME);
+          bookingEndTime.setMinutes(bookingEndTime.getMinutes() + bookingDurationMinutes(booking) + BUFFER_TIME);
           
           // Check if slots overlap
           return (slotDateTime >= bookingTime && slotDateTime < bookingEndTime) ||
