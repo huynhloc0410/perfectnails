@@ -32,10 +32,25 @@ interface Booking {
 }
 
 const BUFFER_TIME = 10; // 10 minutes buffer between appointments
-const BUSINESS_HOURS = {
-  start: 9, // 9 AM
-  end: 19, // 7 PM
-};
+const ANYBODY_EMPLOYEE_ID = '__anybody__';
+
+type BusinessHours = { openMinutes: number; closeMinutes: number } | null;
+
+function minutesSinceMidnight(d: Date): number {
+  return d.getHours() * 60 + d.getMinutes();
+}
+
+function getBusinessHoursForDate(dateLocal: Date): BusinessHours {
+  // 0 = Sunday, 6 = Saturday
+  const dow = dateLocal.getDay();
+  if (dow === 0) return null; // Sunday closed
+  if (dow === 6) {
+    // Saturday 9:00 AM - 5:00 PM
+    return { openMinutes: 9 * 60, closeMinutes: 17 * 60 };
+  }
+  // Mon - Fri: 9:30 AM - 6:00 PM
+  return { openMinutes: 9 * 60 + 30, closeMinutes: 18 * 60 };
+}
 
 /** Admin can set duration to 0 to hide time on Services; scheduling still uses 45 min. */
 function schedulingMinutes(duration: number | undefined): number {
@@ -174,9 +189,19 @@ export default function Booking() {
     }
 
     const serviceDuration = schedulingMinutes(selectedService.duration);
-    const slots = generateTimeSlots(formData.date, formData.employee, serviceDuration);
-    setAvailableTimeSlots(slots);
-  }, [formData.service, formData.employee, formData.date, bookings, services]);
+    if (formData.employee === ANYBODY_EMPLOYEE_ID) {
+      const merged = new Set<string>();
+      for (const emp of availableEmployees) {
+        const empSlots = generateTimeSlots(formData.date, emp.id, serviceDuration);
+        for (const s of empSlots) merged.add(s);
+      }
+      const slots = Array.from(merged).sort((a, b) => a.localeCompare(b));
+      setAvailableTimeSlots(slots);
+    } else {
+      const slots = generateTimeSlots(formData.date, formData.employee, serviceDuration);
+      setAvailableTimeSlots(slots);
+    }
+  }, [formData.service, formData.employee, formData.date, bookings, services, availableEmployees]);
 
   // Generate time slots for a given date, employee, and service duration
   const generateTimeSlots = (date: string, employeeId: string, duration: number): string[] => {
@@ -192,6 +217,11 @@ export default function Booking() {
       return [];
     }
 
+    const hours = getBusinessHoursForDate(selectedDateObj);
+    if (!hours) {
+      return [];
+    }
+
     // Get existing bookings for this employee on this date
     const employeeBookings = bookings.filter(b => {
       if (b.employee !== employeeId) return false;
@@ -202,12 +232,16 @@ export default function Booking() {
       return bookingDateStr === selectedDateStr;
     });
 
-    // Generate slots from business hours
-    for (let hour = BUSINESS_HOURS.start; hour < BUSINESS_HOURS.end; hour++) {
-      for (let minute = 0; minute < 60; minute += 15) {
-        const slotTime = `${hour.toString().padStart(2, '0')}:${minute.toString().padStart(2, '0')}`;
-        const slotDateTime = new Date(selectedDateObj);
-        slotDateTime.setHours(hour, minute, 0, 0);
+    // Booking must start at open and no later than 1 hour before close.
+    const latestStartMinutes = hours.closeMinutes - 60;
+
+    // Generate slots (15-minute increments) within business hours
+    for (let startMinutes = hours.openMinutes; startMinutes <= latestStartMinutes; startMinutes += 15) {
+      const hour = Math.floor(startMinutes / 60);
+      const minute = startMinutes % 60;
+      const slotTime = `${hour.toString().padStart(2, '0')}:${minute.toString().padStart(2, '0')}`;
+      const slotDateTime = new Date(selectedDateObj);
+      slotDateTime.setHours(hour, minute, 0, 0);
         
         // Check if slot is in the past (for today)
         if (selectedDateObj.toDateString() === today.toDateString() && slotDateTime < new Date()) {
@@ -217,10 +251,7 @@ export default function Booking() {
         // Check if slot fits the service duration
         const slotEndTime = new Date(slotDateTime);
         slotEndTime.setMinutes(slotEndTime.getMinutes() + duration + BUFFER_TIME);
-        
-        if (slotEndTime.getHours() >= BUSINESS_HOURS.end) {
-          continue;
-        }
+        if (minutesSinceMidnight(slotEndTime) > hours.closeMinutes) continue;
 
         // Check if slot conflicts with existing bookings
         const isAvailable = !employeeBookings.some(booking => {
@@ -237,7 +268,6 @@ export default function Booking() {
         if (isAvailable) {
           slots.push(slotTime);
         }
-      }
     }
 
     return slots;
@@ -258,7 +288,7 @@ export default function Booking() {
     formDataObj.append('name', formData.name);
     formDataObj.append('phone', formData.phone);
     formDataObj.append('service', formData.service);
-    formDataObj.append('employee', formData.employee);
+    formDataObj.append('employee', formData.employee === ANYBODY_EMPLOYEE_ID ? '' : formData.employee);
     formDataObj.append('date', formData.date);
     formDataObj.append('timeSlot', formData.timeSlot);
     formDataObj.append('duration', serviceDuration.toString());
@@ -342,6 +372,8 @@ export default function Booking() {
     const maxDate = new Date();
     maxDate.setDate(maxDate.getDate() + 30);
     
+    // Sunday closed
+    if (date.getDay() === 0) return false;
     return date >= today && date <= maxDate;
   };
 
@@ -532,6 +564,7 @@ export default function Booking() {
                     <option value="">
                       {formData.service ? 'Select a team member' : 'Please select a service first'}
                     </option>
+                    <option value={ANYBODY_EMPLOYEE_ID}>Anybody (no preference)</option>
                     {availableEmployees.map((employee) => (
                       <option key={employee.id} value={employee.id}>
                         {employee.name}

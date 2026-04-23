@@ -466,6 +466,50 @@ export default function AdminPage() {
     }
   };
 
+  const sortedBookings = [...bookings].sort((a, b) => {
+    const at = new Date(a.date).getTime();
+    const bt = new Date(b.date).getTime();
+    return at - bt;
+  });
+
+  const dayKeyLocal = (d: Date): string => {
+    const y = d.getFullYear();
+    const m = String(d.getMonth() + 1).padStart(2, '0');
+    const day = String(d.getDate()).padStart(2, '0');
+    return `${y}-${m}-${day}`;
+  };
+
+  const startOfDay = (d: Date): Date => new Date(d.getFullYear(), d.getMonth(), d.getDate());
+
+  const dayLabel = (key: string): string => {
+    const [y, m, d] = key.split('-').map(Number);
+    const dateObj = new Date(y, m - 1, d);
+    const today = startOfDay(new Date());
+    const tomorrow = new Date(today);
+    tomorrow.setDate(tomorrow.getDate() + 1);
+
+    if (startOfDay(dateObj).getTime() === today.getTime()) return 'Today';
+    if (startOfDay(dateObj).getTime() === tomorrow.getTime()) return 'Tomorrow';
+
+    return dateObj.toLocaleDateString([], {
+      weekday: 'long',
+      month: 'long',
+      day: '2-digit',
+      year: 'numeric',
+    });
+  };
+
+  const groupedBookings = (() => {
+    const map = new Map<string, Booking[]>();
+    for (const b of sortedBookings) {
+      const key = dayKeyLocal(new Date(b.date));
+      const arr = map.get(key);
+      if (arr) arr.push(b);
+      else map.set(key, [b]);
+    }
+    return Array.from(map.entries()).sort(([a], [b]) => a.localeCompare(b));
+  })();
+
   return (
     <div className="min-h-screen bg-gray-50 py-8">
       <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
@@ -948,39 +992,56 @@ Saturday - Sunday: 10:00 AM - 6:00 PM`}
             {activeTab === 'bookings' && (
               <div>
                 <h2 className="text-2xl font-semibold text-gray-800 mb-4">Bookings Management</h2>
-                <div className="space-y-4">
-                  {bookings.map((booking) => {
-                    const bookingEmployee = booking.employee 
-                      ? employees.find(e => e.id === booking.employee)
-                      : null;
-                    
-                    return (
-                      <div key={booking.id} className="border border-gray-200 rounded-lg p-4 flex justify-between items-start">
-                        <div className="flex-1">
-                          <h4 className="font-semibold text-lg text-gray-800">{booking.name}</h4>
-                          <p className="text-gray-600 text-sm mt-1">Phone: {booking.phone}</p>
-                          <p className="text-gray-600 text-sm">Service: {booking.service}</p>
-                          {bookingEmployee && (
-                            <p className="text-gray-600 text-sm">
-                              Employee: <span className="font-semibold">{bookingEmployee.name}</span> ({bookingEmployee.role})
-                            </p>
-                          )}
-                          <p className="text-gray-600 text-sm">
-                            Time: {booking.timeSlot || new Date(booking.date).toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' })} ({booking.duration || 45} min)
-                          </p>
-                          <p className="text-gray-500 text-xs mt-2">
-                            Date: {new Date(booking.date).toLocaleDateString()}
-                          </p>
-                        </div>
-                        <button
-                          onClick={() => deleteBooking(booking.id)}
-                          className="px-3 py-1 bg-red-500 text-white rounded hover:bg-red-600 transition text-sm"
-                        >
-                          Delete
-                        </button>
+                <div className="space-y-8">
+                  {groupedBookings.map(([key, dayBookings]) => (
+                    <div key={key} className="space-y-4">
+                      <div className="flex items-baseline justify-between border-b border-gray-200 pb-2">
+                        <h3 className="text-lg font-semibold text-gray-800">{dayLabel(key)}</h3>
+                        <span className="text-xs font-medium text-gray-500">{key}</span>
                       </div>
-                    );
-                  })}
+
+                      {dayBookings.map((booking) => {
+                        const bookingEmployee = booking.employee
+                          ? employees.find((e) => e.id === booking.employee)
+                          : null;
+                        const bookingDateObj = new Date(booking.date);
+                        const apptTime =
+                          booking.timeSlot ||
+                          bookingDateObj.toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' });
+                        const apptDate = bookingDateObj.toLocaleDateString([], {
+                          weekday: 'short',
+                          month: 'short',
+                          day: '2-digit',
+                          year: 'numeric',
+                        });
+
+                        return (
+                          <div key={booking.id} className="border border-gray-200 rounded-lg p-4 flex justify-between items-start">
+                            <div className="flex-1">
+                              <h4 className="font-semibold text-lg text-gray-800">
+                                {booking.name}{' '}
+                                <span className="font-semibold text-champagne-700">· {apptDate} {apptTime}</span>
+                              </h4>
+                              <p className="text-gray-600 text-sm mt-1">Phone: {booking.phone}</p>
+                              <p className="text-gray-600 text-sm">Service: {booking.service}</p>
+                              {bookingEmployee && (
+                                <p className="text-gray-600 text-sm">
+                                  Employee: <span className="font-semibold">{bookingEmployee.name}</span> ({bookingEmployee.role})
+                                </p>
+                              )}
+                              <p className="text-gray-600 text-sm">Duration: {booking.duration || 45} min</p>
+                            </div>
+                            <button
+                              onClick={() => deleteBooking(booking.id)}
+                              className="px-3 py-1 bg-red-500 text-white rounded hover:bg-red-600 transition text-sm"
+                            >
+                              Delete
+                            </button>
+                          </div>
+                        );
+                      })}
+                    </div>
+                  ))}
                   {bookings.length === 0 && (
                     <p className="text-gray-500 text-center py-8">No bookings yet</p>
                   )}
