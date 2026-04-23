@@ -18,6 +18,7 @@ import {
   SITE_HERO_SERVICE_LINE,
   SITE_HOURS_FALLBACK_SUMMARY,
   SITE_PRIMARY_AREA,
+  SITE_STANDARD_INTRO,
   SITE_TRUST_POINTS,
   SITE_TRUST_SECTION_LABEL,
 } from '../lib/siteBranding';
@@ -142,7 +143,7 @@ export default function HomeContent() {
   return (
     <>
       <section
-        className="relative isolate min-h-[min(88svh,820px)] w-full overflow-hidden bg-lux-espresso"
+        className="relative isolate min-h-[min(82svh,780px)] w-full overflow-hidden bg-lux-espresso"
         aria-labelledby="hero-heading"
       >
         <img
@@ -157,27 +158,27 @@ export default function HomeContent() {
         />
         <div className="pointer-events-none absolute inset-x-0 top-0 z-[2] h-px bg-gradient-to-r from-transparent via-champagne-400/35 to-transparent" aria-hidden />
 
-        <div className="relative z-10 mx-auto flex min-h-[min(88svh,820px)] w-full max-w-3xl flex-col px-6 pb-16 pt-[calc(4.75rem+env(safe-area-inset-top,0px))] sm:max-w-4xl sm:px-10 sm:pb-20 sm:pt-[calc(5.25rem+env(safe-area-inset-top,0px))] md:pb-24">
-          <div className="flex w-full flex-1 flex-col items-center justify-center text-center">
+        <div className="relative z-10 mx-auto flex min-h-[min(82svh,780px)] w-full max-w-3xl flex-col px-6 pb-12 pt-[calc(4.25rem+env(safe-area-inset-top,0px))] sm:max-w-4xl sm:px-10 sm:pb-16 sm:pt-[calc(4.75rem+env(safe-area-inset-top,0px))] md:pb-20">
+          <div className="flex w-full flex-1 flex-col items-center justify-start text-center">
             <p className="hero-eyebrow inline-flex max-w-lg items-center justify-center rounded-full border border-champagne-400/45 bg-black/50 px-4 py-1.5 text-[11px] font-semibold uppercase tracking-[0.28em] text-champagne-100 shadow-[0_2px_16px_rgba(0,0,0,0.35)] backdrop-blur-md sm:text-xs sm:tracking-[0.3em]">
               Nail studio · {SITE_PRIMARY_AREA}
             </p>
             <h1
               id="hero-heading"
-              className="font-display mt-5 max-w-2xl text-[2.125rem] font-medium leading-[1.15] tracking-[0.02em] text-white sm:mt-6 sm:text-5xl md:text-[3.25rem]"
+              className="font-display mt-4 max-w-2xl text-[2.125rem] font-medium leading-[1.15] tracking-[0.02em] text-white sm:mt-5 sm:text-5xl md:text-[3.25rem]"
             >
               {SITE_BRAND_NAME}
             </h1>
-            <div className="mx-auto mt-4 h-px w-14 bg-gradient-to-r from-transparent via-champagne-400/70 to-transparent sm:mt-5 sm:w-16" aria-hidden />
+            <div className="mx-auto mt-3 h-px w-14 bg-gradient-to-r from-transparent via-champagne-400/70 to-transparent sm:mt-4 sm:w-16" aria-hidden />
 
-            <p className="mt-4 max-w-md font-light leading-[1.75] text-white/90 sm:mt-5 sm:max-w-lg sm:text-[1.0625rem]">
+            <p className="mt-3 max-w-md font-light leading-[1.7] text-white/90 sm:mt-4 sm:max-w-lg sm:text-[1.0625rem]">
               {SITE_HERO_SERVICE_LINE}
             </p>
-            <p className="mt-3 max-w-md font-light leading-relaxed text-white/75 sm:mt-3.5 sm:text-base">
+            <p className="mt-2 max-w-md font-light leading-relaxed text-white/75 sm:mt-2.5 sm:text-base">
               {SITE_HERO_APPOINTMENT_LINE}
             </p>
 
-            <div className="mt-6 flex w-full max-w-lg flex-col gap-3 sm:mt-7 sm:max-w-2xl sm:flex-row sm:justify-center sm:gap-4">
+            <div className="mt-5 flex w-full max-w-lg flex-col gap-3 sm:mt-6 sm:max-w-2xl sm:flex-row sm:justify-center sm:gap-4">
               <Link
                 href="/services"
                 className="cta-flash-btn hero-cta-pulse group relative flex min-h-[3.35rem] flex-1 items-center justify-center overflow-hidden rounded-md border-2 border-champagne-300/85 bg-lux-espresso/50 px-5 py-3 text-center shadow-[0_0_0_1px_rgba(255,255,255,0.08)_inset,0_0_20px_rgba(168,138,61,0.25)] backdrop-blur-md transition duration-300 hover:border-champagne-200/95 hover:bg-lux-espresso/60 hover:shadow-[0_0_28px_rgba(212,175,55,0.35)] active:scale-[0.99] sm:min-h-[3.5rem] sm:px-8"
@@ -205,7 +206,7 @@ export default function HomeContent() {
               </Link>
             </div>
 
-            <div className="mt-7 w-full max-w-md space-y-3 sm:mt-8 sm:space-y-3.5">
+            <div className="mt-5 w-full max-w-md space-y-3 sm:mt-6 sm:space-y-3">
               <a
                 href={callHref}
                 className="cta-flash-btn hero-cta-pulse cta-call-primary relative flex w-full flex-col items-center justify-center gap-1 overflow-hidden rounded-md border-2 border-champagne-300/90 bg-lux-espresso/55 px-8 py-4 text-center shadow-[0_0_22px_rgba(168,138,61,0.28)] backdrop-blur-md transition hover:border-champagne-200 hover:bg-lux-espresso/65"
@@ -220,11 +221,11 @@ export default function HomeContent() {
                 href="/booking"
                 className="cta-flash-btn hero-cta-pulse relative flex min-h-[3.25rem] w-full items-center justify-center overflow-hidden rounded-md border-2 border-champagne-400/70 bg-gradient-to-b from-champagne-700 to-champagne-900 px-8 py-3.5 text-center text-[13px] font-semibold uppercase tracking-[0.18em] text-champagne-50 shadow-[0_4px_22px_rgba(0,0,0,0.35)] transition hover:border-champagne-300 hover:from-champagne-600 hover:to-champagne-950 active:scale-[0.99]"
               >
-                Request an appointment
+                Book Now
               </Link>
             </div>
 
-            <address className="mx-auto mt-10 w-full max-w-md not-italic sm:mt-12">
+            <address className="mx-auto mt-7 w-full max-w-md not-italic sm:mt-8">
               <a
                 href={mapsUrl}
                 target="_blank"
@@ -246,9 +247,12 @@ export default function HomeContent() {
             <h2 id="trust-heading" className="font-display mt-4 text-2xl font-medium text-lux-espresso sm:text-[1.75rem]">
               Thoughtful care, every visit
             </h2>
-            <div className="mx-auto mt-6 h-px w-12 bg-lux-line" aria-hidden />
+            <p className="mx-auto mt-5 max-w-xl font-light leading-relaxed text-lux-espressoLight sm:mt-6 sm:text-[1.0625rem]">
+              {SITE_STANDARD_INTRO}
+            </p>
+            <div className="mx-auto mt-8 h-px w-12 bg-lux-line sm:mt-9" aria-hidden />
           </div>
-          <div className="mt-14 grid gap-10 sm:mt-16 sm:grid-cols-3 sm:gap-8">
+          <div className="mt-12 grid gap-10 sm:mt-14 sm:grid-cols-3 sm:gap-8">
             {SITE_TRUST_POINTS.map((item) => (
               <div key={item.title} className="border-t border-lux-line/60 bg-lux-cream/50 px-2 pt-8 sm:px-4">
                 <h3 className="font-display text-lg font-medium text-lux-espresso">{item.title}</h3>
@@ -392,7 +396,7 @@ export default function HomeContent() {
               href="/booking"
               className="inline-flex min-h-[3.25rem] items-center justify-center border border-lux-espresso/20 bg-lux-espresso px-10 text-sm font-medium uppercase tracking-[0.2em] text-lux-paper transition hover:bg-lux-espressoLight"
             >
-              Request appointment
+              Book Now
             </Link>
           </div>
         </div>

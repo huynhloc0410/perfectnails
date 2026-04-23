@@ -829,7 +829,7 @@ export default function Booking() {
                     !formData.phone.trim()
                   }
                 >
-                  Request appointment
+                  Book Now
                 </button>
               </div>
             </div>
