@@ -780,66 +780,30 @@ export default function Booking() {
             <div>
               <label className="block mb-3 text-sm font-medium text-lux-espresso">Select Time *</label>
               
-              {/* Time slots table - organized by hours */}
+              {/* Time slots (compact grid) */}
               {availableTimeSlots.length > 0 ? (
-                <div className="overflow-hidden rounded-xl border border-champagne-200/70">
-                  <table className="w-full">
-                    <thead className="bg-lux-mist/70">
-                      <tr>
-                        <th className="px-4 py-2 text-left text-xs font-medium uppercase text-lux-espressoLight">Hour</th>
-                        <th className="px-4 py-2 text-left text-xs font-medium uppercase text-lux-espressoLight">Available Times</th>
-                      </tr>
-                    </thead>
-                    <tbody className="divide-y divide-champagne-200/60 bg-white">
-                      {(() => {
-                        // Group time slots by hour
-                        const slotsByHour: Record<number, string[]> = {};
-                        availableTimeSlots.forEach(slot => {
-                          const hour = parseInt(slot.split(':')[0]);
-                          if (!slotsByHour[hour]) {
-                            slotsByHour[hour] = [];
-                          }
-                          slotsByHour[hour].push(slot);
-                        });
-
-                        return Object.keys(slotsByHour)
-                          .map(Number)
-                          .sort((a, b) => a - b)
-                          .map(hour => (
-                            <tr key={hour} className="hover:bg-champagne-50/40">
-                              <td className="whitespace-nowrap px-4 py-3">
-                                <span className="text-sm font-semibold text-lux-espresso">
-                                  {hour}:00
-                                </span>
-                              </td>
-                              <td className="px-4 py-3">
-                                <div className="flex flex-wrap gap-1.5">
-                                  {slotsByHour[hour].map((slot) => {
-                                    const isSelected = formData.timeSlot === slot;
-                                    return (
-                                      <button
-                                        key={slot}
-                                        type="button"
-                                        onClick={() => setFormData({ ...formData, timeSlot: slot })}
-                                        className={`
-                                          px-3 py-1.5 rounded-md text-sm font-medium transition min-w-[60px]
-                                          ${isSelected
-                                            ? 'bg-champagne-600 text-white shadow-md'
-                                            : 'border border-champagne-200/80 bg-lux-mist/40 text-lux-espresso hover:bg-champagne-100 hover:text-champagne-700'
-                                          }
-                                        `}
-                                      >
-                                        {slot}
-                                      </button>
-                                    );
-                                  })}
-                                </div>
-                              </td>
-                            </tr>
-                          ));
-                      })()}
-                    </tbody>
-                  </table>
+                <div className="rounded-xl border border-champagne-200/70 bg-white p-3">
+                  <div className="grid grid-cols-3 gap-2 sm:grid-cols-4 md:grid-cols-5">
+                    {availableTimeSlots.map((slot) => {
+                      const isSelected = formData.timeSlot === slot;
+                      return (
+                        <button
+                          key={slot}
+                          type="button"
+                          onClick={() => setFormData({ ...formData, timeSlot: slot })}
+                          className={`
+                            rounded-md px-3 py-2 text-sm font-semibold transition
+                            ${isSelected
+                              ? 'bg-champagne-600 text-white shadow-sm'
+                              : 'border border-champagne-200/80 bg-lux-mist/40 text-lux-espresso hover:bg-champagne-100 hover:text-champagne-700'
+                            }
+                          `}
+                        >
+                          {slot}
+                        </button>
+                      );
+                    })}
+                  </div>
                 </div>
               ) : (
                 <div className="px-4 py-3 border border-red-300 bg-red-50 rounded-md text-red-700 text-sm">
@@ -856,7 +820,7 @@ export default function Booking() {
                 </div>
               )}
 
-              <div className="mt-8 border-t border-champagne-200/80 pt-6">
+              <div className="mt-5 border-t border-champagne-200/80 pt-5">
                 <h3 className="font-display text-base font-medium text-lux-espresso">Your contact info</h3>
                 <p className="mt-1 text-xs text-lux-espressoLight/75">We&apos;ll use this to confirm your appointment.</p>
                 <div className="mt-4 space-y-4">
