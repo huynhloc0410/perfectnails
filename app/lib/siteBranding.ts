@@ -48,9 +48,6 @@ export function siteAbsoluteUrl(path: string): string {
   return `${SITE_PUBLIC_URL}${p}`;
 }
 
-/** Luxury tone: quiet, confident; serif H1 carries the brand — keep short so hero CTAs stay above the fold. */
-export const SITE_HERO_SERVICE_LINE = 'Manicure, pedicure & enhancements in a calm Phoenix studio.';
-
 /** Full promise copy under “Our standard / Thoughtful care, every visit” on the homepage. */
 export const SITE_STANDARD_INTRO =
   'Pedicure, manicure, and nail enhancements — meticulous work, transparent pricing, and a calm studio experience.';
