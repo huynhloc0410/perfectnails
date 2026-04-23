@@ -33,6 +33,7 @@ interface Booking {
 
 const BUFFER_TIME = 0; // minutes between appointments
 const ANYBODY_EMPLOYEE_ID = '__anybody__';
+const TIME_SLOT_STEP_MINUTES = 30;
 
 type BusinessHours = { openMinutes: number; closeMinutes: number } | null;
 
@@ -274,8 +275,12 @@ export default function Booking() {
     // Booking must start at open and no later than 1 hour before close.
     const latestStartMinutes = hours.closeMinutes - 60;
 
-    // Generate slots (15-minute increments) within business hours
-    for (let startMinutes = hours.openMinutes; startMinutes <= latestStartMinutes; startMinutes += 15) {
+    // Generate slots (30-minute increments) within business hours
+    for (
+      let startMinutes = hours.openMinutes;
+      startMinutes <= latestStartMinutes;
+      startMinutes += TIME_SLOT_STEP_MINUTES
+    ) {
       const hour = Math.floor(startMinutes / 60);
       const minute = startMinutes % 60;
       const slotTime = `${hour.toString().padStart(2, '0')}:${minute.toString().padStart(2, '0')}`;
