@@ -31,7 +31,7 @@ interface Booking {
   duration: number;
 }
 
-const BUFFER_TIME = 10; // 10 minutes buffer between appointments
+const BUFFER_TIME = 0; // minutes between appointments
 const ANYBODY_EMPLOYEE_ID = '__anybody__';
 
 type BusinessHours = { openMinutes: number; closeMinutes: number } | null;
@@ -50,6 +50,11 @@ function getBusinessHoursForDate(dateLocal: Date): BusinessHours {
   }
   // Mon - Fri: 9:30 AM - 6:00 PM
   return { openMinutes: 9 * 60 + 30, closeMinutes: 18 * 60 };
+}
+
+function parseLocalDateYYYYMMDD(date: string): Date {
+  const [year, month, day] = date.split('-').map(Number);
+  return new Date(year, month - 1, day);
 }
 
 /** Admin can set duration to 0 to hide time on Services; scheduling still uses 45 min. */
@@ -705,7 +710,7 @@ export default function Booking() {
 
               {formData.date && (
                 <div className="mt-2 text-sm text-lux-espressoLight">
-                  <span className="font-medium text-champagne-600">✓</span> {formatDate(new Date(formData.date))}
+                  <span className="font-medium text-champagne-600">✓</span> {formatDate(parseLocalDateYYYYMMDD(formData.date))}
                 </div>
               )}
 
