@@ -46,11 +46,11 @@ function getBusinessHoursForDate(dateLocal: Date): BusinessHours {
   const dow = dateLocal.getDay();
   if (dow === 0) return null; // Sunday closed
   if (dow === 6) {
-    // Saturday 9:00 AM - 5:00 PM
-    return { openMinutes: 9 * 60, closeMinutes: 17 * 60 };
+    // Saturday: 9:30 AM - 7:00 PM
+    return { openMinutes: 9 * 60 + 30, closeMinutes: 19 * 60 };
   }
-  // Mon - Fri: 9:30 AM - 6:00 PM
-  return { openMinutes: 9 * 60 + 30, closeMinutes: 18 * 60 };
+  // Mon - Fri: 9:30 AM - 7:00 PM
+  return { openMinutes: 9 * 60 + 30, closeMinutes: 19 * 60 };
 }
 
 function parseLocalDateYYYYMMDD(date: string): Date {
@@ -272,8 +272,12 @@ export default function Booking() {
       return localDayKey(start) === localDayKey(selectedDateObj);
     });
 
-    // Booking must start at open and no later than 1 hour before close.
-    const latestStartMinutes = hours.closeMinutes - 60;
+    // Latest start depends on the selected service length (and buffer).
+    // Example: close 7:00 PM with a 60-min service → last start 6:00 PM.
+    const rawLatestStartMinutes = hours.closeMinutes - (duration + BUFFER_TIME);
+    const latestStartMinutes =
+      Math.floor(rawLatestStartMinutes / TIME_SLOT_STEP_MINUTES) * TIME_SLOT_STEP_MINUTES;
+    if (latestStartMinutes < hours.openMinutes) return [];
 
     // Generate slots (30-minute increments) within business hours
     for (
