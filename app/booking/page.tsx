@@ -363,7 +363,7 @@ export default function Booking() {
         setBookingStep(1);
         setAvailableTimeSlots([]);
         
-        setTimeout(() => setSubmitted(false), 5000);
+        setTimeout(() => setSubmitted(false), 10000);
       }
     } catch (error) {
       console.error('Booking error:', error);
@@ -473,12 +473,6 @@ export default function Booking() {
       <div className="container mx-auto border-t border-lux-line/35 px-6 py-10">
       <div className="max-w-4xl mx-auto">
         
-        {submitted && (
-          <div className="mb-6 rounded-xl border border-emerald-200/80 bg-emerald-50/90 px-4 py-3 text-emerald-900">
-            Thank you! Your booking has been submitted. We&apos;ll contact you soon.
-          </div>
-        )}
-
         <form
           onSubmit={handleSubmit}
           className="space-y-6 rounded-xl border border-champagne-300/45 bg-white p-6 shadow-md ring-1 ring-champagne-100/50"
@@ -881,6 +875,12 @@ export default function Booking() {
             </div>
           )}
         </form>
+
+        {submitted && (
+          <div className="mt-6 rounded-xl border border-emerald-200/80 bg-emerald-50/90 px-4 py-3 text-emerald-900">
+            Thank you! Your booking has been submitted. We&apos;ll contact you soon.
+          </div>
+        )}
       </div>
       </div>
     </div>
