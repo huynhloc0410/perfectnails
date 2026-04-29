@@ -878,7 +878,7 @@ export default function Booking() {
 
         {submitted && (
           <div className="mt-6 rounded-xl border border-emerald-200/80 bg-emerald-50/90 px-4 py-3 text-emerald-900">
-            Thank you! Your booking has been submitted. We&apos;ll contact you soon.
+            Thank you! Your booking is successful. We look forward to serving you.
           </div>
         )}
       </div>
