@@ -2,6 +2,7 @@ import "./globals.css";
 import SiteHeader from "./components/SiteHeader";
 import SiteFooter from "./components/SiteFooter";
 import MobileStickyCta from "./components/MobileStickyCta";
+import PromotionPopup from "./components/PromotionPopup";
 import { Cormorant_Garamond, Outfit, Poppins } from "next/font/google";
 import type { Metadata, Viewport } from "next";
 import {
@@ -98,6 +99,7 @@ export default function RootLayout({ children }: { children: React.ReactNode }) 
       <body
         className={`${poppins.className} ${cormorant.variable} ${outfit.variable} flex min-h-screen flex-col bg-lux-paper antialiased`}
       >
+        <PromotionPopup />
         <SiteHeader />
 
         <main className="w-full flex-1 overflow-x-hidden pb-[4.75rem] md:pb-0">{children}</main>
