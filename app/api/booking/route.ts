@@ -7,8 +7,9 @@ import {
 } from '@/lib/s3CmsSite';
 import type { CmsSmsJob } from '@/lib/cmsSiteTypes';
 import { normalizePhoneE164 } from '@/lib/phone';
-import { bookingConfirmationSms } from '@/lib/smsTemplates';
-import { isTwilioConfigured, sendSms } from '@/lib/twilioServer';
+// Phone confirmation SMS temporarily disabled:
+// import { bookingConfirmationSms } from '@/lib/smsTemplates';
+// import { isTwilioConfigured, sendSms } from '@/lib/twilioServer';
 
 export async function POST(req: Request) {
   const data = await req.formData();
@@ -40,25 +41,28 @@ export async function POST(req: Request) {
 
   const now = new Date();
   const phoneE164 = normalizePhoneE164(phone);
-  const twilioReady = isTwilioConfigured();
-  const confirmationBody = bookingConfirmationSms({ name, isoDate: booking.date });
+  // Confirm (SMS) temporarily disabled because phone verification isn't ready.
+  // const twilioReady = isTwilioConfigured();
+  // const confirmationBody = bookingConfirmationSms({ name, isoDate: booking.date });
+  const twilioReady = false;
 
-  const reminderAt = new Date(bookingDate.getTime() - 2 * 60 * 60 * 1000);
-  const shouldScheduleReminder = reminderAt.getTime() > now.getTime();
-
-  const reminderJob: CmsSmsJob | null =
-    phoneE164 && shouldScheduleReminder
-      ? {
-          id: `${booking.id}:reminder`,
-          kind: 'booking_reminder',
-          status: 'pending',
-          to: phoneE164,
-          bookingId: booking.id,
-          sendAt: reminderAt.toISOString(),
-          createdAt: now.toISOString(),
-          updatedAt: now.toISOString(),
-        }
-      : null;
+  // Reminder (SMS) temporarily disabled because phone verification isn't ready.
+  // const reminderAt = new Date(bookingDate.getTime() - 2 * 60 * 60 * 1000);
+  // const shouldScheduleReminder = reminderAt.getTime() > now.getTime();
+  // const reminderJob: CmsSmsJob | null =
+  //   phoneE164 && shouldScheduleReminder
+  //     ? {
+  //         id: `${booking.id}:reminder`,
+  //         kind: 'booking_reminder',
+  //         status: 'pending',
+  //         to: phoneE164,
+  //         bookingId: booking.id,
+  //         sendAt: reminderAt.toISOString(),
+  //         createdAt: now.toISOString(),
+  //         updatedAt: now.toISOString(),
+  //       }
+  //     : null;
+  const reminderJob: CmsSmsJob | null = null;
 
   if (isS3CmsConfigured()) {
     try {
@@ -84,9 +88,10 @@ export async function POST(req: Request) {
   if (twilioReady && phoneE164) {
     confirmation.attempted = true;
     try {
-      const out = await sendSms({ to: phoneE164, body: confirmationBody });
-      confirmation.sent = true;
-      confirmation.messageSid = out.sid;
+      // const out = await sendSms({ to: phoneE164, body: confirmationBody });
+      // confirmation.sent = true;
+      // confirmation.messageSid = out.sid;
+      confirmation.sent = false;
     } catch (e) {
       confirmation.sent = false;
       confirmation.error = e instanceof Error ? e.message : 'Failed to send confirmation SMS';

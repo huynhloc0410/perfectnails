@@ -1,8 +1,9 @@
 import { NextRequest, NextResponse } from 'next/server';
 import { isS3CmsConfigured, readCmsSiteFromS3, writeCmsSiteToS3 } from '@/lib/s3CmsSite';
 import type { CmsSmsJob } from '@/lib/cmsSiteTypes';
-import { bookingReminderSms } from '@/lib/smsTemplates';
-import { isTwilioConfigured, sendSms } from '@/lib/twilioServer';
+// Reminder SMS temporarily disabled:
+// import { bookingReminderSms } from '@/lib/smsTemplates';
+// import { isTwilioConfigured, sendSms } from '@/lib/twilioServer';
 
 export const dynamic = 'force-dynamic';
 
@@ -14,6 +15,9 @@ function authorized(req: NextRequest): boolean {
 }
 
 export async function POST(req: NextRequest) {
+  // Reminder function temporarily disabled because phone verification isn't ready.
+  return NextResponse.json({ ok: true, processed: 0, sent: 0, errored: 0, disabled: true });
+
   if (!authorized(req)) {
     return NextResponse.json({ error: 'Unauthorized' }, { status: 401 });
   }
