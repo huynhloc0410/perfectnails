@@ -79,6 +79,7 @@ export default function PolicyPage() {
             <ul className="list-inside list-disc space-y-2 text-lux-espressoLight">
               <li>Cash</li>
               <li>Credit/Debit Cards</li>
+              <li>Apple Pay</li>
             </ul>
             <p className="mt-4 leading-relaxed text-lux-espressoLight">
               Tips are greatly appreciated and can be given in cash or added to your card payment.
