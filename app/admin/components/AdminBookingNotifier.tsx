@@ -15,6 +15,7 @@ import {
   showBrowserNotification,
   warmAdminNotificationServiceWorker,
 } from '@/app/lib/adminBrowserNotification';
+import { playNewBookingAlertSound } from '@/app/lib/adminNewBookingAlertSound';
 
 const LOG = '[admin-notifications]';
 
@@ -134,6 +135,7 @@ export function AdminBookingNotifier() {
 
       console.log(LOG, 'triggering notification for booking', b.id, body);
 
+      playNewBookingAlertSound();
       void showBrowserNotification({
         title: 'New Booking',
         body,
