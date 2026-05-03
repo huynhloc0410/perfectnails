@@ -1,7 +1,49 @@
 /**
- * Synthetic chime for new-booking alerts (~1s). Failures are swallowed.
+ * ~3s synthetic bell chime for new-booking alerts (harmonic “phone bell” timbre).
+ * Not a copy of any commercial ringtone — Web Audio only; failures are swallowed.
  */
-const DURATION_S = 1;
+
+type Strike = { at: number; hz: number; duration: number; peak: number };
+
+/** Classic doorbell-ish fifth + bright partials; slight inharmonicity for metal. */
+const STRIKES: Strike[] = [
+  { at: 0, hz: 830, duration: 0.9, peak: 0.13 },
+  { at: 0.9, hz: 622, duration: 0.95, peak: 0.11 },
+  { at: 1.85, hz: 740, duration: 1.12, peak: 0.09 },
+];
+
+const PARTIALS: { mult: number; amp: number }[] = [
+  { mult: 1, amp: 1 },
+  { mult: 2.01, amp: 0.42 },
+  { mult: 2.76, amp: 0.18 },
+  { mult: 3.98, amp: 0.07 },
+];
+
+function bellStrike(
+  ctx: AudioContext,
+  start: number,
+  fundamental: number,
+  duration: number,
+  peak: number,
+): void {
+  for (const { mult, amp } of PARTIALS) {
+    const osc = ctx.createOscillator();
+    const gain = ctx.createGain();
+    osc.type = 'sine';
+    const f0 = fundamental * mult;
+    osc.frequency.setValueAtTime(f0, start);
+    osc.frequency.exponentialRampToValueAtTime(f0 * 0.985, start + Math.min(0.35, duration * 0.4));
+
+    gain.gain.setValueAtTime(0, start);
+    gain.gain.linearRampToValueAtTime(peak * amp, start + 0.008);
+    gain.gain.exponentialRampToValueAtTime(0.0001, start + duration);
+
+    osc.connect(gain);
+    gain.connect(ctx.destination);
+    osc.start(start);
+    osc.stop(start + duration + 0.03);
+  }
+}
 
 export function playNewBookingAlertSound(): void {
   if (typeof window === 'undefined') return;
@@ -16,21 +58,9 @@ export function playNewBookingAlertSound(): void {
     const play = () => {
       try {
         const t0 = ctx.currentTime;
-        const osc = ctx.createOscillator();
-        const gain = ctx.createGain();
-        osc.type = 'sine';
-        osc.frequency.setValueAtTime(800, t0);
-        osc.frequency.linearRampToValueAtTime(880, t0 + DURATION_S * 0.35);
-
-        gain.gain.setValueAtTime(0, t0);
-        gain.gain.linearRampToValueAtTime(0.14, t0 + 0.04);
-        gain.gain.linearRampToValueAtTime(0.1, t0 + DURATION_S * 0.4);
-        gain.gain.exponentialRampToValueAtTime(0.0001, t0 + DURATION_S);
-
-        osc.connect(gain);
-        gain.connect(ctx.destination);
-        osc.start(t0);
-        osc.stop(t0 + DURATION_S);
+        for (const s of STRIKES) {
+          bellStrike(ctx, t0 + s.at, s.hz, s.duration, s.peak);
+        }
       } catch {
         /* ignore */
       }
