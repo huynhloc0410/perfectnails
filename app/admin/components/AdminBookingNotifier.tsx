@@ -4,6 +4,10 @@ import { useEffect, useRef, useState } from 'react';
 import { usePathname } from 'next/navigation';
 import { adminDashboardBaseFromPathname } from '@/app/lib/adminPublicPath';
 import {
+  ADMIN_BOOKINGS_BROADCAST,
+  type AdminBookingBroadcastMessage,
+} from '@/app/lib/adminBookingBroadcast';
+import {
   formatMinutesAsTimeLabel,
   getBookingStartMinutes,
 } from '@/app/lib/bookingTimeUtils';
@@ -17,7 +21,7 @@ type BookingRow = {
 
 const STORAGE_KNOWN_IDS = 'admin-known-booking-ids';
 const STORAGE_BOOTSTRAP = 'admin-bookings-notifier-bootstrapped';
-const POLL_MS = 45_000;
+const POLL_MS = 15_000;
 
 function bookingDateIsoKey(dateStr: string): string {
   const d = new Date(dateStr);
@@ -33,26 +37,37 @@ function timeLabelForNotify(b: BookingRow): string {
   return formatMinutesAsTimeLabel(mins);
 }
 
+/** Merge S3/CMS snapshot with local `admin-bookings` so dev + hybrid setups see every booking. */
 async function fetchBookingsList(): Promise<BookingRow[]> {
+  const byId = new Map<string, BookingRow>();
+
   try {
-    const r = await fetch('/api/cms/site', { credentials: 'same-origin' });
+    const r = await fetch('/api/cms/site', { credentials: 'same-origin', cache: 'no-store' });
     const data = await r.json();
-    if (data.configured === true && data.site && Array.isArray(data.site.bookings)) {
-      return data.site.bookings as BookingRow[];
+    if (data.site && Array.isArray(data.site.bookings)) {
+      for (const b of data.site.bookings as BookingRow[]) {
+        if (b?.id) byId.set(b.id, b);
+      }
     }
   } catch {
     /* fall through */
   }
+
   try {
     const raw = localStorage.getItem('admin-bookings');
     if (raw) {
       const parsed = JSON.parse(raw) as unknown;
-      if (Array.isArray(parsed)) return parsed as BookingRow[];
+      if (Array.isArray(parsed)) {
+        for (const b of parsed as BookingRow[]) {
+          if (b?.id) byId.set(b.id, b);
+        }
+      }
     }
   } catch {
     /* ignore */
   }
-  return [];
+
+  return Array.from(byId.values());
 }
 
 function readKnownIds(): Set<string> {
@@ -88,11 +103,12 @@ export function AdminBookingNotifier() {
     const loginSegment = pathname.includes('/login');
     if (loginSegment) return;
 
-    const base = adminDashboardBaseFromPathname(pathname);
-    const bookingsBase = `${base}/bookings`;
+    const bookingsBase = `${adminDashboardBaseFromPathname(pathname)}/bookings`;
 
     const showNotification = (b: BookingRow) => {
-      if (Notification.permission !== 'granted') return;
+      if (Notification.permission !== 'granted') {
+        return;
+      }
 
       const bodyTime = timeLabelForNotify(b);
       const body = `${b.name || 'Guest'}${bodyTime ? ` - ${bodyTime}` : ''}`;
@@ -113,9 +129,7 @@ export function AdminBookingNotifier() {
             /* ignore */
           }
           const dateKey = bookingDateIsoKey(b.date);
-          const url = dateKey
-            ? `${bookingsBase}?date=${encodeURIComponent(dateKey)}`
-            : bookingsBase;
+          const url = dateKey ? `${bookingsBase}?date=${encodeURIComponent(dateKey)}` : bookingsBase;
           window.location.href = url;
         };
       } catch {
@@ -123,32 +137,50 @@ export function AdminBookingNotifier() {
       }
     };
 
+    const processList = (list: BookingRow[]) => {
+      let known = readKnownIds();
+      const bootstrapped = sessionStorage.getItem(STORAGE_BOOTSTRAP) === '1';
+
+      if (!bootstrapped) {
+        try {
+          sessionStorage.setItem(STORAGE_BOOTSTRAP, '1');
+        } catch {
+          /* ignore */
+        }
+        known = new Set(list.map((x) => x.id));
+        writeKnownIds(known);
+        return;
+      }
+
+      for (const b of list) {
+        if (!known.has(b.id)) {
+          known.add(b.id);
+          showNotification(b);
+        }
+      }
+      writeKnownIds(known);
+    };
+
+    const processSingleBooking = (b: BookingRow) => {
+      if (!b?.id) return;
+      const bootstrapped = sessionStorage.getItem(STORAGE_BOOTSTRAP) === '1';
+      if (!bootstrapped) {
+        void poll();
+        return;
+      }
+      let known = readKnownIds();
+      if (known.has(b.id)) return;
+      known.add(b.id);
+      writeKnownIds(known);
+      showNotification(b);
+    };
+
     const poll = async () => {
       if (pollingRef.current) return;
       pollingRef.current = true;
       try {
         const list = await fetchBookingsList();
-        let known = readKnownIds();
-        const bootstrapped = sessionStorage.getItem(STORAGE_BOOTSTRAP) === '1';
-
-        if (!bootstrapped) {
-          try {
-            sessionStorage.setItem(STORAGE_BOOTSTRAP, '1');
-          } catch {
-            /* ignore */
-          }
-          known = new Set(list.map((x) => x.id));
-          writeKnownIds(known);
-          return;
-        }
-
-        for (const b of list) {
-          if (!known.has(b.id)) {
-            known.add(b.id);
-            showNotification(b);
-          }
-        }
-        writeKnownIds(known);
+        processList(list);
       } finally {
         pollingRef.current = false;
       }
@@ -162,37 +194,86 @@ export function AdminBookingNotifier() {
     };
     window.addEventListener('storage', onStorage);
 
+    const onVisible = () => {
+      if (document.visibilityState === 'visible') void poll();
+    };
+    document.addEventListener('visibilitychange', onVisible);
+
+    let bc: BroadcastChannel | null = null;
+    try {
+      bc = new BroadcastChannel(ADMIN_BOOKINGS_BROADCAST);
+      bc.onmessage = (ev: MessageEvent<AdminBookingBroadcastMessage>) => {
+        const msg = ev.data;
+        if (!msg || typeof msg !== 'object') return;
+        if (msg.type === 'booking-created' && msg.booking) {
+          processSingleBooking(msg.booking as BookingRow);
+        }
+        if (msg.type === 'poll') void poll();
+      };
+    } catch {
+      /* BroadcastChannel unsupported */
+    }
+
     return () => {
       window.clearInterval(interval);
       window.removeEventListener('storage', onStorage);
+      document.removeEventListener('visibilitychange', onVisible);
+      try {
+        bc?.close();
+      } catch {
+        /* ignore */
+      }
     };
   }, [pathname]);
 
   return null;
 }
 
-/** Prompt once when permission is still "default" (requires click for requestPermission). */
+/** Prompt for permission + hint when blocked. */
 export function AdminBookingNotificationPermission() {
   const pathname = usePathname();
-  const [visible, setVisible] = useState(false);
+  const [perm, setPerm] = useState<NotificationPermission | 'unsupported'>('default');
+
+  useEffect(() => {
+    if (typeof window === 'undefined' || !('Notification' in window)) {
+      setPerm('unsupported');
+      return;
+    }
+    if (pathname.includes('/login')) return;
+    setPerm(Notification.permission);
+  }, [pathname]);
 
   useEffect(() => {
     if (typeof window === 'undefined' || !('Notification' in window)) return;
-    if (pathname.includes('/login')) return;
-    setVisible(Notification.permission === 'default');
-  }, [pathname]);
+    const sync = () => setPerm(Notification.permission);
+    document.addEventListener('visibilitychange', sync);
+    return () => document.removeEventListener('visibilitychange', sync);
+  }, []);
 
-  if (!visible) return null;
+  if (perm === 'unsupported') return null;
+  if (pathname.includes('/login')) return null;
+  if (perm === 'granted') return null;
+
+  if (perm === 'denied') {
+    return (
+      <div className="fixed bottom-4 left-1/2 z-[200] max-w-md -translate-x-1/2 rounded-lg border border-amber-200 bg-amber-50 px-4 py-3 text-sm text-amber-950 shadow-lg">
+        <p className="font-medium">Booking alerts are blocked</p>
+        <p className="mt-1 text-amber-900/90">
+          Allow notifications for this site in your browser (lock icon or site settings), then reload the page.
+        </p>
+      </div>
+    );
+  }
 
   return (
     <div className="fixed bottom-4 left-1/2 z-[200] flex max-w-md -translate-x-1/2 flex-col gap-2 rounded-lg border border-champagne-300 bg-white px-4 py-3 shadow-lg sm:flex-row sm:items-center">
-      <p className="text-sm text-gray-800">Get desktop alerts when customers book online.</p>
+      <p className="text-sm text-gray-800">Turn on desktop alerts for new online bookings.</p>
       <button
         type="button"
         className="shrink-0 rounded-lg bg-champagne-600 px-3 py-2 text-sm font-semibold text-white hover:bg-champagne-700"
         onClick={async () => {
           const p = await Notification.requestPermission();
-          setVisible(p === 'default');
+          setPerm(p);
         }}
       >
         Enable alerts

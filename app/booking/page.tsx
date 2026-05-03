@@ -2,6 +2,7 @@
 
 import { useState, useEffect } from 'react';
 import { useSearchParams } from 'next/navigation';
+import { ADMIN_BOOKINGS_BROADCAST } from '@/app/lib/adminBookingBroadcast';
 import { isValidUsCustomerPhone } from '@/lib/phone';
 import InnerPageHero from '../components/InnerPageHero';
 import { fetchCmsSite } from '../lib/cmsSiteClient';
@@ -364,6 +365,14 @@ export default function Booking() {
         bookingsList.push(result.booking);
         localStorage.setItem('admin-bookings', JSON.stringify(bookingsList));
         setBookings(bookingsList);
+
+        try {
+          const bc = new BroadcastChannel(ADMIN_BOOKINGS_BROADCAST);
+          bc.postMessage({ type: 'booking-created', booking: result.booking });
+          bc.close();
+        } catch {
+          /* BroadcastChannel may be unavailable */
+        }
         
         setBookingSuccessModalOpen(true);
         setPhoneSubmitError(false);
