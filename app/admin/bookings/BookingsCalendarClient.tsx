@@ -32,8 +32,8 @@ interface Booking {
   duration: number;
 }
 
-/** When true, days before today are not clickable and look disabled. */
-const DISABLE_PAST_DATES = true;
+/** When true, days before today are not clickable. Keep false so past days stay open for history. */
+const DISABLE_PAST_DATES = false;
 
 function dayKeyLocal(d: Date): string {
   return toISODateString(startOfLocalDay(d));
@@ -204,7 +204,10 @@ export function BookingsCalendarClient() {
                 No bookings for this day.
               </p>
             ) : (
-              <ul className="space-y-4">
+              <ul
+                className="grid grid-cols-1 gap-4 sm:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4"
+                role="list"
+              >
                 {dayBookings.map((booking) => {
                   const bookingEmployee = booking.employee
                     ? employees.find((e) => e.id === booking.employee)
@@ -223,22 +226,20 @@ export function BookingsCalendarClient() {
                   return (
                     <li
                       key={booking.id}
-                      className="flex flex-col gap-3 rounded-lg border border-gray-200 p-4 sm:flex-row sm:justify-between"
+                      className="flex h-full min-h-[10rem] flex-col rounded-lg border border-gray-200 bg-white p-4 shadow-sm transition hover:border-champagne-300 hover:shadow-md"
                     >
-                      <div className="min-w-0 flex-1">
-                        <p className="text-lg font-semibold text-gray-900">{booking.name}</p>
-                        <p className="mt-1 text-sm text-champagne-800">
-                          {apptDate} · {apptTime}
+                      <p className="text-base font-semibold leading-snug text-gray-900">{booking.name}</p>
+                      <p className="mt-1 text-sm font-medium text-champagne-800">
+                        {apptDate} · {apptTime}
+                      </p>
+                      <p className="mt-2 text-sm text-gray-600">Phone: {booking.phone}</p>
+                      <p className="text-sm text-gray-600">Service: {booking.service}</p>
+                      {bookingEmployee && (
+                        <p className="text-sm text-gray-600">
+                          Staff: <span className="font-semibold">{bookingEmployee.name}</span> ({bookingEmployee.role})
                         </p>
-                        <p className="mt-1 text-sm text-gray-600">Phone: {booking.phone}</p>
-                        <p className="text-sm text-gray-600">Service: {booking.service}</p>
-                        {bookingEmployee && (
-                          <p className="text-sm text-gray-600">
-                            Staff: <span className="font-semibold">{bookingEmployee.name}</span> ({bookingEmployee.role})
-                          </p>
-                        )}
-                        <p className="text-sm text-gray-600">Duration: {booking.duration || 45} min</p>
-                      </div>
+                      )}
+                      <p className="mt-auto pt-3 text-sm text-gray-500">Duration: {booking.duration || 45} min</p>
                     </li>
                   );
                 })}

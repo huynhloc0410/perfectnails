@@ -33,13 +33,11 @@ export function DayCard({
   const todayStyle = 'border-champagne-400 bg-gradient-to-b from-champagne-100/90 to-champagne-50 ring-2 ring-champagne-400/50';
   const defaultStyle = 'border-gray-200 bg-white shadow-sm';
   const pastBlocked = 'cursor-not-allowed border-gray-200 bg-gray-100 text-gray-400 opacity-75';
-  const pastLink = 'border-gray-200 bg-gray-50/90 text-gray-500 hover:bg-gray-100';
 
   const className = [
     base,
     blocked ? pastBlocked : isSelected ? selected : isToday ? todayStyle : defaultStyle,
     !blocked ? interactive : '',
-    !blocked && isPast && !isToday && !isSelected ? pastLink : '',
   ]
     .filter(Boolean)
     .join(' ');
