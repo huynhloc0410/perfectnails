@@ -12,6 +12,8 @@ import {
   getBookingStartMinutes,
 } from '@/app/lib/bookingTimeUtils';
 
+const LOG = '[admin-notifications]';
+
 type BookingRow = {
   id: string;
   name: string;
@@ -92,13 +94,17 @@ function writeKnownIds(ids: Set<string>) {
 
 /**
  * Polls for new bookings and shows browser notifications; click navigates to /admin/.../bookings?date=...
+ * Never calls `new Notification` unless `Notification.permission === 'granted'`.
  */
 export function AdminBookingNotifier() {
   const pathname = usePathname();
   const pollingRef = useRef(false);
 
   useEffect(() => {
-    if (typeof window === 'undefined' || !('Notification' in window)) return;
+    if (typeof window === 'undefined' || !('Notification' in window)) {
+      console.log(LOG, 'Notification API not available in this environment');
+      return;
+    }
 
     const loginSegment = pathname.includes('/login');
     if (loginSegment) return;
@@ -106,12 +112,18 @@ export function AdminBookingNotifier() {
     const bookingsBase = `${adminDashboardBaseFromPathname(pathname)}/bookings`;
 
     const showNotification = (b: BookingRow) => {
-      if (Notification.permission !== 'granted') {
+      const perm = Notification.permission;
+      console.log(LOG, 'showNotification() booking id=', b.id, 'Notification.permission=', perm);
+
+      if (perm !== 'granted') {
+        console.warn(LOG, 'skip notification: permission is not granted (must use Enable alerts / Test first)');
         return;
       }
 
       const bodyTime = timeLabelForNotify(b);
       const body = `${b.name || 'Guest'}${bodyTime ? ` - ${bodyTime}` : ''}`;
+
+      console.log(LOG, 'triggering notification for booking', b.id, body);
 
       try {
         const n = new Notification('New Booking', {
@@ -132,12 +144,14 @@ export function AdminBookingNotifier() {
           const url = dateKey ? `${bookingsBase}?date=${encodeURIComponent(dateKey)}` : bookingsBase;
           window.location.href = url;
         };
-      } catch {
-        /* ignore */
+      } catch (e) {
+        console.error(LOG, 'new Notification() failed', e);
       }
     };
 
     const processList = (list: BookingRow[]) => {
+      console.log(LOG, 'poll: Notification.permission=', Notification.permission, 'bookings count=', list.length);
+
       let known = readKnownIds();
       const bootstrapped = sessionStorage.getItem(STORAGE_BOOTSTRAP) === '1';
 
@@ -149,11 +163,13 @@ export function AdminBookingNotifier() {
         }
         known = new Set(list.map((x) => x.id));
         writeKnownIds(known);
+        console.log(LOG, 'bootstrap: seeded known ids, count=', known.size, '(no notifications on first run)');
         return;
       }
 
       for (const b of list) {
         if (!known.has(b.id)) {
+          console.log(LOG, 'new booking detected id=', b.id, 'name=', b.name);
           known.add(b.id);
           showNotification(b);
         }
@@ -163,13 +179,18 @@ export function AdminBookingNotifier() {
 
     const processSingleBooking = (b: BookingRow) => {
       if (!b?.id) return;
+      console.log(LOG, 'BroadcastChannel booking-created id=', b.id, 'permission=', Notification.permission);
+
       const bootstrapped = sessionStorage.getItem(STORAGE_BOOTSTRAP) === '1';
       if (!bootstrapped) {
         void poll();
         return;
       }
       let known = readKnownIds();
-      if (known.has(b.id)) return;
+      if (known.has(b.id)) {
+        console.log(LOG, 'booking already known, skip duplicate notify');
+        return;
+      }
       known.add(b.id);
       writeKnownIds(known);
       showNotification(b);
@@ -190,7 +211,10 @@ export function AdminBookingNotifier() {
     const interval = window.setInterval(() => void poll(), POLL_MS);
 
     const onStorage = (e: StorageEvent) => {
-      if (e.key === 'admin-bookings') void poll();
+      if (e.key === 'admin-bookings') {
+        console.log(LOG, 'storage event admin-bookings, re-polling');
+        void poll();
+      }
     };
     window.addEventListener('storage', onStorage);
 
@@ -211,7 +235,7 @@ export function AdminBookingNotifier() {
         if (msg.type === 'poll') void poll();
       };
     } catch {
-      /* BroadcastChannel unsupported */
+      console.log(LOG, 'BroadcastChannel not available');
     }
 
     return () => {
@@ -229,7 +253,10 @@ export function AdminBookingNotifier() {
   return null;
 }
 
-/** Prompt for permission + hint when blocked. */
+/**
+ * Permission must be requested via user gesture (buttons below).
+ * Includes "Test notification" to verify the pipeline.
+ */
 export function AdminBookingNotificationPermission() {
   const pathname = usePathname();
   const [perm, setPerm] = useState<NotificationPermission | 'unsupported'>('default');
@@ -237,47 +264,111 @@ export function AdminBookingNotificationPermission() {
   useEffect(() => {
     if (typeof window === 'undefined' || !('Notification' in window)) {
       setPerm('unsupported');
+      console.log(LOG, 'permission UI: Notification API unsupported');
       return;
     }
     if (pathname.includes('/login')) return;
-    setPerm(Notification.permission);
+    const p = Notification.permission;
+    console.log(LOG, 'permission UI: current Notification.permission=', p);
+    setPerm(p);
   }, [pathname]);
 
   useEffect(() => {
     if (typeof window === 'undefined' || !('Notification' in window)) return;
-    const sync = () => setPerm(Notification.permission);
+    const sync = () => {
+      const p = Notification.permission;
+      console.log(LOG, 'permission sync (visibility):', p);
+      setPerm(p);
+    };
     document.addEventListener('visibilitychange', sync);
     return () => document.removeEventListener('visibilitychange', sync);
   }, []);
 
+  const requestEnable = async () => {
+    console.log(LOG, 'Enable alerts clicked; before request:', Notification.permission);
+    try {
+      const p = await Notification.requestPermission();
+      console.log(LOG, 'Enable alerts: requestPermission result=', p);
+      if (p === 'denied') {
+        console.warn(LOG, 'permission denied by user or browser');
+      }
+      setPerm(p);
+    } catch (e) {
+      console.error(LOG, 'requestPermission failed', e);
+    }
+  };
+
+  const testNotification = async () => {
+    console.log(LOG, 'Test notification clicked; current permission=', Notification.permission);
+
+    if (!('Notification' in window)) {
+      console.warn(LOG, 'Test: Notification API missing');
+      return;
+    }
+
+    if (Notification.permission === 'default') {
+      console.log(LOG, 'Test: requesting permission (user gesture)');
+      try {
+        const p = await Notification.requestPermission();
+        console.log(LOG, 'Test: requestPermission result=', p);
+        setPerm(p);
+      } catch (e) {
+        console.error(LOG, 'Test: requestPermission error', e);
+        return;
+      }
+    }
+
+    if (Notification.permission === 'denied') {
+      console.warn(LOG, 'Test: permission denied — unblock in browser site settings');
+      return;
+    }
+
+    if (Notification.permission === 'granted') {
+      console.log(LOG, 'Test: showing test notification');
+      try {
+        new Notification('Test notification', {
+          body: 'If you see this, browser alerts are working.',
+          icon: '/icon.png',
+          tag: 'admin-test-notification',
+        });
+      } catch (e) {
+        console.error(LOG, 'Test: new Notification() failed', e);
+      }
+    }
+  };
+
   if (perm === 'unsupported') return null;
   if (pathname.includes('/login')) return null;
-  if (perm === 'granted') return null;
-
-  if (perm === 'denied') {
-    return (
-      <div className="fixed bottom-4 left-1/2 z-[200] max-w-md -translate-x-1/2 rounded-lg border border-amber-200 bg-amber-50 px-4 py-3 text-sm text-amber-950 shadow-lg">
-        <p className="font-medium">Booking alerts are blocked</p>
-        <p className="mt-1 text-amber-900/90">
-          Allow notifications for this site in your browser (lock icon or site settings), then reload the page.
-        </p>
-      </div>
-    );
-  }
 
   return (
-    <div className="fixed bottom-4 left-1/2 z-[200] flex max-w-md -translate-x-1/2 flex-col gap-2 rounded-lg border border-champagne-300 bg-white px-4 py-3 shadow-lg sm:flex-row sm:items-center">
-      <p className="text-sm text-gray-800">Turn on desktop alerts for new online bookings.</p>
-      <button
-        type="button"
-        className="shrink-0 rounded-lg bg-champagne-600 px-3 py-2 text-sm font-semibold text-white hover:bg-champagne-700"
-        onClick={async () => {
-          const p = await Notification.requestPermission();
-          setPerm(p);
-        }}
-      >
-        Enable alerts
-      </button>
+    <div className="fixed bottom-4 left-1/2 z-[200] flex max-w-lg -translate-x-1/2 flex-col gap-3 rounded-lg border border-champagne-300 bg-white px-4 py-3 shadow-lg sm:flex-row sm:items-center sm:justify-between">
+      <div className="text-xs text-gray-600">
+        <span className="font-semibold text-gray-800">Alerts:</span>{' '}
+        <span className="capitalize">{perm}</span>
+        {perm === 'denied' && (
+          <span className="mt-1 block text-amber-800">
+            Blocked — allow notifications in the browser lock icon → Site settings, then reload.
+          </span>
+        )}
+      </div>
+      <div className="flex flex-wrap gap-2">
+        {perm === 'default' && (
+          <button
+            type="button"
+            className="rounded-lg bg-champagne-600 px-3 py-2 text-sm font-semibold text-white hover:bg-champagne-700"
+            onClick={() => void requestEnable()}
+          >
+            Enable alerts
+          </button>
+        )}
+        <button
+          type="button"
+          className="rounded-lg border border-gray-300 bg-gray-50 px-3 py-2 text-sm font-semibold text-gray-800 hover:bg-gray-100"
+          onClick={() => void testNotification()}
+        >
+          Test notification
+        </button>
+      </div>
     </div>
   );
 }
