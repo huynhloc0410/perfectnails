@@ -260,6 +260,7 @@ export function AdminBookingNotifier() {
 export function AdminBookingNotificationPermission() {
   const pathname = usePathname();
   const [perm, setPerm] = useState<NotificationPermission | 'unsupported'>('default');
+  const [feedback, setFeedback] = useState<string | null>(null);
 
   useEffect(() => {
     if (typeof window === 'undefined' || !('Notification' in window)) {
@@ -299,40 +300,54 @@ export function AdminBookingNotificationPermission() {
   };
 
   const testNotification = async () => {
+    setFeedback(null);
     console.log(LOG, 'Test notification clicked; current permission=', Notification.permission);
 
     if (!('Notification' in window)) {
       console.warn(LOG, 'Test: Notification API missing');
+      setFeedback('This browser does not support notifications (or not a secure page — use HTTPS or localhost).');
       return;
     }
 
-    if (Notification.permission === 'default') {
+    let effective: NotificationPermission = Notification.permission;
+
+    if (effective === 'default') {
       console.log(LOG, 'Test: requesting permission (user gesture)');
       try {
-        const p = await Notification.requestPermission();
-        console.log(LOG, 'Test: requestPermission result=', p);
-        setPerm(p);
+        effective = await Notification.requestPermission();
+        console.log(LOG, 'Test: requestPermission result=', effective);
+        setPerm(effective);
       } catch (e) {
         console.error(LOG, 'Test: requestPermission error', e);
+        setFeedback('Could not request notification permission. Try another browser or check site settings.');
         return;
       }
     }
 
-    if (Notification.permission === 'denied') {
+    if (effective === 'denied') {
       console.warn(LOG, 'Test: permission denied — unblock in browser site settings');
+      setFeedback(
+        'Notifications are blocked. Use the lock icon → Site settings → allow Notifications, then reload.',
+      );
       return;
     }
 
-    if (Notification.permission === 'granted') {
+    if (effective === 'granted') {
       console.log(LOG, 'Test: showing test notification');
       try {
         new Notification('Test notification', {
           body: 'If you see this, browser alerts are working.',
           icon: '/icon.png',
-          tag: 'admin-test-notification',
+          tag: `admin-test-notification-${Date.now()}`,
         });
+        setFeedback(
+          'Sent. If no banner appeared: check macOS Notification Center, disable Focus / Do Not Disturb, or allow Chrome/Safari under System Settings → Notifications — some browsers only show banners when this tab is in the background.',
+        );
       } catch (e) {
         console.error(LOG, 'Test: new Notification() failed', e);
+        setFeedback(
+          `Could not show notification: ${e instanceof Error ? e.message : String(e)}`,
+        );
       }
     }
   };
@@ -349,6 +364,9 @@ export function AdminBookingNotificationPermission() {
           <span className="mt-1 block text-amber-800">
             Blocked — allow notifications in the browser lock icon → Site settings, then reload.
           </span>
+        )}
+        {feedback && (
+          <span className="mt-2 block text-xs text-gray-700">{feedback}</span>
         )}
       </div>
       <div className="flex flex-wrap gap-2">
