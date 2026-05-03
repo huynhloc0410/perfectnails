@@ -117,6 +117,8 @@ export default function Booking() {
     timeSlot: ''
   });
   const [bookingSuccessModalOpen, setBookingSuccessModalOpen] = useState(false);
+  /** Set true only after failed submit (invalid phone); cleared when user edits phone. */
+  const [phoneSubmitError, setPhoneSubmitError] = useState(false);
   const [availableEmployees, setAvailableEmployees] = useState<Employee[]>([]);
   const [availableTimeSlots, setAvailableTimeSlots] = useState<string[]>([]);
   const [currentMonth, setCurrentMonth] = useState(new Date());
@@ -332,6 +334,7 @@ export default function Booking() {
     }
 
     if (!isValidUsCustomerPhone(formData.phone)) {
+      setPhoneSubmitError(true);
       return;
     }
 
@@ -363,6 +366,7 @@ export default function Booking() {
         setBookings(bookingsList);
         
         setBookingSuccessModalOpen(true);
+        setPhoneSubmitError(false);
         setFormData({ name: '', phone: '', service: '', employee: '', date: '', timeSlot: '' });
         setSelectedCategory('');
         setBookingStep(1);
@@ -385,9 +389,6 @@ export default function Booking() {
   const filteredServices = selectedCategory
     ? services.filter((s) => (s.category || '').trim() === selectedCategory)
     : [];
-
-  const phoneInvalid =
-    formData.phone.trim().length > 0 && !isValidUsCustomerPhone(formData.phone);
 
   // Calendar functions
   const getDaysInMonth = (date: Date): (Date | null)[] => {
@@ -848,18 +849,21 @@ export default function Booking() {
                       inputMode="numeric"
                       autoComplete="tel"
                       value={formData.phone}
-                      onChange={(e) => setFormData({ ...formData, phone: e.target.value })}
+                      onChange={(e) => {
+                        setPhoneSubmitError(false);
+                        setFormData({ ...formData, phone: e.target.value });
+                      }}
                       placeholder="(602) 123-4567 or 6021234567"
                       className={`w-full rounded-md border px-4 py-2 focus:ring-champagne-500 ${
-                        phoneInvalid
+                        phoneSubmitError
                           ? 'border-red-500 focus:border-red-600'
                           : 'border-champagne-300/70 focus:border-champagne-500'
                       }`}
                       required
-                      aria-invalid={phoneInvalid}
-                      aria-describedby={phoneInvalid ? 'booking-phone-error' : undefined}
+                      aria-invalid={phoneSubmitError}
+                      aria-describedby={phoneSubmitError ? 'booking-phone-error' : undefined}
                     />
-                    {phoneInvalid && (
+                    {phoneSubmitError && (
                       <p id="booking-phone-error" className="mt-1 text-sm text-red-600" role="alert">
                         Wrong phone number
                       </p>
@@ -885,8 +889,7 @@ export default function Booking() {
                     !formData.date ||
                     !formData.timeSlot ||
                     !formData.name.trim() ||
-                    !formData.phone.trim() ||
-                    !isValidUsCustomerPhone(formData.phone)
+                    !formData.phone.trim()
                   }
                 >
                   Book Now
