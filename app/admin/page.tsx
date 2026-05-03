@@ -2,7 +2,7 @@
 
 import { useState, useEffect } from 'react';
 import { usePathname, useRouter } from 'next/navigation';
-import { adminLoginPathFromPathname } from '../lib/adminPublicPath';
+import { adminDashboardBaseFromPathname, adminLoginPathFromPathname } from '../lib/adminPublicPath';
 import { migrateLegacyStoredContactAddress } from '../lib/siteContact';
 import { SITE_DATA_UPDATED_EVENT } from '../lib/cmsSiteClient';
 import { SITE_BRAND_NAME } from '../lib/siteBranding';
@@ -991,7 +991,15 @@ Saturday - Sunday: 10:00 AM - 6:00 PM`}
             {/* Bookings Tab */}
             {activeTab === 'bookings' && (
               <div>
-                <h2 className="text-2xl font-semibold text-gray-800 mb-4">Bookings Management</h2>
+                <div className="mb-4 flex flex-col gap-3 sm:flex-row sm:items-center sm:justify-between">
+                  <h2 className="text-2xl font-semibold text-gray-800">Bookings Management</h2>
+                  <a
+                    href={`${adminDashboardBaseFromPathname(pathname)}/bookings`}
+                    className="inline-flex min-h-[44px] items-center justify-center rounded-lg border border-champagne-200 bg-champagne-50 px-4 py-2 text-sm font-semibold text-champagne-800 transition hover:bg-champagne-100"
+                  >
+                    Weekly calendar view
+                  </a>
+                </div>
                 <div className="space-y-8">
                   {groupedBookings.map(([key, dayBookings]) => (
                     <div key={key} className="space-y-4">
