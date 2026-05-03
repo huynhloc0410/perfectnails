@@ -253,7 +253,7 @@ export function AdminBookingNotifier() {
 
 /**
  * Permission must be requested via user gesture (buttons below).
- * Includes "Test notification" to verify the pipeline.
+ * Includes a Test button to verify the pipeline.
  */
 export function AdminBookingNotificationPermission() {
   const pathname = usePathname();
@@ -303,7 +303,7 @@ export function AdminBookingNotificationPermission() {
 
     if (!('Notification' in window)) {
       console.warn(LOG, 'Test: Notification API missing');
-      setFeedback('This browser does not support notifications (or not a secure page — use HTTPS or localhost).');
+      setFeedback('Notifications are not supported here. Use HTTPS or localhost.');
       return;
     }
 
@@ -317,16 +317,14 @@ export function AdminBookingNotificationPermission() {
         setPerm(effective);
       } catch (e) {
         console.error(LOG, 'Test: requestPermission error', e);
-        setFeedback('Could not request notification permission. Try another browser or check site settings.');
+        setFeedback('Could not request permission.');
         return;
       }
     }
 
     if (effective === 'denied') {
       console.warn(LOG, 'Test: permission denied — unblock in browser site settings');
-      setFeedback(
-        'Notifications are blocked. Use the lock icon → Site settings → allow Notifications, then reload.',
-      );
+      setFeedback('Notifications blocked — allow them in site settings, then reload.');
       return;
     }
 
@@ -334,15 +332,14 @@ export function AdminBookingNotificationPermission() {
       console.log(LOG, 'Test: showing test notification');
       try {
         await showBrowserNotification({
-          title: 'Test notification',
-          body: 'If you see this, browser alerts are working.',
+          title: 'Test',
+          body: 'Alerts are enabled.',
           icon: '/icon.png',
           tag: `admin-test-notification-${Date.now()}`,
           targetUrl: window.location.href,
         });
-        setFeedback(
-          'Sent. Desktop: check Notification Center if no banner. Phone: pull down the notification shade; sound follows system Chrome/Android settings.',
-        );
+        setFeedback('Test sent.');
+        window.setTimeout(() => setFeedback(null), 2500);
       } catch (e) {
         console.error(LOG, 'Test: showBrowserNotification failed', e);
         setFeedback(
@@ -362,7 +359,7 @@ export function AdminBookingNotificationPermission() {
         <span className="capitalize">{perm}</span>
         {perm === 'denied' && (
           <span className="mt-1 block text-amber-800">
-            Blocked — allow notifications in the browser lock icon → Site settings, then reload.
+            Blocked — allow notifications in site settings, then reload.
           </span>
         )}
         {feedback && (
@@ -384,7 +381,7 @@ export function AdminBookingNotificationPermission() {
           className="rounded-lg border border-gray-300 bg-gray-50 px-3 py-2 text-sm font-semibold text-gray-800 hover:bg-gray-100"
           onClick={() => void testNotification()}
         >
-          Test notification
+          Test
         </button>
       </div>
     </div>
