@@ -11,6 +11,7 @@ import {
   startOfLocalDay,
   toISODateString,
 } from '@/app/lib/adminWeekNav';
+import { groupBookingsByStartTime } from '@/app/lib/bookingTimeUtils';
 import { WeeklyHeader } from './components/WeeklyHeader';
 import { WeekGrid } from './components/WeekGrid';
 
@@ -126,11 +127,10 @@ export function BookingsCalendarClient() {
 
   const dayBookings = useMemo(() => {
     const key = selectedIso;
-    return bookings.filter((b) => dayKeyLocal(new Date(b.date)) === key).sort((a, b) => {
-      const ta = (a.timeSlot || '').localeCompare(b.timeSlot || '');
-      return ta;
-    });
+    return bookings.filter((b) => dayKeyLocal(new Date(b.date)) === key);
   }, [bookings, selectedIso]);
+
+  const bookingsByTime = useMemo(() => groupBookingsByStartTime(dayBookings), [dayBookings]);
 
   const handleLogout = async () => {
     try {
@@ -204,46 +204,51 @@ export function BookingsCalendarClient() {
                 No bookings for this day.
               </p>
             ) : (
-              <ul
-                className="grid grid-cols-1 gap-4 sm:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4"
-                role="list"
-              >
-                {dayBookings.map((booking) => {
-                  const bookingEmployee = booking.employee
-                    ? employees.find((e) => e.id === booking.employee)
-                    : null;
-                  const bookingDateObj = new Date(booking.date);
-                  const apptTime =
-                    booking.timeSlot ||
-                    bookingDateObj.toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' });
-                  const apptDate = bookingDateObj.toLocaleDateString([], {
-                    weekday: 'short',
-                    month: 'short',
-                    day: '2-digit',
-                    year: 'numeric',
-                  });
-
-                  return (
-                    <li
-                      key={booking.id}
-                      className="flex h-full min-h-[10rem] flex-col rounded-lg border border-gray-200 bg-white p-4 shadow-sm transition hover:border-champagne-300 hover:shadow-md"
-                    >
-                      <p className="text-base font-semibold leading-snug text-gray-900">{booking.name}</p>
-                      <p className="mt-1 text-sm font-medium text-champagne-800">
-                        {apptDate} · {apptTime}
+              <div className="space-y-8">
+                {bookingsByTime.map(({ minutes, label, bookings: atTime }) => (
+                  <section
+                    key={minutes}
+                    aria-labelledby={`admin-slot-${minutes}`}
+                    className="flex flex-col gap-3 border-b border-gray-100 pb-8 last:border-0 last:pb-0 sm:flex-row sm:items-start sm:gap-6"
+                  >
+                    <div className="flex shrink-0 items-baseline gap-3 sm:w-36 sm:flex-col sm:gap-1 sm:pt-1">
+                      <h3
+                        id={`admin-slot-${minutes}`}
+                        className="text-xl font-bold tabular-nums text-champagne-900"
+                      >
+                        {label}
+                      </h3>
+                      <p className="text-xs font-medium uppercase tracking-wide text-gray-500">
+                        {atTime.length} booking{atTime.length !== 1 ? 's' : ''}
                       </p>
-                      <p className="mt-2 text-sm text-gray-600">Phone: {booking.phone}</p>
-                      <p className="text-sm text-gray-600">Service: {booking.service}</p>
-                      {bookingEmployee && (
-                        <p className="text-sm text-gray-600">
-                          Staff: <span className="font-semibold">{bookingEmployee.name}</span> ({bookingEmployee.role})
-                        </p>
-                      )}
-                      <p className="mt-auto pt-3 text-sm text-gray-500">Duration: {booking.duration || 45} min</p>
-                    </li>
-                  );
-                })}
-              </ul>
+                    </div>
+                    <ul className="flex min-w-0 flex-1 flex-wrap gap-3">
+                      {atTime.map((booking) => {
+                        const bookingEmployee = booking.employee
+                          ? employees.find((e) => e.id === booking.employee)
+                          : null;
+                        return (
+                          <li
+                            key={booking.id}
+                            className="w-full min-w-[14rem] max-w-md flex-1 basis-56 rounded-lg border border-gray-200 bg-white p-4 shadow-sm transition hover:border-champagne-300 hover:shadow-md"
+                          >
+                            <p className="text-base font-semibold leading-snug text-gray-900">{booking.name}</p>
+                            <p className="mt-2 text-sm text-gray-600">Phone: {booking.phone}</p>
+                            <p className="text-sm text-gray-600">Service: {booking.service}</p>
+                            {bookingEmployee && (
+                              <p className="text-sm text-gray-600">
+                                Staff: <span className="font-semibold">{bookingEmployee.name}</span> (
+                                {bookingEmployee.role})
+                              </p>
+                            )}
+                            <p className="mt-3 text-sm text-gray-500">Duration: {booking.duration || 45} min</p>
+                          </li>
+                        );
+                      })}
+                    </ul>
+                  </section>
+                ))}
+              </div>
             )}
           </div>
         </div>
