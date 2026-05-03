@@ -1,3 +1,14 @@
+import {
+  AdminBookingNotificationPermission,
+  AdminBookingNotifier,
+} from './components/AdminBookingNotifier';
+
 export default function AdminLayout({ children }: { children: React.ReactNode }) {
-  return <>{children}</>;
+  return (
+    <>
+      <AdminBookingNotifier />
+      <AdminBookingNotificationPermission />
+      {children}
+    </>
+  );
 }
