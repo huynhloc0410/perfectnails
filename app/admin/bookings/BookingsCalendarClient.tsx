@@ -12,6 +12,7 @@ import {
   toISODateString,
 } from '@/app/lib/adminWeekNav';
 import { groupBookingsByStartTime } from '@/app/lib/bookingTimeUtils';
+import { BookingSmsButtons } from './components/BookingSmsButtons';
 import { WeeklyHeader } from './components/WeeklyHeader';
 import { WeekGrid } from './components/WeekGrid';
 
@@ -154,6 +155,8 @@ export function BookingsCalendarClient() {
     year: 'numeric',
   });
 
+  const smsDayLabel = dayTitle;
+
   return (
     <div className="min-h-screen bg-gray-50 py-8">
       <div className="mx-auto max-w-7xl px-4 sm:px-6 lg:px-8">
@@ -250,6 +253,13 @@ export function BookingsCalendarClient() {
                               </p>
                             )}
                             <p className="mt-3 text-sm text-gray-500">Duration: {booking.duration || 45} min</p>
+                            <BookingSmsButtons
+                              customerName={booking.name}
+                              phone={booking.phone}
+                              service={booking.service}
+                              dateLabel={smsDayLabel}
+                              timeLabel={label}
+                            />
                           </li>
                         );
                       })}
