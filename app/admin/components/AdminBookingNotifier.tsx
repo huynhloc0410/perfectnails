@@ -123,7 +123,7 @@ export function AdminBookingNotifier() {
       console.log(LOG, 'showNotification() booking id=', b.id, 'Notification.permission=', perm);
 
       if (perm !== 'granted') {
-        console.warn(LOG, 'skip notification: permission is not granted (must use Enable alerts / Test first)');
+        console.warn(LOG, 'skip notification: permission is not granted (use Enable alerts)');
         return;
       }
 
@@ -252,13 +252,11 @@ export function AdminBookingNotifier() {
 }
 
 /**
- * Permission must be requested via user gesture (buttons below).
- * Includes a Test button to verify the pipeline.
+ * Shown only when notifications need attention: permission prompt or blocked state.
  */
 export function AdminBookingNotificationPermission() {
   const pathname = usePathname();
   const [perm, setPerm] = useState<NotificationPermission | 'unsupported'>('default');
-  const [feedback, setFeedback] = useState<string | null>(null);
 
   useEffect(() => {
     if (typeof window === 'undefined' || !('Notification' in window)) {
@@ -297,60 +295,9 @@ export function AdminBookingNotificationPermission() {
     }
   };
 
-  const testNotification = async () => {
-    setFeedback(null);
-    console.log(LOG, 'Test notification clicked; current permission=', Notification.permission);
-
-    if (!('Notification' in window)) {
-      console.warn(LOG, 'Test: Notification API missing');
-      setFeedback('Notifications are not supported here. Use HTTPS or localhost.');
-      return;
-    }
-
-    let effective: NotificationPermission = Notification.permission;
-
-    if (effective === 'default') {
-      console.log(LOG, 'Test: requesting permission (user gesture)');
-      try {
-        effective = await Notification.requestPermission();
-        console.log(LOG, 'Test: requestPermission result=', effective);
-        setPerm(effective);
-      } catch (e) {
-        console.error(LOG, 'Test: requestPermission error', e);
-        setFeedback('Could not request permission.');
-        return;
-      }
-    }
-
-    if (effective === 'denied') {
-      console.warn(LOG, 'Test: permission denied — unblock in browser site settings');
-      setFeedback('Notifications blocked — allow them in site settings, then reload.');
-      return;
-    }
-
-    if (effective === 'granted') {
-      console.log(LOG, 'Test: showing test notification');
-      try {
-        await showBrowserNotification({
-          title: 'Test',
-          body: 'Alerts are enabled.',
-          icon: '/icon.png',
-          tag: `admin-test-notification-${Date.now()}`,
-          targetUrl: window.location.href,
-        });
-        setFeedback('Test sent.');
-        window.setTimeout(() => setFeedback(null), 2500);
-      } catch (e) {
-        console.error(LOG, 'Test: showBrowserNotification failed', e);
-        setFeedback(
-          `Could not show notification: ${e instanceof Error ? e.message : String(e)}`,
-        );
-      }
-    }
-  };
-
   if (perm === 'unsupported') return null;
   if (pathname.includes('/login')) return null;
+  if (perm === 'granted') return null;
 
   return (
     <div className="fixed bottom-4 left-1/2 z-[200] flex max-w-lg -translate-x-1/2 flex-col gap-3 rounded-lg border border-champagne-300 bg-white px-4 py-3 shadow-lg sm:flex-row sm:items-center sm:justify-between">
@@ -362,12 +309,9 @@ export function AdminBookingNotificationPermission() {
             Blocked — allow notifications in site settings, then reload.
           </span>
         )}
-        {feedback && (
-          <span className="mt-2 block text-xs text-gray-700">{feedback}</span>
-        )}
       </div>
-      <div className="flex flex-wrap gap-2">
-        {perm === 'default' && (
+      {perm === 'default' && (
+        <div className="flex flex-wrap gap-2">
           <button
             type="button"
             className="rounded-lg bg-champagne-600 px-3 py-2 text-sm font-semibold text-white hover:bg-champagne-700"
@@ -375,15 +319,8 @@ export function AdminBookingNotificationPermission() {
           >
             Enable alerts
           </button>
-        )}
-        <button
-          type="button"
-          className="rounded-lg border border-gray-300 bg-gray-50 px-3 py-2 text-sm font-semibold text-gray-800 hover:bg-gray-100"
-          onClick={() => void testNotification()}
-        >
-          Test
-        </button>
-      </div>
+        </div>
+      )}
     </div>
   );
 }
