@@ -138,6 +138,76 @@ export function BookingsCalendarClient() {
 
   const bookingsByTime = useMemo(() => groupBookingsByStartTime(dayBookings), [dayBookings]);
 
+  const deleteBooking = async (id: string) => {
+    if (!confirm('Are you sure you want to delete this booking?')) return;
+
+    const previous = bookings;
+    const nextBookings = previous.filter((b) => b.id !== id);
+    setBookings(nextBookings);
+
+    try {
+      sessionStorage.removeItem(`admin-sms-confirm-${id}`);
+      sessionStorage.removeItem(`admin-sms-reminder-${id}`);
+    } catch {
+      /* ignore */
+    }
+
+    if (!useCms) {
+      try {
+        localStorage.setItem('admin-bookings', JSON.stringify(nextBookings));
+      } catch {
+        /* ignore */
+      }
+      return;
+    }
+
+    try {
+      const r = await fetch('/api/cms/site');
+      const data = await r.json();
+      if (!data.site || data.error) {
+        alert('Could not load site data to save.');
+        setBookings(previous);
+        return;
+      }
+      const s = data.site as Record<string, unknown>;
+      const put = await fetch('/api/cms/site', {
+        method: 'PUT',
+        credentials: 'same-origin',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({
+          version: typeof s.version === 'number' ? s.version : 1,
+          services: Array.isArray(s.services) ? s.services : [],
+          employees: Array.isArray(s.employees) ? s.employees : [],
+          bookings: nextBookings,
+          smsJobs: Array.isArray(s.smsJobs) ? s.smsJobs : [],
+          about:
+            s.about && typeof s.about === 'object'
+              ? s.about
+              : { title: '', content: '' },
+          contact:
+            s.contact && typeof s.contact === 'object'
+              ? s.contact
+              : {
+                  address: '',
+                  phone: '',
+                  email: '',
+                  hours: '',
+                  socialMedia: { facebook: '', instagram: '', twitter: '' },
+                },
+          gallery: Array.isArray(s.gallery) ? s.gallery : [],
+        }),
+      });
+      if (!put.ok) {
+        const msg = await put.text().catch(() => '');
+        alert(`Could not save delete (${put.status}). ${msg || 'Check S3 configuration.'}`);
+        setBookings(previous);
+      }
+    } catch {
+      alert('Could not save delete to cloud.');
+      setBookings(previous);
+    }
+  };
+
   const handleLogout = async () => {
     try {
       await fetch('/api/admin/logout', { method: 'POST', credentials: 'same-origin' });
@@ -243,7 +313,18 @@ export function BookingsCalendarClient() {
                             key={booking.id}
                             className="w-full min-w-[14rem] max-w-md flex-1 basis-56 rounded-lg border border-gray-200 bg-white p-4 shadow-sm transition hover:border-champagne-300 hover:shadow-md"
                           >
-                            <p className="text-base font-semibold leading-snug text-gray-900">{booking.name}</p>
+                            <div className="flex items-start justify-between gap-2">
+                              <p className="min-w-0 flex-1 text-base font-semibold leading-snug text-gray-900">
+                                {booking.name}
+                              </p>
+                              <button
+                                type="button"
+                                onClick={() => void deleteBooking(booking.id)}
+                                className="shrink-0 rounded-md bg-red-600 px-2.5 py-1 text-xs font-semibold text-white transition hover:bg-red-700"
+                              >
+                                Delete
+                              </button>
+                            </div>
                             <p className="mt-2 text-sm text-gray-600">Phone: {booking.phone}</p>
                             <p className="text-sm text-gray-600">Service: {booking.service}</p>
                             {bookingEmployee && (
