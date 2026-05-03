@@ -2,6 +2,7 @@
 
 import { useState, useEffect } from 'react';
 import { useSearchParams } from 'next/navigation';
+import { isValidUsCustomerPhone } from '@/lib/phone';
 import InnerPageHero from '../components/InnerPageHero';
 import { fetchCmsSite } from '../lib/cmsSiteClient';
 
@@ -115,7 +116,7 @@ export default function Booking() {
     date: '',
     timeSlot: ''
   });
-  const [submitted, setSubmitted] = useState(false);
+  const [bookingSuccessModalOpen, setBookingSuccessModalOpen] = useState(false);
   const [availableEmployees, setAvailableEmployees] = useState<Employee[]>([]);
   const [availableTimeSlots, setAvailableTimeSlots] = useState<string[]>([]);
   const [currentMonth, setCurrentMonth] = useState(new Date());
@@ -330,6 +331,10 @@ export default function Booking() {
       return;
     }
 
+    if (!isValidUsCustomerPhone(formData.phone)) {
+      return;
+    }
+
     const selectedService = services.find(s => s.name === formData.service);
     const serviceDuration = schedulingMinutes(selectedService?.duration);
 
@@ -357,13 +362,11 @@ export default function Booking() {
         localStorage.setItem('admin-bookings', JSON.stringify(bookingsList));
         setBookings(bookingsList);
         
-        setSubmitted(true);
+        setBookingSuccessModalOpen(true);
         setFormData({ name: '', phone: '', service: '', employee: '', date: '', timeSlot: '' });
         setSelectedCategory('');
         setBookingStep(1);
         setAvailableTimeSlots([]);
-        
-        setTimeout(() => setSubmitted(false), 10000);
       }
     } catch (error) {
       console.error('Booking error:', error);
@@ -382,6 +385,9 @@ export default function Booking() {
   const filteredServices = selectedCategory
     ? services.filter((s) => (s.category || '').trim() === selectedCategory)
     : [];
+
+  const phoneInvalid =
+    formData.phone.trim().length > 0 && !isValidUsCustomerPhone(formData.phone);
 
   // Calendar functions
   const getDaysInMonth = (date: Date): (Date | null)[] => {
@@ -839,12 +845,25 @@ export default function Booking() {
                     <input
                       type="tel"
                       name="phone"
+                      inputMode="numeric"
+                      autoComplete="tel"
                       value={formData.phone}
                       onChange={(e) => setFormData({ ...formData, phone: e.target.value })}
-                      placeholder="Mobile number"
-                      className="w-full rounded-md border border-champagne-300/70 px-4 py-2 focus:border-champagne-500 focus:ring-champagne-500"
+                      placeholder="(602) 123-4567 or 6021234567"
+                      className={`w-full rounded-md border px-4 py-2 focus:ring-champagne-500 ${
+                        phoneInvalid
+                          ? 'border-red-500 focus:border-red-600'
+                          : 'border-champagne-300/70 focus:border-champagne-500'
+                      }`}
                       required
+                      aria-invalid={phoneInvalid}
+                      aria-describedby={phoneInvalid ? 'booking-phone-error' : undefined}
                     />
+                    {phoneInvalid && (
+                      <p id="booking-phone-error" className="mt-1 text-sm text-red-600" role="alert">
+                        Wrong phone number
+                      </p>
+                    )}
                   </div>
                 </div>
               </div>
@@ -866,7 +885,8 @@ export default function Booking() {
                     !formData.date ||
                     !formData.timeSlot ||
                     !formData.name.trim() ||
-                    !formData.phone.trim()
+                    !formData.phone.trim() ||
+                    !isValidUsCustomerPhone(formData.phone)
                   }
                 >
                   Book Now
@@ -876,9 +896,34 @@ export default function Booking() {
           )}
         </form>
 
-        {submitted && (
-          <div className="mt-6 rounded-xl border border-emerald-200/80 bg-emerald-50/90 px-4 py-3 text-emerald-900">
-            Thank you! Your booking is successful. We look forward to serving you.
+        {bookingSuccessModalOpen && (
+          <div
+            className="fixed inset-0 z-[100] flex items-center justify-center p-4"
+            role="dialog"
+            aria-modal="true"
+            aria-labelledby="booking-success-title"
+          >
+            <button
+              type="button"
+              className="absolute inset-0 bg-black/50"
+              onClick={() => setBookingSuccessModalOpen(false)}
+              aria-label="Close dialog"
+            />
+            <div className="relative z-[101] w-full max-w-md rounded-2xl border border-champagne-200 bg-white p-6 shadow-xl">
+              <h2 id="booking-success-title" className="font-display text-lg font-semibold text-lux-espresso">
+                Thank you
+              </h2>
+              <p className="mt-3 text-sm leading-relaxed text-lux-espressoLight">
+                Your booking was successful. You will receive a confirmation message within 5–10 minutes.
+              </p>
+              <button
+                type="button"
+                className="mt-6 w-full rounded-xl bg-champagne-600 px-5 py-3 text-sm font-semibold text-white shadow-sm hover:bg-champagne-700"
+                onClick={() => setBookingSuccessModalOpen(false)}
+              >
+                OK
+              </button>
+            </div>
           </div>
         )}
       </div>

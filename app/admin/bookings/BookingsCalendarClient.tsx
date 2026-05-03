@@ -254,6 +254,7 @@ export function BookingsCalendarClient() {
                             )}
                             <p className="mt-3 text-sm text-gray-500">Duration: {booking.duration || 45} min</p>
                             <BookingSmsButtons
+                              bookingId={booking.id}
                               customerName={booking.name}
                               phone={booking.phone}
                               service={booking.service}
