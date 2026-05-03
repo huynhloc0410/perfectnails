@@ -1,4 +1,10 @@
-import { SITE_BRAND_NAME, SITE_PUBLIC_URL } from '@/app/lib/siteBranding';
+import {
+  SITE_BRAND_NAME,
+  SITE_PUBLIC_URL,
+  SITE_SALON_ADDRESS_LINE,
+  siteSalonAppleMapsUrl,
+  siteSalonGoogleMapsUrl,
+} from '@/app/lib/siteBranding';
 
 /** E.164-style address for `sms:` links (digits with leading + when possible). */
 export function normalizePhoneForSms(raw: string): string {
@@ -28,21 +34,38 @@ export type BookingSmsCopyFields = {
 
 export function buildConfirmSmsBody(f: BookingSmsCopyFields): string {
   const bookingLink = `${f.siteBaseUrl}/booking`;
+  const googleMaps = siteSalonGoogleMapsUrl();
+  const appleMaps = siteSalonAppleMapsUrl();
   return [
     `Hi ${f.customerName},`,
     '',
     `Your appointment at ${SITE_BRAND_NAME} is confirmed for ${f.dateLabel} at ${f.timeLabel} — ${f.service}.`,
     '',
-    `More info / book again: ${bookingLink}`,
+    `We're here (save this address):`,
+    `${SITE_BRAND_NAME}`,
+    SITE_SALON_ADDRESS_LINE,
+    '',
+    `Directions — Google Maps: ${googleMaps}`,
+    `Directions — Apple Maps: ${appleMaps}`,
+    '',
+    `Book again: ${bookingLink}`,
   ].join('\n');
 }
 
 export function buildReminderSmsBody(f: BookingSmsCopyFields): string {
   const bookingLink = `${f.siteBaseUrl}/booking`;
+  const googleMaps = siteSalonGoogleMapsUrl();
+  const appleMaps = siteSalonAppleMapsUrl();
   return [
     `Hi ${f.customerName},`,
     '',
     `Reminder: ${f.dateLabel} at ${f.timeLabel} — ${f.service} at ${SITE_BRAND_NAME}.`,
+    '',
+    `Visit us:`,
+    SITE_SALON_ADDRESS_LINE,
+    '',
+    `Google Maps: ${googleMaps}`,
+    `Apple Maps: ${appleMaps}`,
     '',
     bookingLink,
   ].join('\n');

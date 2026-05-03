@@ -33,6 +33,24 @@ export const SITE_SCHEMA_POSTAL_ADDRESS = {
   addressCountry: 'US',
 } as const;
 
+/** Single-line postal address (SMS, confirmations). Keep aligned with `SITE_SCHEMA_POSTAL_ADDRESS`. */
+export const SITE_SALON_ADDRESS_LINE =
+  `${SITE_SCHEMA_POSTAL_ADDRESS.streetAddress}, ${SITE_SCHEMA_POSTAL_ADDRESS.addressLocality}, ${SITE_SCHEMA_POSTAL_ADDRESS.addressRegion} ${SITE_SCHEMA_POSTAL_ADDRESS.postalCode}`;
+
+/**
+ * Opens Google Maps (app or web) with the salon pinned — reliable from SMS on Android & iOS.
+ */
+export function siteSalonGoogleMapsUrl(): string {
+  const query = `${SITE_BRAND_NAME}, ${SITE_SALON_ADDRESS_LINE}`;
+  return `https://www.google.com/maps/search/?api=1&query=${encodeURIComponent(query)}`;
+}
+
+/** Opens Apple Maps on iPhone/iPad; usable from SMS for guests who prefer Apple Maps. */
+export function siteSalonAppleMapsUrl(): string {
+  const q = encodeURIComponent(`${SITE_BRAND_NAME}, ${SITE_SALON_ADDRESS_LINE}`);
+  return `https://maps.apple.com/?q=${q}`;
+}
+
 const _siteUrl = process.env.NEXT_PUBLIC_SITE_URL?.trim().replace(/\/$/, '');
 export const SITE_PUBLIC_URL = (_siteUrl && _siteUrl.startsWith('http') ? _siteUrl : 'https://perfectnails.com') as string;
 
