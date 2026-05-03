@@ -3,6 +3,9 @@
 import { useState, useEffect } from 'react';
 import { usePathname, useRouter } from 'next/navigation';
 import { adminDashboardBaseFromPathname, adminLoginPathFromPathname } from '../lib/adminPublicPath';
+import { addDays, formatWeekRangeLabel, mondayOfWeek, startOfLocalDay, toISODateString } from '../lib/adminWeekNav';
+import { WeeklyHeader } from './bookings/components/WeeklyHeader';
+import { WeekGrid } from './bookings/components/WeekGrid';
 import { migrateLegacyStoredContactAddress } from '../lib/siteContact';
 import { SITE_DATA_UPDATED_EVENT } from '../lib/cmsSiteClient';
 import { SITE_BRAND_NAME } from '../lib/siteBranding';
@@ -61,6 +64,8 @@ export default function AdminPage() {
   const [editingEmployee, setEditingEmployee] = useState<Employee | null>(null);
   /** When true, services/employees/bookings/about/contact sync to S3 via PUT /api/cms/site */
   const [useCms, setUseCms] = useState(false);
+  /** Weekly booking navigator (Bookings tab): anchor day for strip + selection highlight. */
+  const [bookingsNavDate, setBookingsNavDate] = useState(() => startOfLocalDay(new Date()));
 
   // Authentication is handled by admin layout
 
@@ -457,58 +462,11 @@ export default function AdminPage() {
     alert('Contact page updated successfully!');
   };
 
-  // Delete Booking
-  const deleteBooking = (id: string) => {
-    if (confirm('Are you sure you want to delete this booking?')) {
-      const updated = bookings.filter(b => b.id !== id);
-      setBookings(updated);
-      void persistSiteSnapshot({ bookings: updated });
-    }
-  };
-
-  const sortedBookings = [...bookings].sort((a, b) => {
-    const at = new Date(a.date).getTime();
-    const bt = new Date(b.date).getTime();
-    return at - bt;
-  });
-
-  const dayKeyLocal = (d: Date): string => {
-    const y = d.getFullYear();
-    const m = String(d.getMonth() + 1).padStart(2, '0');
-    const day = String(d.getDate()).padStart(2, '0');
-    return `${y}-${m}-${day}`;
-  };
-
-  const startOfDay = (d: Date): Date => new Date(d.getFullYear(), d.getMonth(), d.getDate());
-
-  const dayLabel = (key: string): string => {
-    const [y, m, d] = key.split('-').map(Number);
-    const dateObj = new Date(y, m - 1, d);
-    const today = startOfDay(new Date());
-    const tomorrow = new Date(today);
-    tomorrow.setDate(tomorrow.getDate() + 1);
-
-    if (startOfDay(dateObj).getTime() === today.getTime()) return 'Today';
-    if (startOfDay(dateObj).getTime() === tomorrow.getTime()) return 'Tomorrow';
-
-    return dateObj.toLocaleDateString([], {
-      weekday: 'long',
-      month: 'long',
-      day: '2-digit',
-      year: 'numeric',
-    });
-  };
-
-  const groupedBookings = (() => {
-    const map = new Map<string, Booking[]>();
-    for (const b of sortedBookings) {
-      const key = dayKeyLocal(new Date(b.date));
-      const arr = map.get(key);
-      if (arr) arr.push(b);
-      else map.set(key, [b]);
-    }
-    return Array.from(map.entries()).sort(([a], [b]) => a.localeCompare(b));
-  })();
+  const bookingsCalendarBase = `${adminDashboardBaseFromPathname(pathname)}/bookings`;
+  const bookingsWeekMonday = mondayOfWeek(bookingsNavDate);
+  const bookingsWeekSaturday = addDays(bookingsWeekMonday, 5);
+  const bookingsWeekRangeLabel = formatWeekRangeLabel(bookingsWeekMonday, bookingsWeekSaturday);
+  const bookingsSelectedIso = toISODateString(bookingsNavDate);
 
   return (
     <div className="min-h-screen bg-gray-50 py-8">
@@ -991,69 +949,33 @@ Saturday - Sunday: 10:00 AM - 6:00 PM`}
             {/* Bookings Tab */}
             {activeTab === 'bookings' && (
               <div>
-                <div className="mb-4 flex flex-col gap-3 sm:flex-row sm:items-center sm:justify-between">
-                  <h2 className="text-2xl font-semibold text-gray-800">Bookings Management</h2>
+                <h2 className="text-2xl font-semibold text-gray-800 mb-1">Bookings</h2>
+                <p className="text-gray-600 text-sm mb-6">
+                  Closed Sundays. Choose a day for the full schedule, or open the dedicated bookings page.
+                </p>
+                <div className="rounded-xl border border-gray-200 bg-gradient-to-b from-gray-50/80 to-white p-6 space-y-6">
+                  <WeeklyHeader
+                    weekRangeLabel={bookingsWeekRangeLabel}
+                    onPrevWeek={() => setBookingsNavDate((d) => addDays(d, -7))}
+                    onNextWeek={() => setBookingsNavDate((d) => addDays(d, 7))}
+                    onToday={() => setBookingsNavDate(startOfLocalDay(new Date()))}
+                  />
+                  <WeekGrid
+                    anchorDate={bookingsNavDate}
+                    selectedIso={bookingsSelectedIso}
+                    bookingsBasePath={bookingsCalendarBase}
+                    disablePastDates={false}
+                  />
+                </div>
+                <p className="mt-5 text-center text-sm text-gray-600">
                   <a
-                    href={`${adminDashboardBaseFromPathname(pathname)}/bookings`}
-                    className="inline-flex min-h-[44px] items-center justify-center rounded-lg border border-champagne-200 bg-champagne-50 px-4 py-2 text-sm font-semibold text-champagne-800 transition hover:bg-champagne-100"
+                    href={bookingsCalendarBase}
+                    className="font-semibold text-champagne-700 hover:text-champagne-900 underline-offset-2 hover:underline"
                   >
-                    Weekly calendar view
-                  </a>
-                </div>
-                <div className="space-y-8">
-                  {groupedBookings.map(([key, dayBookings]) => (
-                    <div key={key} className="space-y-4">
-                      <div className="flex items-baseline justify-between border-b border-gray-200 pb-2">
-                        <h3 className="text-lg font-semibold text-gray-800">{dayLabel(key)}</h3>
-                        <span className="text-xs font-medium text-gray-500">{key}</span>
-                      </div>
-
-                      {dayBookings.map((booking) => {
-                        const bookingEmployee = booking.employee
-                          ? employees.find((e) => e.id === booking.employee)
-                          : null;
-                        const bookingDateObj = new Date(booking.date);
-                        const apptTime =
-                          booking.timeSlot ||
-                          bookingDateObj.toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' });
-                        const apptDate = bookingDateObj.toLocaleDateString([], {
-                          weekday: 'short',
-                          month: 'short',
-                          day: '2-digit',
-                          year: 'numeric',
-                        });
-
-                        return (
-                          <div key={booking.id} className="border border-gray-200 rounded-lg p-4 flex justify-between items-start">
-                            <div className="flex-1">
-                              <h4 className="font-semibold text-lg text-gray-800">
-                                {booking.name}{' '}
-                                <span className="font-semibold text-champagne-700">· {apptDate} {apptTime}</span>
-                              </h4>
-                              <p className="text-gray-600 text-sm mt-1">Phone: {booking.phone}</p>
-                              <p className="text-gray-600 text-sm">Service: {booking.service}</p>
-                              {bookingEmployee && (
-                                <p className="text-gray-600 text-sm">
-                                  Employee: <span className="font-semibold">{bookingEmployee.name}</span> ({bookingEmployee.role})
-                                </p>
-                              )}
-                              <p className="text-gray-600 text-sm">Duration: {booking.duration || 45} min</p>
-                            </div>
-                            <button
-                              onClick={() => deleteBooking(booking.id)}
-                              className="px-3 py-1 bg-red-500 text-white rounded hover:bg-red-600 transition text-sm"
-                            >
-                              Delete
-                            </button>
-                          </div>
-                        );
-                      })}
-                    </div>
-                  ))}
-                  {bookings.length === 0 && (
-                    <p className="text-gray-500 text-center py-8">No bookings yet</p>
-                  )}
-                </div>
+                    Open full bookings page
+                  </a>{' '}
+                  for appointment details grouped by time.
+                </p>
               </div>
             )}
 

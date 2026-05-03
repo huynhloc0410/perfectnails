@@ -1,4 +1,4 @@
-/** Local-calendar helpers for Monday–Sunday week navigation in admin. */
+/** Local-calendar helpers for admin week navigation (Mon–Sat open days in UI). */
 
 export function startOfLocalDay(d: Date): Date {
   return new Date(d.getFullYear(), d.getMonth(), d.getDate());
@@ -37,6 +37,14 @@ export function parseISODateLocal(s: string): Date | null {
 }
 
 export const WEEKDAY_SHORT_MON_FIRST = ['Mon', 'Tue', 'Wed', 'Thu', 'Fri', 'Sat', 'Sun'] as const;
+
+/** Mon–Sat labels for booking calendar (Sunday closed). */
+export const WEEKDAY_SHORT_MON_SAT = ['Mon', 'Tue', 'Wed', 'Thu', 'Fri', 'Sat'] as const;
+
+/** Business week for booking UI: Monday through Saturday only. */
+export function getOpenWeekDayDatesMonSat(monday: Date): Date[] {
+  return Array.from({ length: 6 }, (_, i) => addDays(monday, i));
+}
 
 export function formatCardDate(d: Date): string {
   return d.toLocaleDateString('en-US', { month: 'long', day: 'numeric', year: 'numeric' });

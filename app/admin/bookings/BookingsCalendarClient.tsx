@@ -65,6 +65,11 @@ export function BookingsCalendarClient() {
     if (!rawDate || !parsed) {
       const iso = toISODateString(startOfLocalDay(new Date()));
       router.replace(`${bookingsBasePath}?date=${encodeURIComponent(iso)}`);
+      return;
+    }
+    if (parsed.getDay() === 0) {
+      const sat = addDays(parsed, -1);
+      router.replace(`${bookingsBasePath}?date=${encodeURIComponent(toISODateString(sat))}`);
     }
   }, [rawDate, router, bookingsBasePath]);
 
@@ -102,8 +107,8 @@ export function BookingsCalendarClient() {
 
   const selectedIso = toISODateString(selectedDate);
   const monday = mondayOfWeek(selectedDate);
-  const sunday = addDays(monday, 6);
-  const weekRangeLabel = formatWeekRangeLabel(monday, sunday);
+  const saturday = addDays(monday, 5);
+  const weekRangeLabel = formatWeekRangeLabel(monday, saturday);
 
   const navigateToDate = useCallback(
     (d: Date) => {
@@ -179,6 +184,9 @@ export function BookingsCalendarClient() {
           </div>
 
           <div className="space-y-6 border-b border-gray-100 bg-gradient-to-b from-gray-50/80 to-white p-6">
+            <p className="text-center text-sm text-gray-600">
+              Closed Sundays — calendar shows Monday through Saturday.
+            </p>
             <WeeklyHeader
               weekRangeLabel={weekRangeLabel}
               onPrevWeek={onPrevWeek}

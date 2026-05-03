@@ -1,9 +1,9 @@
 'use client';
 
 import {
-  WEEKDAY_SHORT_MON_FIRST,
+  WEEKDAY_SHORT_MON_SAT,
   formatCardDate,
-  getWeekDayDates,
+  getOpenWeekDayDatesMonSat,
   mondayOfWeek,
   startOfLocalDay,
   toISODateString,
@@ -25,13 +25,13 @@ export function WeekGrid({
   disablePastDates,
 }: WeekGridProps) {
   const monday = mondayOfWeek(anchorDate);
-  const days = getWeekDayDates(monday);
+  const days = getOpenWeekDayDatesMonSat(monday);
   const today = new Date();
   const todayIso = toISODateString(startOfLocalDay(today));
 
   return (
     <div className="-mx-1 overflow-x-auto pb-1 sm:mx-0 sm:overflow-visible">
-      <div className="flex min-w-[640px] gap-2 px-1 sm:grid sm:min-w-0 sm:grid-cols-7 sm:gap-3 sm:px-0">
+      <div className="flex min-w-[560px] gap-2 px-1 sm:grid sm:min-w-0 sm:grid-cols-6 sm:gap-3 sm:px-0">
         {days.map((d, i) => {
           const iso = toISODateString(d);
           const href = `${bookingsBasePath}?date=${encodeURIComponent(iso)}`;
@@ -42,7 +42,7 @@ export function WeekGrid({
           return (
             <DayCard
               key={iso}
-              dayName={WEEKDAY_SHORT_MON_FIRST[i]}
+              dayName={WEEKDAY_SHORT_MON_SAT[i]}
               dateLabel={formatCardDate(d)}
               isoDate={iso}
               href={href}
