@@ -11,6 +11,10 @@ import {
   formatMinutesAsTimeLabel,
   getBookingStartMinutes,
 } from '@/app/lib/bookingTimeUtils';
+import {
+  showBrowserNotification,
+  warmAdminNotificationServiceWorker,
+} from '@/app/lib/adminBrowserNotification';
 
 const LOG = '[admin-notifications]';
 
@@ -109,6 +113,8 @@ export function AdminBookingNotifier() {
     const loginSegment = pathname.includes('/login');
     if (loginSegment) return;
 
+    warmAdminNotificationServiceWorker();
+
     const bookingsBase = `${adminDashboardBaseFromPathname(pathname)}/bookings`;
 
     const showNotification = (b: BookingRow) => {
@@ -122,31 +128,21 @@ export function AdminBookingNotifier() {
 
       const bodyTime = timeLabelForNotify(b);
       const body = `${b.name || 'Guest'}${bodyTime ? ` - ${bodyTime}` : ''}`;
+      const dateKey = bookingDateIsoKey(b.date);
+      const path = dateKey ? `${bookingsBase}?date=${encodeURIComponent(dateKey)}` : bookingsBase;
+      const targetUrl = new URL(path, window.location.origin).href;
 
       console.log(LOG, 'triggering notification for booking', b.id, body);
 
-      try {
-        const n = new Notification('New Booking', {
-          body,
-          icon: '/icon.png',
-          tag: `booking-${b.id}`,
-          requireInteraction: false,
-        });
-
-        n.onclick = () => {
-          n.close();
-          try {
-            window.focus();
-          } catch {
-            /* ignore */
-          }
-          const dateKey = bookingDateIsoKey(b.date);
-          const url = dateKey ? `${bookingsBase}?date=${encodeURIComponent(dateKey)}` : bookingsBase;
-          window.location.href = url;
-        };
-      } catch (e) {
-        console.error(LOG, 'new Notification() failed', e);
-      }
+      void showBrowserNotification({
+        title: 'New Booking',
+        body,
+        tag: `booking-${b.id}`,
+        icon: '/icon.png',
+        targetUrl,
+      }).catch((e) => {
+        console.error(LOG, 'showBrowserNotification failed', e);
+      });
     };
 
     const processList = (list: BookingRow[]) => {
@@ -335,16 +331,18 @@ export function AdminBookingNotificationPermission() {
     if (effective === 'granted') {
       console.log(LOG, 'Test: showing test notification');
       try {
-        new Notification('Test notification', {
+        await showBrowserNotification({
+          title: 'Test notification',
           body: 'If you see this, browser alerts are working.',
           icon: '/icon.png',
           tag: `admin-test-notification-${Date.now()}`,
+          targetUrl: window.location.href,
         });
         setFeedback(
-          'Sent. If no banner appeared: check macOS Notification Center, disable Focus / Do Not Disturb, or allow Chrome/Safari under System Settings → Notifications — some browsers only show banners when this tab is in the background.',
+          'Sent. Desktop: check Notification Center if no banner. Phone: pull down the notification shade; sound follows system Chrome/Android settings.',
         );
       } catch (e) {
-        console.error(LOG, 'Test: new Notification() failed', e);
+        console.error(LOG, 'Test: showBrowserNotification failed', e);
         setFeedback(
           `Could not show notification: ${e instanceof Error ? e.message : String(e)}`,
         );
