@@ -3,6 +3,7 @@ import SiteHeader from "./components/SiteHeader";
 import SiteFooter from "./components/SiteFooter";
 import MobileStickyCta from "./components/MobileStickyCta";
 import PromotionPopup from "./components/PromotionPopup";
+import Script from "next/script";
 import { Cormorant_Garamond, Outfit, Poppins } from "next/font/google";
 import type { Metadata, Viewport } from "next";
 import {
@@ -94,11 +95,31 @@ export const viewport: Viewport = {
 };
 
 export default function RootLayout({ children }: { children: React.ReactNode }) {
+  const gaId = process.env.NEXT_PUBLIC_GA_ID;
+  const shouldLoadAnalytics = process.env.NODE_ENV === "production" && !!gaId;
+
   return (
     <html lang="en">
       <body
         className={`${poppins.className} ${cormorant.variable} ${outfit.variable} flex min-h-screen flex-col bg-lux-paper antialiased`}
       >
+        {shouldLoadAnalytics && (
+          <>
+            <Script
+              src={`https://www.googletagmanager.com/gtag/js?id=${gaId}`}
+              strategy="afterInteractive"
+            />
+            <Script id="ga4-init" strategy="afterInteractive">
+              {`
+window.dataLayer = window.dataLayer || [];
+function gtag(){dataLayer.push(arguments);}
+gtag('js', new Date());
+gtag('config', '${gaId}');
+              `}
+            </Script>
+          </>
+        )}
+
         <PromotionPopup />
         <SiteHeader />
 
