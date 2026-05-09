@@ -195,6 +195,9 @@ export function BookingsCalendarClient() {
                   socialMedia: { facebook: '', instagram: '', twitter: '' },
                 },
           gallery: Array.isArray(s.gallery) ? s.gallery : [],
+          bookingBlocks: Array.isArray((s as { bookingBlocks?: unknown }).bookingBlocks)
+            ? (s as { bookingBlocks: unknown[] }).bookingBlocks
+            : [],
         }),
       });
       if (!put.ok) {

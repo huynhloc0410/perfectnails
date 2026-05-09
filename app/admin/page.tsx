@@ -9,6 +9,7 @@ import { WeekGrid } from './bookings/components/WeekGrid';
 import { migrateLegacyStoredContactAddress } from '../lib/siteContact';
 import { SITE_DATA_UPDATED_EVENT } from '../lib/cmsSiteClient';
 import { SITE_BRAND_NAME } from '../lib/siteBranding';
+import { normalizeCmsBookingBlock, type CmsBookingBlock } from '@/lib/cmsSiteTypes';
 
 interface Service {
   id: string;
@@ -45,6 +46,13 @@ export default function AdminPage() {
   const [galleryImages, setGalleryImages] = useState<string[]>([]);
   const [bookings, setBookings] = useState<Booking[]>([]);
   const [employees, setEmployees] = useState<Employee[]>([]);
+  const [bookingBlocks, setBookingBlocks] = useState<CmsBookingBlock[]>([]);
+  const [bookingBlockDraft, setBookingBlockDraft] = useState({
+    date: '',
+    startTime: '09:30',
+    endTime: '10:30',
+    employeeId: '',
+  });
   
   // Content management
   const [aboutContent, setAboutContent] = useState({ title: '', content: '' });
@@ -76,6 +84,7 @@ export default function AdminPage() {
     about?: typeof aboutContent;
     contact?: typeof contactContent;
     gallery?: string[];
+    bookingBlocks?: CmsBookingBlock[];
   }) => {
     const nextServices = partial.services ?? services;
     const nextEmployees = partial.employees ?? employees;
@@ -83,6 +92,7 @@ export default function AdminPage() {
     const nextAbout = partial.about ?? aboutContent;
     const nextContact = partial.contact ?? contactContent;
     const nextGallery = partial.gallery ?? galleryImages;
+    const nextBookingBlocks = partial.bookingBlocks ?? bookingBlocks;
 
     if (!useCms) {
       if (partial.services !== undefined) {
@@ -103,9 +113,31 @@ export default function AdminPage() {
       if (partial.gallery !== undefined) {
         localStorage.setItem('admin-gallery', JSON.stringify(nextGallery));
       }
+      if (partial.bookingBlocks !== undefined) {
+        localStorage.setItem('admin-booking-blocks', JSON.stringify(nextBookingBlocks));
+      }
       if (partial.contact !== undefined) {
         window.dispatchEvent(new Event(SITE_DATA_UPDATED_EVENT));
       }
+      return;
+    }
+
+    let smsJobsPayload: unknown[] = [];
+    try {
+      const cr = await fetch('/api/cms/site', { credentials: 'same-origin' });
+      const d = await cr.json();
+      const s = d.site;
+      if (!s || typeof s !== 'object') {
+        alert('Could not load site data before saving. Try again in a moment.');
+        return;
+      }
+      smsJobsPayload = Array.isArray((s as { smsJobs?: unknown[] }).smsJobs)
+        ? (s as { smsJobs: unknown[] }).smsJobs
+        : [];
+    } catch {
+      alert(
+        'Could not load the latest site snapshot before saving. SMS job queue must not be wiped — save aborted.',
+      );
       return;
     }
 
@@ -118,6 +150,8 @@ export default function AdminPage() {
         services: nextServices,
         employees: nextEmployees,
         bookings: nextBookings,
+        smsJobs: smsJobsPayload,
+        bookingBlocks: nextBookingBlocks,
         about: nextAbout,
         contact: nextContact,
         gallery: nextGallery,
@@ -155,6 +189,9 @@ export default function AdminPage() {
           if (Array.isArray(s.services)) setServices(s.services as Service[]);
           if (Array.isArray(s.employees)) setEmployees(s.employees as Employee[]);
           if (Array.isArray(s.bookings)) setBookings(s.bookings as Booking[]);
+          if (Array.isArray((s as { bookingBlocks?: unknown }).bookingBlocks)) {
+            setBookingBlocks((s as { bookingBlocks: CmsBookingBlock[] }).bookingBlocks);
+          }
           if (s.about && typeof s.about === 'object') {
             setAboutContent((prev) => ({ ...prev, ...s.about }));
           }
@@ -180,6 +217,15 @@ export default function AdminPage() {
           if (savedEmployees) setEmployees(JSON.parse(savedEmployees));
           if (savedAbout) setAboutContent(JSON.parse(savedAbout));
           if (savedContact) setContactContent(JSON.parse(savedContact));
+          const savedBlocksElse = localStorage.getItem('admin-booking-blocks');
+          if (savedBlocksElse) {
+            try {
+              const bl = JSON.parse(savedBlocksElse) as unknown;
+              if (Array.isArray(bl)) setBookingBlocks(bl as CmsBookingBlock[]);
+            } catch {
+              /* ignore */
+            }
+          }
         }
       } catch {
         if (!cancelled) {
@@ -193,6 +239,15 @@ export default function AdminPage() {
           if (savedEmployees) setEmployees(JSON.parse(savedEmployees));
           if (savedAbout) setAboutContent(JSON.parse(savedAbout));
           if (savedContact) setContactContent(JSON.parse(savedContact));
+          const savedBlocksCatch = localStorage.getItem('admin-booking-blocks');
+          if (savedBlocksCatch) {
+            try {
+              const bl = JSON.parse(savedBlocksCatch) as unknown;
+              if (Array.isArray(bl)) setBookingBlocks(bl as CmsBookingBlock[]);
+            } catch {
+              /* ignore */
+            }
+          }
         }
       }
 
@@ -242,6 +297,8 @@ export default function AdminPage() {
             services: Array.isArray(s.services) ? s.services : [],
             employees: Array.isArray(s.employees) ? s.employees : [],
             bookings: Array.isArray(s.bookings) ? s.bookings : [],
+            smsJobs: Array.isArray(s.smsJobs) ? s.smsJobs : [],
+            bookingBlocks: Array.isArray(s.bookingBlocks) ? s.bookingBlocks : [],
             about: s.about && typeof s.about === 'object' ? s.about : { title: '', content: '' },
             contact:
               s.contact && typeof s.contact === 'object'
@@ -274,6 +331,38 @@ export default function AdminPage() {
     }
     router.push(adminLoginPathFromPathname(pathname));
     router.refresh();
+  };
+
+  const persistBookingBlocks = (next: CmsBookingBlock[]) => {
+    setBookingBlocks(next);
+    void persistSiteSnapshot({ bookingBlocks: next });
+  };
+
+  const addBookingBlock = () => {
+    if (!bookingBlockDraft.date.trim()) {
+      alert('Pick a date for the blocked window.');
+      return;
+    }
+    const id =
+      typeof crypto !== 'undefined' && 'randomUUID' in crypto ? crypto.randomUUID() : `${Date.now()}`;
+    const raw = {
+      id,
+      date: bookingBlockDraft.date.trim(),
+      startTime: bookingBlockDraft.startTime,
+      endTime: bookingBlockDraft.endTime,
+      employeeId: bookingBlockDraft.employeeId.trim() || undefined,
+    };
+    const normalized = normalizeCmsBookingBlock(raw);
+    if (!normalized) {
+      alert('Times must be 24-hour HH:MM with end strictly after start.');
+      return;
+    }
+    persistBookingBlocks([...bookingBlocks, normalized]);
+  };
+
+  const removeBookingBlock = (id: string) => {
+    if (!confirm('Remove this blocked window?')) return;
+    persistBookingBlocks(bookingBlocks.filter((b) => b.id !== id));
   };
 
   // Gallery Management
@@ -967,6 +1056,106 @@ Saturday - Sunday: 10:00 AM - 6:00 PM`}
                     disablePastDates={false}
                   />
                 </div>
+                <div className="mt-10 border-t border-gray-200 pt-8">
+                  <h3 className="text-lg font-semibold text-gray-800 mb-2">Block times on booking page</h3>
+                  <p className="text-gray-600 text-sm mb-4">
+                    Visitors won&apos;t see these windows as available. Use whole-salon breaks or one stylist&apos;s away
+                    time. End time is exclusive (blocked through the minute before end).
+                  </p>
+                  <div className="grid grid-cols-1 md:grid-cols-12 gap-3 items-end rounded-lg border border-gray-200 bg-white p-4">
+                    <div className="md:col-span-3">
+                      <label className="block text-xs font-medium text-gray-600 mb-1">Date</label>
+                      <input
+                        type="date"
+                        value={bookingBlockDraft.date}
+                        onChange={(e) => setBookingBlockDraft({ ...bookingBlockDraft, date: e.target.value })}
+                        className="w-full px-3 py-2 border border-gray-300 rounded-md text-sm"
+                      />
+                    </div>
+                    <div className="md:col-span-2">
+                      <label className="block text-xs font-medium text-gray-600 mb-1">Start</label>
+                      <input
+                        type="time"
+                        step={300}
+                        value={bookingBlockDraft.startTime}
+                        onChange={(e) =>
+                          setBookingBlockDraft({ ...bookingBlockDraft, startTime: e.target.value.slice(0, 5) })
+                        }
+                        className="w-full px-3 py-2 border border-gray-300 rounded-md text-sm"
+                      />
+                    </div>
+                    <div className="md:col-span-2">
+                      <label className="block text-xs font-medium text-gray-600 mb-1">End</label>
+                      <input
+                        type="time"
+                        step={300}
+                        value={bookingBlockDraft.endTime}
+                        onChange={(e) =>
+                          setBookingBlockDraft({ ...bookingBlockDraft, endTime: e.target.value.slice(0, 5) })
+                        }
+                        className="w-full px-3 py-2 border border-gray-300 rounded-md text-sm"
+                      />
+                    </div>
+                    <div className="md:col-span-3">
+                      <label className="block text-xs font-medium text-gray-600 mb-1">Scope</label>
+                      <select
+                        value={bookingBlockDraft.employeeId}
+                        onChange={(e) => setBookingBlockDraft({ ...bookingBlockDraft, employeeId: e.target.value })}
+                        className="w-full px-3 py-2 border border-gray-300 rounded-md text-sm"
+                      >
+                        <option value="">Whole salon</option>
+                        {employees.map((em) => (
+                          <option key={em.id} value={em.id}>
+                            {em.name} only
+                          </option>
+                        ))}
+                      </select>
+                    </div>
+                    <div className="md:col-span-2">
+                      <button
+                        type="button"
+                        onClick={addBookingBlock}
+                        className="w-full px-4 py-2 bg-champagne-600 text-white rounded-md hover:bg-champagne-700 text-sm font-semibold"
+                      >
+                        Add block
+                      </button>
+                    </div>
+                  </div>
+                  {bookingBlocks.length > 0 ? (
+                    <ul className="mt-4 space-y-2">
+                      {[...bookingBlocks]
+                        .sort((a, b) => a.date.localeCompare(b.date) || a.startTime.localeCompare(b.startTime))
+                        .map((b) => {
+                          const emp = b.employeeId ? employees.find((e) => e.id === b.employeeId) : undefined;
+                          const who = emp ? `${emp.name} only` : b.employeeId ? 'Former staff slot' : 'Whole salon';
+                          return (
+                            <li
+                              key={b.id}
+                              className="flex flex-wrap items-center justify-between gap-2 rounded-md border border-gray-200 bg-gray-50 px-3 py-2 text-sm"
+                            >
+                              <span className="text-gray-800">
+                                <span className="font-semibold">{b.date}</span>{' '}
+                                <span className="text-gray-600">
+                                  {b.startTime}–{b.endTime}
+                                </span>
+                                <span className="text-gray-500"> · {who}</span>
+                              </span>
+                              <button
+                                type="button"
+                                onClick={() => removeBookingBlock(b.id)}
+                                className="text-red-600 hover:text-red-800 text-xs font-semibold"
+                              >
+                                Remove
+                              </button>
+                            </li>
+                          );
+                        })}
+                    </ul>
+                  ) : (
+                    <p className="mt-3 text-sm text-gray-500">No custom blocks — only existing appointments reduce availability.</p>
+                  )}
+                </div>
+
                 <p className="mt-5 text-center text-sm text-gray-600">
                   <a
                     href={bookingsCalendarBase}

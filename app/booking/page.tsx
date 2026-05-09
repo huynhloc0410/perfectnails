@@ -6,6 +6,8 @@ import { ADMIN_BOOKINGS_BROADCAST } from '@/app/lib/adminBookingBroadcast';
 import { isValidUsCustomerPhone } from '@/lib/phone';
 import InnerPageHero from '../components/InnerPageHero';
 import { fetchCmsSite } from '../lib/cmsSiteClient';
+import type { CmsBookingBlock } from '@/lib/cmsSiteTypes';
+import { isBookingWindowBlocked } from '@/lib/bookingBlocks';
 
 interface Service {
   id: string;
@@ -108,6 +110,7 @@ export default function Booking() {
   const [services, setServices] = useState<Service[]>([]);
   const [employees, setEmployees] = useState<Employee[]>([]);
   const [bookings, setBookings] = useState<Booking[]>([]);
+  const [bookingBlocks, setBookingBlocks] = useState<CmsBookingBlock[]>([]);
   const [selectedCategory, setSelectedCategory] = useState<string>('');
   const [formData, setFormData] = useState({ 
     name: '', 
@@ -142,6 +145,9 @@ export default function Booking() {
           if (Array.isArray(data.site.bookings)) {
             setBookings(data.site.bookings as Booking[]);
           }
+          if (Array.isArray(data.site.bookingBlocks)) {
+            setBookingBlocks(data.site.bookingBlocks as CmsBookingBlock[]);
+          }
           return;
         }
       } catch {
@@ -151,9 +157,18 @@ export default function Booking() {
       const savedServices = localStorage.getItem('admin-services');
       const savedEmployees = localStorage.getItem('admin-employees');
       const savedBookings = localStorage.getItem('admin-bookings');
+      const savedBlocks = localStorage.getItem('admin-booking-blocks');
       if (savedServices) setServices(JSON.parse(savedServices));
       if (savedEmployees) setEmployees(JSON.parse(savedEmployees));
       if (savedBookings) setBookings(JSON.parse(savedBookings));
+      if (savedBlocks) {
+        try {
+          const parsed = JSON.parse(savedBlocks) as unknown[];
+          if (Array.isArray(parsed)) setBookingBlocks(parsed as CmsBookingBlock[]);
+        } catch {
+          /* ignore */
+        }
+      }
     })();
     return () => {
       cancelled = true;
@@ -247,7 +262,15 @@ export default function Booking() {
       const slots = generateTimeSlots(formData.date, formData.employee, serviceDuration);
       setAvailableTimeSlots(slots);
     }
-  }, [formData.service, formData.employee, formData.date, bookings, services, availableEmployees]);
+  }, [
+    formData.service,
+    formData.employee,
+    formData.date,
+    bookings,
+    bookingBlocks,
+    services,
+    availableEmployees,
+  ]);
 
   // Generate time slots for a given date, employee, and service duration
   const generateTimeSlots = (date: string, employeeId: string, duration: number): string[] => {
@@ -318,7 +341,14 @@ export default function Booking() {
                  (slotDateTime <= bookingTime && slotEndTime >= bookingEndTime);
         });
 
-        if (isAvailable) {
+        const overlapsBlock = isBookingWindowBlocked({
+          dateYmd: date,
+          employeeId,
+          slotStartLocal: slotDateTime,
+          slotEndExclusiveLocal: slotEndTime,
+          blocks: bookingBlocks,
+        });
+        if (isAvailable && !overlapsBlock) {
           slots.push(slotTime);
         }
     }
@@ -358,7 +388,12 @@ export default function Booking() {
       });
 
       const result = await response.json();
-      
+
+      if (response.status === 409 || result?.error === 'time_blocked') {
+        alert('That time is no longer available. Please choose a different slot.');
+        return;
+      }
+
       if (result.success) {
         const savedBookings = localStorage.getItem('admin-bookings') || '[]';
         const bookingsList = JSON.parse(savedBookings);

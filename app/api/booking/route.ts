@@ -1,5 +1,6 @@
 import { NextResponse } from 'next/server';
 import type { CmsBooking } from '@/lib/cmsSiteTypes';
+import { isBookingWindowBlocked } from '@/lib/bookingBlocks';
 import {
   isS3CmsConfigured,
   readCmsSiteFromS3,
@@ -28,6 +29,7 @@ export async function POST(req: Request) {
 
   // In a real app, you'd save to a database
   // For now, we'll return the booking data and the client will save it
+  const bookingDuration = parseInt(duration, 10) || 45;
   const booking: CmsBooking = {
     id: Date.now().toString(),
     name,
@@ -36,7 +38,7 @@ export async function POST(req: Request) {
     employee: employee || undefined,
     date: bookingDate.toISOString(),
     timeSlot,
-    duration: parseInt(duration, 10) || 45,
+    duration: bookingDuration,
   };
 
   const now = new Date();
@@ -68,6 +70,21 @@ export async function POST(req: Request) {
     try {
       const site = await readCmsSiteFromS3();
       if (site) {
+        const dateYmd = `${year}-${String(month).padStart(2, '0')}-${String(day).padStart(2, '0')}`;
+        const empId = (employee || '').trim();
+        const slotEndExclusive = new Date(bookingDate.getTime());
+        slotEndExclusive.setMinutes(slotEndExclusive.getMinutes() + bookingDuration);
+        const blocked = isBookingWindowBlocked({
+          dateYmd,
+          employeeId: empId,
+          slotStartLocal: bookingDate,
+          slotEndExclusiveLocal: slotEndExclusive,
+          blocks: site.bookingBlocks,
+        });
+        if (blocked) {
+          return NextResponse.json({ success: false, error: 'time_blocked' }, { status: 409 });
+        }
+
         site.bookings = [...site.bookings, booking];
         if (reminderJob) {
           const existing = site.smsJobs?.some((j) => j.id === reminderJob.id);

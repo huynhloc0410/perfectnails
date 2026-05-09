@@ -18,6 +18,7 @@ export interface CmsSiteApiShape {
       socialMedia?: { facebook?: string; instagram?: string; twitter?: string };
     };
     gallery?: string[];
+    bookingBlocks?: unknown[];
   };
   error?: string;
 }
