@@ -25,7 +25,7 @@ export default function InnerPageHero({
           </h1>
           <PageHeroRule />
           {subtitle ? (
-            <p className="mx-auto mt-[0.525rem] max-w-2xl text-sm font-light leading-relaxed text-lux-espressoLight/95">
+            <p className="mx-auto mt-[0.525rem] max-w-2xl text-base font-light leading-relaxed text-lux-espressoLight/95 md:text-sm lg:text-base">
               {subtitle}
             </p>
           ) : null}

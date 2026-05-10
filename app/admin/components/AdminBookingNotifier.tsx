@@ -2,20 +2,20 @@
 
 import { useEffect, useRef, useState } from 'react';
 import { usePathname } from 'next/navigation';
-import { adminDashboardBaseFromPathname } from '@/app/lib/adminPublicPath';
+import { adminDashboardBaseFromPathname } from '@/lib/admin/public-path';
 import {
   ADMIN_BOOKINGS_BROADCAST,
   type AdminBookingBroadcastMessage,
-} from '@/app/lib/adminBookingBroadcast';
+} from '@/lib/admin/booking-broadcast';
 import {
   formatMinutesAsTimeLabel,
   getBookingStartMinutes,
-} from '@/app/lib/bookingTimeUtils';
+} from '@/lib/booking/time-display';
 import {
   showBrowserNotification,
   warmAdminNotificationServiceWorker,
-} from '@/app/lib/adminBrowserNotification';
-import { playNewBookingAlertSound } from '@/app/lib/adminNewBookingAlertSound';
+} from '@/lib/admin/browser-notification';
+import { playNewBookingAlertSound } from '@/lib/admin/new-booking-alert-sound';
 
 const LOG = '[admin-notifications]';
 

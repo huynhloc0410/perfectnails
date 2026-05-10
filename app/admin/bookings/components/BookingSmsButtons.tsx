@@ -7,7 +7,7 @@ import {
   buildSmsHref,
   defaultSmsSiteBaseUrl,
   normalizePhoneForSms,
-} from '@/app/lib/adminBookingSms';
+} from '@/lib/admin/booking-sms-copy';
 
 type BookingSmsButtonsProps = {
   bookingId: string;

@@ -2,13 +2,13 @@
 
 import { useState, useEffect } from 'react';
 import { usePathname, useRouter } from 'next/navigation';
-import { adminDashboardBaseFromPathname, adminLoginPathFromPathname } from '../lib/adminPublicPath';
-import { addDays, formatWeekRangeLabel, mondayOfWeek, startOfLocalDay, toISODateString } from '../lib/adminWeekNav';
+import { adminDashboardBaseFromPathname, adminLoginPathFromPathname } from '@/lib/admin/public-path';
+import { addDays, formatWeekRangeLabel, mondayOfWeek, startOfLocalDay, toISODateString } from '@/lib/admin/week-calendar';
 import { WeeklyHeader } from './bookings/components/WeeklyHeader';
 import { WeekGrid } from './bookings/components/WeekGrid';
-import { migrateLegacyStoredContactAddress } from '../lib/siteContact';
-import { SITE_DATA_UPDATED_EVENT } from '../lib/cmsSiteClient';
-import { SITE_BRAND_NAME } from '../lib/siteBranding';
+import { migrateLegacyStoredContactAddress } from '@/lib/site/contact';
+import { SITE_DATA_UPDATED_EVENT } from '@/lib/cms/site-client';
+import { SITE_BRAND_NAME } from '@/lib/site/branding';
 import {
   coerceBookingBlocksList,
   normalizeCmsBookingBlock,

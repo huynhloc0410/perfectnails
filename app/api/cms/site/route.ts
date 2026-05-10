@@ -1,6 +1,7 @@
 import { NextRequest, NextResponse } from 'next/server';
 import { ADMIN_SESSION_COOKIE, verifyAdminToken } from '@/lib/adminSessionVerify';
 import { defaultCmsSite, normalizeCmsSite } from '@/lib/cmsSiteTypes';
+import { CACHE_HEADERS_PRIVATE_NO_STORE } from '@/lib/http/cache-headers';
 import {
   isS3CmsConfigured,
   readCmsSiteFromS3,
@@ -23,7 +24,7 @@ export async function GET() {
           'Set AWS_ACCESS_KEY_ID, AWS_SECRET_ACCESS_KEY, region (AWS_REGION or AWS_DEFAULT_REGION), bucket (AWS_S3_BUCKET_NAME from NailsByNi, or S3_BUCKET_NAME, etc.). Names are case-sensitive on Render.',
       },
       {
-        headers: { 'Cache-Control': 'private, no-store' },
+        headers: CACHE_HEADERS_PRIVATE_NO_STORE,
       }
     );
   }
@@ -33,7 +34,7 @@ export async function GET() {
     return NextResponse.json(
       { configured: true, site: site ?? defaultCmsSite() },
       {
-        headers: { 'Cache-Control': 'private, no-store' },
+        headers: CACHE_HEADERS_PRIVATE_NO_STORE,
       }
     );
   } catch (e) {

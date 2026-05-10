@@ -3,8 +3,8 @@
 import { useState, useEffect } from 'react';
 import InnerPageHero from '../components/InnerPageHero';
 import Link from 'next/link';
-import { fetchCmsSite } from '../lib/cmsSiteClient';
-import { SITE_BRAND_NAME, SITE_PUBLIC_URL, siteAbsoluteUrl } from '../lib/siteBranding';
+import { fetchCmsSite } from '@/lib/cms/site-client';
+import { SITE_BRAND_NAME } from '@/lib/site/branding';
 
 export default function About() {
   const [aboutContent, setAboutContent] = useState({ title: 'About Us', content: '' });
@@ -33,113 +33,6 @@ export default function About() {
     })();
     return () => {
       cancelled = true;
-    };
-  }, []);
-
-  // Generate comprehensive structured data for SEO
-  useEffect(() => {
-    if (typeof window === 'undefined') return;
-
-    // AboutPage Schema
-    const aboutPageSchema = {
-      '@context': 'https://schema.org',
-      '@type': 'AboutPage',
-      name: `About ${SITE_BRAND_NAME}`,
-      description: `Learn about ${SITE_BRAND_NAME}, Phoenix's premier nail salon. Discover our story, commitment to quality, and expert team dedicated to making you look and feel your best.`,
-      url: siteAbsoluteUrl('/about'),
-      mainEntity: {
-        '@type': 'Organization',
-        name: SITE_BRAND_NAME,
-        description: 'Premier nail salon in Phoenix, Arizona offering professional manicures, pedicures, and nail art services',
-        address: {
-          '@type': 'PostalAddress',
-          streetAddress: '4030 E Bell Rd #110',
-          addressLocality: 'Phoenix',
-          addressRegion: 'AZ',
-          postalCode: '85032',
-          addressCountry: 'US',
-        },
-        url: SITE_PUBLIC_URL,
-        telephone: '+1-623-302-2156',
-        priceRange: '$$',
-        openingHours: 'Mo-Fr 09:00-19:00, Sa-Su 10:00-18:00',
-        areaServed: {
-          '@type': 'City',
-          name: 'Phoenix',
-          containedIn: {
-            '@type': 'State',
-            name: 'Arizona',
-          },
-        },
-      },
-    };
-
-    // FAQ Schema
-    const faqSchema = {
-      '@context': 'https://schema.org',
-      '@type': 'FAQPage',
-      mainEntity: [
-        {
-          '@type': 'Question',
-          name: `What services does ${SITE_BRAND_NAME} offer?`,
-          acceptedAnswer: {
-            '@type': 'Answer',
-            text: `${SITE_BRAND_NAME} offers a comprehensive range of professional nail care services including manicures, pedicures, Gel X, Gel Builder, Acrylic nails, and custom nail art designs. We serve clients in Phoenix, Arizona and surrounding areas.`,
-          },
-        },
-        {
-          '@type': 'Question',
-          name: `Where is ${SITE_BRAND_NAME} located?`,
-          acceptedAnswer: {
-            '@type': 'Answer',
-            text: `${SITE_BRAND_NAME} is located at 4030 E Bell Rd #110, Phoenix, AZ 85032. We are conveniently located in Phoenix, Arizona.`,
-          },
-        },
-        {
-          '@type': 'Question',
-          name: `What are ${SITE_BRAND_NAME}'s business hours?`,
-          acceptedAnswer: {
-            '@type': 'Answer',
-            text: `${SITE_BRAND_NAME} is open Monday through Friday from 9:00 AM to 7:00 PM, and Saturday through Sunday from 10:00 AM to 6:00 PM.`,
-          },
-        },
-        {
-          '@type': 'Question',
-          name: `How do I book an appointment at ${SITE_BRAND_NAME}?`,
-          acceptedAnswer: {
-            '@type': 'Answer',
-            text: 'You can book an appointment online through our website booking page, or contact us directly by phone. We offer easy online scheduling where you can select your service, choose a technician, pick a date and time that works for you.',
-          },
-        },
-      ],
-    };
-
-    // Remove existing scripts
-    const existingAboutScript = document.getElementById('about-page-schema');
-    const existingFaqScript = document.getElementById('faq-schema');
-    if (existingAboutScript) existingAboutScript.remove();
-    if (existingFaqScript) existingFaqScript.remove();
-
-    // Inject AboutPage schema
-    const aboutScript = document.createElement('script');
-    aboutScript.id = 'about-page-schema';
-    aboutScript.type = 'application/ld+json';
-    aboutScript.text = JSON.stringify(aboutPageSchema);
-    document.head.appendChild(aboutScript);
-
-    // Inject FAQ schema
-    const faqScript = document.createElement('script');
-    faqScript.id = 'faq-schema';
-    faqScript.type = 'application/ld+json';
-    faqScript.text = JSON.stringify(faqSchema);
-    document.head.appendChild(faqScript);
-
-    // Cleanup
-    return () => {
-      const aboutToRemove = document.getElementById('about-page-schema');
-      const faqToRemove = document.getElementById('faq-schema');
-      if (aboutToRemove) aboutToRemove.remove();
-      if (faqToRemove) faqToRemove.remove();
     };
   }, []);
 

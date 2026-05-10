@@ -1,5 +1,5 @@
 import { MetadataRoute } from 'next';
-import { SITE_PUBLIC_URL } from './lib/siteBranding';
+import { SITE_PUBLIC_URL } from '@/lib/site/branding';
 
 export default function sitemap(): MetadataRoute.Sitemap {
   const baseUrl = SITE_PUBLIC_URL;
@@ -16,6 +16,30 @@ export default function sitemap(): MetadataRoute.Sitemap {
       lastModified: new Date(),
       changeFrequency: 'weekly',
       priority: 0.9,
+    },
+    {
+      url: `${baseUrl}/pedicure`,
+      lastModified: new Date(),
+      changeFrequency: 'monthly',
+      priority: 0.85,
+    },
+    {
+      url: `${baseUrl}/manicure`,
+      lastModified: new Date(),
+      changeFrequency: 'monthly',
+      priority: 0.85,
+    },
+    {
+      url: `${baseUrl}/builder-gel`,
+      lastModified: new Date(),
+      changeFrequency: 'monthly',
+      priority: 0.85,
+    },
+    {
+      url: `${baseUrl}/acrylic`,
+      lastModified: new Date(),
+      changeFrequency: 'monthly',
+      priority: 0.85,
     },
     {
       url: `${baseUrl}/booking`,

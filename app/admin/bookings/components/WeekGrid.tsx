@@ -7,7 +7,7 @@ import {
   mondayOfWeek,
   startOfLocalDay,
   toISODateString,
-} from '@/app/lib/adminWeekNav';
+} from '@/lib/admin/week-calendar';
 import { DayCard } from './DayCard';
 
 type WeekGridProps = {

@@ -1,4 +1,4 @@
-/** Same-origin BroadcastChannel for booking tab → admin tabs (instant notifier without waiting for poll). */
+/** Same-origin BroadcastChannel: booking tab → admin tabs (instant notifier without waiting for poll). */
 export const ADMIN_BOOKINGS_BROADCAST = 'nails-admin-bookings';
 
 export type AdminBookingBroadcastMessage =

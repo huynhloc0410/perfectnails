@@ -5,9 +5,9 @@ import InnerPageHero from '../components/InnerPageHero';
 import {
   SITE_DEFAULT_ADDRESS,
   migrateLegacyStoredContactAddress,
-} from '../lib/siteContact';
-import { fetchCmsSite } from '../lib/cmsSiteClient';
-import { SITE_BRAND_NAME, SITE_PUBLIC_URL, siteAbsoluteUrl } from '../lib/siteBranding';
+} from '@/lib/site/contact';
+import { fetchCmsSite } from '@/lib/cms/site-client';
+import { SITE_BRAND_NAME } from '@/lib/site/branding';
 
 interface ContactContent {
   address: string;
@@ -71,58 +71,6 @@ export default function Contact() {
   // Format address for Google Maps
   const mapAddress = encodeURIComponent(displayAddress);
 
-  // Generate LocalBusiness structured data and inject it
-  useEffect(() => {
-    if (typeof window === 'undefined') return;
-
-    const localBusinessSchema = {
-      '@context': 'https://schema.org',
-      '@type': 'BeautySalon',
-      name: SITE_BRAND_NAME,
-      description: 'Professional nail salon in Phoenix, Arizona offering manicures, pedicures, nail art, and premium nail care services',
-      url: SITE_PUBLIC_URL,
-      telephone: contact.phone || '+1-623-302-2156',
-      email: contact.email || '',
-      address: {
-        '@type': 'PostalAddress',
-        streetAddress: contact.address || '4030 E Bell Rd #110',
-        addressLocality: 'Phoenix',
-        addressRegion: 'AZ',
-        postalCode: '85032',
-        addressCountry: 'US',
-      },
-      priceRange: '$$',
-      openingHours: contact.hours ? contact.hours.split('\n').map((line: string) => line.trim()).filter((line: string) => line) : ['Mo-Fr 09:00-19:00', 'Sa-Su 10:00-18:00'],
-      image: siteAbsoluteUrl('/logo.png'),
-      sameAs: [
-        contact.socialMedia.facebook,
-        contact.socialMedia.instagram,
-        contact.socialMedia.twitter,
-      ].filter(Boolean),
-    };
-
-    // Remove existing script if any
-    const existingScript = document.getElementById('local-business-schema');
-    if (existingScript) {
-      existingScript.remove();
-    }
-
-    // Create and inject script
-    const script = document.createElement('script');
-    script.id = 'local-business-schema';
-    script.type = 'application/ld+json';
-    script.text = JSON.stringify(localBusinessSchema);
-    document.head.appendChild(script);
-
-    // Cleanup
-    return () => {
-      const scriptToRemove = document.getElementById('local-business-schema');
-      if (scriptToRemove) {
-        scriptToRemove.remove();
-      }
-    };
-  }, [contact]);
-
   return (
     <div>
       <InnerPageHero
@@ -136,10 +84,10 @@ export default function Contact() {
       
       <div className="grid grid-cols-1 md:grid-cols-2 gap-8">
         <div className="rounded-xl border border-champagne-300/45 bg-white p-6 shadow-md ring-1 ring-champagne-100/50">
-          <h3 className="mb-4 font-display text-xl font-medium text-lux-espresso">Get in Touch</h3>
+          <h2 className="mb-4 font-display text-xl font-medium text-lux-espresso">Get in Touch</h2>
           
           <div className="mb-4">
-            <h4 className="mb-1 font-semibold text-lux-espresso">Address</h4>
+            <h3 className="mb-1 font-semibold text-lux-espresso">Address</h3>
             <p className="text-lux-espressoLight/90">{displayAddress}</p>
             <a
               href={`https://www.google.com/maps/search/?api=1&query=${mapAddress}`}
@@ -153,7 +101,7 @@ export default function Contact() {
           
           {contact.phone && (
             <div className="mb-4">
-              <h4 className="mb-1 font-semibold text-lux-espresso">Phone</h4>
+              <h3 className="mb-1 font-semibold text-lux-espresso">Phone</h3>
               <a href={`tel:${contact.phone}`} className="text-champagne-600 hover:text-champagne-700">
                 {contact.phone}
               </a>
@@ -162,7 +110,7 @@ export default function Contact() {
           
           {contact.email && (
             <div className="mb-4">
-              <h4 className="mb-1 font-semibold text-lux-espresso">Email</h4>
+              <h3 className="mb-1 font-semibold text-lux-espresso">Email</h3>
               <a href={`mailto:${contact.email}`} className="text-champagne-600 hover:text-champagne-700">
                 {contact.email}
               </a>
@@ -171,7 +119,7 @@ export default function Contact() {
           
           {contact.hours && (
             <div className="mb-4">
-              <h4 className="mb-2 font-semibold text-lux-espresso">Business Hours</h4>
+              <h3 className="mb-2 font-semibold text-lux-espresso">Business Hours</h3>
               <div className="space-y-1 text-lux-espressoLight/90">
                 {contact.hours.split('\n').map((line, index) => {
                   const trimmedLine = line.trim();
@@ -199,7 +147,7 @@ export default function Contact() {
         </div>
 
         <div className="rounded-xl border border-champagne-300/45 bg-white p-6 shadow-md ring-1 ring-champagne-100/50">
-          <h3 className="mb-4 font-display text-xl font-medium text-lux-espresso">Follow Us</h3>
+          <h2 className="mb-4 font-display text-xl font-medium text-lux-espresso">Follow Us</h2>
           
           <div className="space-y-3">
             {contact.socialMedia.facebook && (
@@ -256,7 +204,7 @@ export default function Contact() {
 
       {/* Map Section */}
       <div className="mt-8 overflow-hidden rounded-xl border border-champagne-300/45 bg-white shadow-md ring-1 ring-champagne-100/50">
-        <h3 className="mb-4 p-6 pb-0 font-display text-xl font-medium text-lux-espresso">Find Us</h3>
+        <h2 className="mb-4 p-6 pb-0 font-display text-xl font-medium text-lux-espresso">Find Us</h2>
         <div className="w-full h-96 relative">
           <iframe
             width="100%"

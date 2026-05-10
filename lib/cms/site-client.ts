@@ -1,9 +1,13 @@
-/** Client fetch for GET /api/cms/site (public). */
+/**
+ * Browser fetch for `GET /api/cms/site` (public CMS bundle).
+ * Keeps cache disabled so admin saves propagate quickly after refresh.
+ */
 
-/** Fire on `window` after admin saves (localStorage or S3) so footer/contact UIs can refetch. */
+/** Dispatched on `window` after admin saves (localStorage or S3) so public UIs can refetch. */
 export const SITE_DATA_UPDATED_EVENT = 'perfectnails-site-updated';
 
-export interface CmsSiteApiShape {
+/** Shape returned by `/api/cms/site` — intentionally loose on nested fields for forward compatibility. */
+export interface CmsSiteApiResponse {
   configured?: boolean;
   site?: {
     services?: unknown[];
@@ -23,10 +27,10 @@ export interface CmsSiteApiShape {
   error?: string;
 }
 
-export async function fetchCmsSite(): Promise<CmsSiteApiShape> {
+export async function fetchCmsSite(): Promise<CmsSiteApiResponse> {
   const r = await fetch('/api/cms/site', {
     credentials: 'same-origin',
     cache: 'no-store',
   });
-  return r.json() as Promise<CmsSiteApiShape>;
+  return r.json() as Promise<CmsSiteApiResponse>;
 }

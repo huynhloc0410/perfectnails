@@ -2,10 +2,10 @@
 
 import { useState, useEffect, useCallback } from 'react';
 import { useSearchParams } from 'next/navigation';
-import { ADMIN_BOOKINGS_BROADCAST } from '@/app/lib/adminBookingBroadcast';
+import { ADMIN_BOOKINGS_BROADCAST } from '@/lib/admin/booking-broadcast';
 import { isValidUsCustomerPhone } from '@/lib/phone';
 import InnerPageHero from '../components/InnerPageHero';
-import { fetchCmsSite, SITE_DATA_UPDATED_EVENT } from '../lib/cmsSiteClient';
+import { fetchCmsSite, SITE_DATA_UPDATED_EVENT } from '@/lib/cms/site-client';
 import { coerceBookingBlocksList, type CmsBookingBlock } from '@/lib/cmsSiteTypes';
 import {
   isBookingWindowBlocked,

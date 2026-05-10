@@ -2,7 +2,7 @@
 
 import Link from 'next/link';
 import { useCallback, useEffect, useRef, useState } from 'react';
-import { fetchCmsSite, SITE_DATA_UPDATED_EVENT } from '../lib/cmsSiteClient';
+import { fetchCmsSite, SITE_DATA_UPDATED_EVENT } from '@/lib/cms/site-client';
 import {
   SITE_DEFAULT_ADDRESS,
   SITE_PHONE_DISPLAY,
@@ -11,8 +11,8 @@ import {
   formatPhoneDisplay,
   migrateLegacyStoredContactAddress,
   toTelHref,
-} from '../lib/siteContact';
-import { SITE_BRAND_NAME } from '../lib/siteBranding';
+} from '@/lib/site/contact';
+import { SITE_BRAND_NAME } from '@/lib/site/branding';
 import SiteLogoLink from './SiteLogoLink';
 
 function applyLocalContact(

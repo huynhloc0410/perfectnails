@@ -2,8 +2,8 @@
 
 import { useState } from 'react';
 import { usePathname, useRouter } from 'next/navigation';
-import { adminDashboardBaseFromPathname } from '../../lib/adminPublicPath';
-import { SITE_BRAND_NAME } from '../../lib/siteBranding';
+import { adminDashboardBaseFromPathname } from '@/lib/admin/public-path';
+import { SITE_BRAND_NAME } from '@/lib/site/branding';
 
 export default function AdminLogin() {
   const [password, setPassword] = useState('');

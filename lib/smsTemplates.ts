@@ -1,4 +1,4 @@
-import { SITE_BRAND_NAME } from '@/app/lib/siteBranding';
+import { SITE_BRAND_NAME } from '@/lib/site/branding';
 
 export function formatApptTimeForSms(isoDate: string): string {
   const d = new Date(isoDate);

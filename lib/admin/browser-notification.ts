@@ -52,8 +52,6 @@ function vibratePattern(): number[] | undefined {
 /**
  * Shows a local notification. Uses `new Notification` when allowed; otherwise registers
  * the admin SW and uses registration.showNotification (required on Android Chrome).
- * Sound: controlled by the OS / browser (`silent: false`); custom alert sounds are not
- * portable on the web notification API.
  */
 export async function showBrowserNotification(args: ShowBrowserNotificationArgs): Promise<void> {
   const { title, body, tag, icon = '/icon.png', targetUrl } = args;

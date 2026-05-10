@@ -2,7 +2,7 @@
 
 import Link from 'next/link';
 import { useState } from 'react';
-import { SITE_BRAND_NAME, SITE_LOGO_PATH } from '../lib/siteBranding';
+import { SITE_BRAND_NAME, SITE_LOGO_PATH } from '@/lib/site/branding';
 
 type Variant = 'header' | 'footer';
 

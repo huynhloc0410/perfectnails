@@ -3,7 +3,7 @@
 import { useState, useEffect } from 'react';
 import GalleryLightbox from '../components/GalleryLightbox';
 import InnerPageHero from '../components/InnerPageHero';
-import { fetchCmsSite } from '../lib/cmsSiteClient';
+import { fetchCmsSite } from '@/lib/cms/site-client';
 
 function resolveImageSrc(url: string): string {
   const u = (url || '').trim();

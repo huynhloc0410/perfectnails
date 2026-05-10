@@ -1,20 +1,30 @@
 import { Metadata } from 'next';
-import { SITE_BRAND_NAME, siteAbsoluteUrl } from '../lib/siteBranding';
+import { SITE_BRAND_NAME, siteAbsoluteUrl } from '@/lib/site/branding';
 
 export const metadata: Metadata = {
-  title: `Gallery - Nail Art Portfolio | ${SITE_BRAND_NAME}`,
-  description: `View our stunning nail art gallery featuring the latest designs, trends, and creative nail work from ${SITE_BRAND_NAME} in Glendale, Arizona.`,
-  keywords: ['nail art gallery', 'nail designs Glendale', 'nail art portfolio', 'nail salon photos', 'nail inspiration'],
+  title: {
+    absolute: `Nail Art Gallery | ${SITE_BRAND_NAME} | Phoenix, AZ`,
+  },
+  description: `Browse nail art and design inspiration from ${SITE_BRAND_NAME} in Phoenix, AZ — gel, acrylic, and custom styles.`,
+  keywords: [
+    'nail art gallery Phoenix',
+    'nail designs Phoenix AZ',
+    'nail inspiration',
+    'gel nail art Phoenix',
+  ],
   openGraph: {
-    title: `Gallery - ${SITE_BRAND_NAME}`,
-    description: 'Browse our beautiful nail art gallery showcasing professional nail designs and creative work.',
+    title: `Gallery — ${SITE_BRAND_NAME}`,
+    description: 'Nail art and design work from our Phoenix studio.',
     type: 'website',
+    locale: 'en_US',
+    url: siteAbsoluteUrl('/gallery'),
+    siteName: SITE_BRAND_NAME,
     images: [
       {
         url: siteAbsoluteUrl('/og-gallery.jpg'),
         width: 1200,
         height: 630,
-        alt: `${SITE_BRAND_NAME} Gallery - Professional Nail Art Portfolio`,
+        alt: `${SITE_BRAND_NAME} — nail art gallery`,
       },
     ],
   },

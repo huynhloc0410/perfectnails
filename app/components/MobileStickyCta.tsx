@@ -3,14 +3,15 @@
 import Link from 'next/link';
 import { usePathname } from 'next/navigation';
 import { useCallback, useEffect, useState } from 'react';
-import { fetchCmsSite } from '../lib/cmsSiteClient';
+import { fetchCmsSite } from '@/lib/cms/site-client';
 import {
   SITE_PHONE_DISPLAY,
   SITE_PHONE_HREF,
   formatPhoneDisplay,
   migrateLegacyStoredContactAddress,
   toTelHref,
-} from '../lib/siteContact';
+} from '@/lib/site/contact';
+import { readLocalStorageJson } from '@/lib/storage/local-json';
 
 export default function MobileStickyCta() {
   const pathname = usePathname() || '/';
@@ -32,16 +33,10 @@ export default function MobileStickyCta() {
     } catch {
       /* local */
     }
-    const raw = localStorage.getItem('admin-contact');
-    if (!raw) return;
-    try {
-      const c = JSON.parse(raw) as { phone?: string };
-      if (c.phone) {
-        setPhoneHref(toTelHref(c.phone));
-        setPhoneLabel(formatPhoneDisplay(c.phone));
-      }
-    } catch {
-      /* keep */
+    const c = readLocalStorageJson<{ phone?: string }>('admin-contact');
+    if (c?.phone) {
+      setPhoneHref(toTelHref(c.phone));
+      setPhoneLabel(formatPhoneDisplay(c.phone));
     }
   }, []);
 

@@ -1,11 +1,10 @@
 /**
  * ~3s synthetic bell chime for new-booking alerts (harmonic “phone bell” timbre).
- * Not a copy of any commercial ringtone — Web Audio only; failures are swallowed.
+ * Web Audio only; failures are swallowed.
  */
 
 type Strike = { at: number; hz: number; duration: number; peak: number };
 
-/** Classic doorbell-ish fifth + bright partials; slight inharmonicity for metal. */
 const STRIKES: Strike[] = [
   { at: 0, hz: 830, duration: 0.9, peak: 0.13 },
   { at: 0.9, hz: 622, duration: 0.95, peak: 0.11 },

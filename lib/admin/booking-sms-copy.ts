@@ -4,7 +4,7 @@ import {
   SITE_SALON_ADDRESS_LINE,
   siteSalonAppleMapsUrl,
   siteSalonGoogleMapsUrl,
-} from '@/app/lib/siteBranding';
+} from '@/lib/site/branding';
 
 /** E.164-style address for `sms:` links (digits with leading + when possible). */
 export function normalizePhoneForSms(raw: string): string {

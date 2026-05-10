@@ -1,5 +1,5 @@
 /**
- * Normalize booking start time for grouping (same wall-clock start → same row).
+ * Parse booking wall-clock start and group rows for admin calendar views.
  */
 
 export function getBookingStartMinutes(booking: { date: string; timeSlot?: string }): number {

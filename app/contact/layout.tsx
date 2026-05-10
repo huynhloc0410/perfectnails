@@ -1,20 +1,30 @@
 import { Metadata } from 'next';
-import { SITE_BRAND_NAME, siteAbsoluteUrl } from '../lib/siteBranding';
+import { SITE_BRAND_NAME, siteAbsoluteUrl } from '@/lib/site/branding';
 
 export const metadata: Metadata = {
-  title: `Contact Us - Get in Touch | ${SITE_BRAND_NAME} Glendale, AZ`,
-  description: `Contact ${SITE_BRAND_NAME} nail salon in Glendale, Arizona. Find our address, phone number, email, business hours, and social media links. We're here to help!`,
-  keywords: ['nail salon contact', 'nail salon Glendale address', 'nail salon phone number', 'nail salon hours', 'contact nail salon'],
+  title: {
+    absolute: `Contact & Location | ${SITE_BRAND_NAME} | Phoenix, AZ`,
+  },
+  description: `Contact ${SITE_BRAND_NAME} on E Bell Rd, Phoenix, AZ — phone, hours, map, and directions. Message us or book online.`,
+  keywords: [
+    'nail salon contact Phoenix',
+    'Perfect Nails Spa phone',
+    'nail salon Bell Rd Phoenix',
+    'nail salon hours Phoenix AZ',
+  ],
   openGraph: {
-    title: `Contact Us - ${SITE_BRAND_NAME}`,
-    description: `Get in touch with ${SITE_BRAND_NAME}. Find our location, contact information, and business hours.`,
+    title: `Contact — ${SITE_BRAND_NAME}`,
+    description: `Visit or call ${SITE_BRAND_NAME} in Phoenix — address on E Bell Rd, hours, and map.`,
     type: 'website',
+    locale: 'en_US',
+    url: siteAbsoluteUrl('/contact'),
+    siteName: SITE_BRAND_NAME,
     images: [
       {
         url: siteAbsoluteUrl('/og-contact.jpg'),
         width: 1200,
         height: 630,
-        alt: `Contact ${SITE_BRAND_NAME} - Glendale, Arizona`,
+        alt: `Contact ${SITE_BRAND_NAME} — Phoenix, Arizona`,
       },
     ],
   },

@@ -10,8 +10,11 @@ import {
   formatPhoneDisplay,
   migrateLegacyStoredContactAddress,
   toTelHref,
-} from '../lib/siteContact';
-import { fetchCmsSite } from '../lib/cmsSiteClient';
+} from '@/lib/site/contact';
+import { summarizeHoursLabel } from '@/lib/site/hours';
+import { fetchCmsSite } from '@/lib/cms/site-client';
+import { formatUsd } from '@/lib/format/currency';
+import { readLocalStorageJson } from '@/lib/storage/local-json';
 import {
   SITE_BRAND_NAME,
   SITE_HERO_APPOINTMENT_LINE,
@@ -20,7 +23,7 @@ import {
   SITE_STANDARD_INTRO,
   SITE_TRUST_POINTS,
   SITE_TRUST_SECTION_LABEL,
-} from '../lib/siteBranding';
+} from '@/lib/site/branding';
 
 /** Single still hero — luxury direction: one focal visual, no carousel. */
 const HERO_IMAGE = '/images/nail0.webp';
@@ -52,15 +55,6 @@ function PhoneIcon({ className }: { className?: string }) {
   );
 }
 
-function summarizeHours(raw: string | undefined): string {
-  const t = (raw ?? '').trim();
-  if (!t) return SITE_HOURS_FALLBACK_SUMMARY;
-  const lines = t.split(/\r?\n/).map((l) => l.trim()).filter(Boolean);
-  if (lines.length === 0) return SITE_HOURS_FALLBACK_SUMMARY;
-  if (lines.length === 1) return lines[0];
-  return `${lines[0]} · ${lines[1]}`;
-}
-
 export default function HomeContent() {
   const [callHref, setCallHref] = useState(SITE_PHONE_HREF);
   const [phoneDisplay, setPhoneDisplay] = useState(SITE_PHONE_DISPLAY);
@@ -83,7 +77,7 @@ export default function HomeContent() {
               setPhoneDisplay(formatPhoneDisplay(c.phone));
             }
             setHeroAddress(effectiveContactAddress(c.address));
-            if (typeof c.hours === 'string') setHoursSummary(summarizeHours(c.hours));
+            if (typeof c.hours === 'string') setHoursSummary(summarizeHoursLabel(c.hours));
           }
           if (Array.isArray(data.site.services) && data.site.services.length > 0) {
             const list = data.site.services as PreviewService[];
@@ -99,38 +93,19 @@ export default function HomeContent() {
       }
       if (cancelled) return;
       migrateLegacyStoredContactAddress();
-      const saved = localStorage.getItem('admin-contact');
-      if (saved) {
-        try {
-          const c = JSON.parse(saved) as { phone?: string; address?: string; hours?: string };
-          if (c.phone) {
-            setCallHref(toTelHref(c.phone));
-            setPhoneDisplay(formatPhoneDisplay(c.phone));
-          }
-          setHeroAddress(effectiveContactAddress(c.address));
-          if (c.hours) setHoursSummary(summarizeHours(c.hours));
-        } catch {
-          /* keep */
+      const c = readLocalStorageJson<{ phone?: string; address?: string; hours?: string }>('admin-contact');
+      if (c) {
+        if (c.phone) {
+          setCallHref(toTelHref(c.phone));
+          setPhoneDisplay(formatPhoneDisplay(c.phone));
         }
+        setHeroAddress(effectiveContactAddress(c.address));
+        if (c.hours) setHoursSummary(summarizeHoursLabel(c.hours));
       }
-      const savedSvc = localStorage.getItem('admin-services');
-      if (savedSvc) {
-        try {
-          const list = JSON.parse(savedSvc) as PreviewService[];
-          if (Array.isArray(list) && list.length) setServicePreview(list.slice(0, 6));
-        } catch {
-          /* ignore */
-        }
-      }
-      const savedGal = localStorage.getItem('admin-gallery');
-      if (savedGal) {
-        try {
-          const g = JSON.parse(savedGal) as string[];
-          if (Array.isArray(g) && g.length) setGalleryPreview(g.slice(0, 4));
-        } catch {
-          /* ignore */
-        }
-      }
+      const list = readLocalStorageJson<PreviewService[]>('admin-services');
+      if (Array.isArray(list) && list.length) setServicePreview(list.slice(0, 6));
+      const g = readLocalStorageJson<string[]>('admin-gallery');
+      if (Array.isArray(g) && g.length) setGalleryPreview(g.slice(0, 4));
     })();
     return () => {
       cancelled = true;
@@ -147,7 +122,7 @@ export default function HomeContent() {
       >
         <img
           src={HERO_IMAGE}
-          alt=""
+          alt={`${SITE_BRAND_NAME} nail salon — Phoenix, AZ`}
           className="absolute inset-0 h-full w-full object-cover object-center"
           fetchPriority="high"
         />
@@ -295,7 +270,7 @@ export default function HomeContent() {
                     <h3 className="font-display mt-3 text-xl font-medium text-lux-espresso">{s.name}</h3>
                   </div>
                   <div className="mt-8 flex items-end justify-between gap-4 border-t border-lux-line/40 pt-6">
-                    <p className="font-display text-2xl font-medium text-lux-espresso">${Number(s.price).toFixed(2)}</p>
+                    <p className="font-display text-2xl font-medium text-lux-espresso">${formatUsd(Number(s.price))}</p>
                     <Link
                       href={`/booking?service=${encodeURIComponent(s.name)}`}
                       className="text-[11px] font-semibold uppercase tracking-[0.2em] text-lux-bronze underline decoration-lux-line decoration-1 underline-offset-4 hover:text-lux-espresso"
@@ -342,7 +317,7 @@ export default function HomeContent() {
                 >
                   <img
                     src={resolveImageSrc(url)}
-                    alt=""
+                    alt={`Nail art preview ${i + 1} — ${SITE_BRAND_NAME}`}
                     className="h-full w-full object-cover transition duration-500 group-hover:scale-[1.02] motion-reduce:group-hover:scale-100"
                     loading="lazy"
                   />

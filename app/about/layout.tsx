@@ -1,8 +1,12 @@
 import { Metadata } from 'next';
-import { SITE_BRAND_NAME, siteAbsoluteUrl } from '../lib/siteBranding';
+import JsonLd from '../components/JsonLd';
+import { SITE_BRAND_NAME, siteAbsoluteUrl } from '@/lib/site/branding';
+import { buildAboutPageDocumentsJsonLd } from '@/lib/site/schema';
 
 export const metadata: Metadata = {
-  title: `About Us - ${SITE_BRAND_NAME} | Premier Nail Salon in Phoenix, Arizona`,
+  title: {
+    absolute: `About Us — ${SITE_BRAND_NAME} | Nail Salon Phoenix, AZ`,
+  },
   description: `Learn about ${SITE_BRAND_NAME}, Phoenix's premier nail salon at 4030 E Bell Rd #110. Discover our story, expert nail technicians, commitment to quality manicures, pedicures, Gel X, and nail art services. Serving Phoenix, AZ since opening.`,
   keywords: [
     'about nail salon Phoenix AZ',
@@ -16,7 +20,7 @@ export const metadata: Metadata = {
     'Phoenix nail salon history',
   ],
   openGraph: {
-    title: `About Us - ${SITE_BRAND_NAME} | Phoenix, Arizona Nail Salon`,
+    title: `About Us — ${SITE_BRAND_NAME} | Phoenix, AZ`,
     description: `Learn about ${SITE_BRAND_NAME}, your premier nail salon in Phoenix, Arizona. Expert technicians, quality services, and a commitment to excellence.`,
     type: 'website',
     url: siteAbsoluteUrl('/about'),
@@ -39,6 +43,11 @@ export default function AboutLayout({
 }: {
   children: React.ReactNode;
 }) {
-  return children;
+  return (
+    <>
+      <JsonLd data={buildAboutPageDocumentsJsonLd()} />
+      {children}
+    </>
+  );
 }
 

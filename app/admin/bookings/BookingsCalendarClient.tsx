@@ -2,7 +2,7 @@
 
 import { useCallback, useEffect, useMemo, useState } from 'react';
 import { usePathname, useRouter, useSearchParams } from 'next/navigation';
-import { adminDashboardBaseFromPathname, adminLoginPathFromPathname } from '@/app/lib/adminPublicPath';
+import { adminDashboardBaseFromPathname, adminLoginPathFromPathname } from '@/lib/admin/public-path';
 import {
   addDays,
   formatWeekRangeLabel,
@@ -10,8 +10,8 @@ import {
   parseISODateLocal,
   startOfLocalDay,
   toISODateString,
-} from '@/app/lib/adminWeekNav';
-import { groupBookingsByStartTime } from '@/app/lib/bookingTimeUtils';
+} from '@/lib/admin/week-calendar';
+import { groupBookingsByStartTime } from '@/lib/booking/time-display';
 import { BookingSmsButtons } from './components/BookingSmsButtons';
 import { WeeklyHeader } from './components/WeeklyHeader';
 import { WeekGrid } from './components/WeekGrid';

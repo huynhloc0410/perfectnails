@@ -3,30 +3,17 @@
 import { useState, useEffect } from 'react';
 import Link from 'next/link';
 import InnerPageHero from '../components/InnerPageHero';
-import { fetchCmsSite } from '../lib/cmsSiteClient';
-import { SITE_BRAND_NAME, siteAbsoluteUrl } from '../lib/siteBranding';
-
-interface Service {
-  id: string;
-  name: string;
-  description: string;
-  price: number;
-  category: string;
-  duration: number;
-}
-
-function formatPrice(service: Service): string {
-  return Number(
-    typeof service.price === 'number' ? service.price : parseFloat(String(service.price)),
-  ).toFixed(2);
-}
+import type { CmsService } from '@/lib/cmsSiteTypes';
+import { fetchCmsSite } from '@/lib/cms/site-client';
+import { formatUsd } from '@/lib/format/currency';
+import { SITE_BRAND_NAME, siteAbsoluteUrl } from '@/lib/site/branding';
 
 function ServiceCard({
   service,
   expanded,
   onToggle,
 }: {
-  service: Service;
+  service: CmsService;
   expanded: boolean;
   onToggle: () => void;
 }) {
@@ -85,7 +72,7 @@ function ServiceCard({
       ) : null}
       <div className="mt-4 flex items-center justify-between">
         <div>
-          <span className="font-display text-2xl font-medium text-champagne-800">${formatPrice(service)}</span>
+          <span className="font-display text-2xl font-medium text-champagne-800">${formatUsd(Number(service.price))}</span>
           {service.duration !== 0 && (
             <p className="mt-1 text-sm text-lux-espressoLight/75">{service.duration || 45} minutes</p>
           )}
@@ -104,7 +91,7 @@ function ServiceCard({
 }
 
 export default function Services() {
-  const [services, setServices] = useState<Service[]>([]);
+  const [services, setServices] = useState<CmsService[]>([]);
   const [categories, setCategories] = useState<string[]>([]);
   const [expandedServiceId, setExpandedServiceId] = useState<string | null>(null);
 
@@ -115,7 +102,7 @@ export default function Services() {
         const data = await fetchCmsSite();
         if (cancelled) return;
         if (data.configured && data.site && Array.isArray(data.site.services) && !data.error) {
-          const servicesList = data.site.services as Service[];
+          const servicesList = data.site.services as CmsService[];
           setServices(servicesList);
           const uniqueCategories = Array.from(
             new Set(
@@ -133,7 +120,7 @@ export default function Services() {
       if (cancelled) return;
       const savedServices = localStorage.getItem('admin-services');
       if (savedServices) {
-        const servicesList: Service[] = JSON.parse(savedServices);
+        const servicesList: CmsService[] = JSON.parse(savedServices);
         setServices(servicesList);
         const uniqueCategories = Array.from(
           new Set(
@@ -156,17 +143,17 @@ export default function Services() {
       (s) => (s.category || '').trim() === category
     );
     return acc;
-  }, {} as Record<string, Service[]>);
+  }, {} as Record<string, CmsService[]>);
 
   // Services without category
   const uncategorizedServices = services.filter(s => !s.category || s.category.trim() === '');
 
-  // Generate Service schema for structured data
   const serviceSchema = {
     '@context': 'https://schema.org',
-    '@type': 'BeautySalon',
+    '@type': 'NailSalon',
+    '@id': `${siteAbsoluteUrl('/services')}#catalog`,
     name: SITE_BRAND_NAME,
-    description: 'Professional nail salon services in Glendale, Arizona',
+    description: 'Professional nail salon services in Phoenix, Arizona',
     url: siteAbsoluteUrl('/services'),
     hasOfferCatalog: {
       '@type': 'OfferCatalog',
@@ -179,13 +166,13 @@ export default function Services() {
           name: service.name,
           description: service.description || `${service.name} service at ${SITE_BRAND_NAME}`,
           provider: {
-            '@type': 'BeautySalon',
+            '@type': 'NailSalon',
             name: SITE_BRAND_NAME,
           },
           areaServed: {
             '@type': 'City',
-            name: 'Glendale',
-            containedIn: {
+            name: 'Phoenix',
+            containedInPlace: {
               '@type': 'State',
               name: 'Arizona',
             },
@@ -211,6 +198,33 @@ export default function Services() {
       />
 
       <div className="container mx-auto border-t border-lux-line/35 px-6 py-10">
+        <nav
+          className="mx-auto mb-10 max-w-5xl rounded-xl border border-champagne-200/80 bg-champagne-50/50 px-4 py-3 text-center text-sm text-lux-espressoLight md:text-left"
+          aria-label="Popular treatments"
+        >
+          <span className="font-semibold text-lux-espresso">Popular: </span>
+          <Link className="font-medium text-champagne-800 underline-offset-4 hover:underline" href="/pedicure">
+            Pedicure
+          </Link>
+          <span className="mx-1.5 text-champagne-400" aria-hidden>
+            ·
+          </span>
+          <Link className="font-medium text-champagne-800 underline-offset-4 hover:underline" href="/manicure">
+            Manicure
+          </Link>
+          <span className="mx-1.5 text-champagne-400" aria-hidden>
+            ·
+          </span>
+          <Link className="font-medium text-champagne-800 underline-offset-4 hover:underline" href="/builder-gel">
+            Builder gel
+          </Link>
+          <span className="mx-1.5 text-champagne-400" aria-hidden>
+            ·
+          </span>
+          <Link className="font-medium text-champagne-800 underline-offset-4 hover:underline" href="/acrylic">
+            Acrylic
+          </Link>
+        </nav>
       
       {services.length === 0 ? (
         <div className="py-12 text-center">

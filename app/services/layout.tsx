@@ -1,20 +1,34 @@
 import { Metadata } from 'next';
-import { SITE_BRAND_NAME, siteAbsoluteUrl } from '../lib/siteBranding';
+import { SITE_BRAND_NAME, siteAbsoluteUrl } from '@/lib/site/branding';
 
 export const metadata: Metadata = {
-  title: `Our Services - Manicure, Pedicure, Gel X, Acrylic | ${SITE_BRAND_NAME}`,
-  description: 'Browse our complete range of professional nail services in Glendale, AZ. From classic manicures and pedicures to Gel X, Gel Builder, and Acrylic nails. Book your appointment today.',
-  keywords: ['nail services Glendale', 'manicure services', 'pedicure services', 'Gel X nails', 'acrylic nails', 'nail art Glendale AZ'],
+  title: {
+    absolute: `Nail Services Menu — Manicure, Pedicure, Gel & Acrylic | ${SITE_BRAND_NAME}`,
+  },
+  description:
+    'Browse manicures, pedicures, builder gel, acrylic, and nail art at Perfect Nails & Spa on E Bell Rd, Phoenix, AZ. Transparent pricing — book online.',
+  keywords: [
+    'nail services Phoenix AZ',
+    'manicure Phoenix',
+    'pedicure Phoenix',
+    'acrylic nails Phoenix',
+    'builder gel Phoenix',
+    'Bell Rd nail salon',
+  ],
   openGraph: {
-    title: `Our Services - ${SITE_BRAND_NAME}`,
-    description: 'Professional nail services including manicures, pedicures, Gel X, and acrylic nails in Glendale, Arizona.',
+    title: `Nail services — ${SITE_BRAND_NAME}`,
+    description:
+      'Professional nail services in Phoenix, Arizona — manicures, pedicures, enhancements, and nail art.',
     type: 'website',
+    locale: 'en_US',
+    url: siteAbsoluteUrl('/services'),
+    siteName: SITE_BRAND_NAME,
     images: [
       {
         url: siteAbsoluteUrl('/og-services.jpg'),
         width: 1200,
         height: 630,
-        alt: `${SITE_BRAND_NAME} Services - Manicure, Pedicure, Gel X, Acrylic`,
+        alt: `${SITE_BRAND_NAME} — manicure, pedicure, gel, acrylic`,
       },
     ],
   },

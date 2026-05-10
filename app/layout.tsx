@@ -6,13 +6,15 @@ import PromotionPopup from "./components/PromotionPopup";
 import Script from "next/script";
 import { Cormorant_Garamond, Outfit, Poppins } from "next/font/google";
 import type { Metadata, Viewport } from "next";
+import JsonLd from "./components/JsonLd";
 import {
   SITE_BRAND_NAME,
   SITE_PUBLIC_URL,
   SITE_SEO_HOME_DESCRIPTION,
   SITE_SEO_HOME_TITLE,
   SITE_SEO_KEYWORDS,
-} from "./lib/siteBranding";
+} from "@/lib/site/branding";
+import { buildSalonJsonLd } from "@/lib/site/schema";
 
 const poppins = Poppins({
   subsets: ["latin"],
@@ -49,9 +51,6 @@ export const metadata: Metadata = {
     telephone: false,
   },
   metadataBase: new URL(SITE_PUBLIC_URL),
-  alternates: {
-    canonical: '/',
-  },
   openGraph: {
     type: 'website',
     locale: 'en_US',
@@ -67,12 +66,6 @@ export const metadata: Metadata = {
         alt: `${SITE_BRAND_NAME} - Nail salon in Phoenix, Arizona`,
       },
     ],
-  },
-  twitter: {
-    card: 'summary_large_image',
-    title: SITE_SEO_HOME_TITLE,
-    description: SITE_SEO_HOME_DESCRIPTION,
-    images: [`${SITE_PUBLIC_URL}/og-image.jpg`],
   },
   robots: {
     index: true,
@@ -103,6 +96,8 @@ export default function RootLayout({ children }: { children: React.ReactNode }) 
       <body
         className={`${poppins.className} ${cormorant.variable} ${outfit.variable} flex min-h-screen flex-col bg-lux-paper antialiased`}
       >
+        <JsonLd data={buildSalonJsonLd()} />
+
         {shouldLoadAnalytics && (
           <>
             <Script

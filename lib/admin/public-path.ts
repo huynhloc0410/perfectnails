@@ -1,6 +1,6 @@
 /**
- * Client-side helpers for admin URLs when using optional secret path
- * `/admin/<secret>` (see ADMIN_PATH_SECRET in middleware).
+ * Client helpers for admin URLs when using optional secret path `/admin/<secret>`
+ * (see `ADMIN_PATH_SECRET` in middleware).
  */
 
 export function adminDashboardBaseFromPathname(pathname: string): string {
