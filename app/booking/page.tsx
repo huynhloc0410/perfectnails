@@ -1,13 +1,22 @@
 'use client';
 
-import { useState, useEffect } from 'react';
+import { useState, useEffect, useCallback } from 'react';
 import { useSearchParams } from 'next/navigation';
 import { ADMIN_BOOKINGS_BROADCAST } from '@/app/lib/adminBookingBroadcast';
 import { isValidUsCustomerPhone } from '@/lib/phone';
 import InnerPageHero from '../components/InnerPageHero';
-import { fetchCmsSite } from '../lib/cmsSiteClient';
-import type { CmsBookingBlock } from '@/lib/cmsSiteTypes';
-import { isBookingWindowBlocked } from '@/lib/bookingBlocks';
+import { fetchCmsSite, SITE_DATA_UPDATED_EVENT } from '../lib/cmsSiteClient';
+import { coerceBookingBlocksList, type CmsBookingBlock } from '@/lib/cmsSiteTypes';
+import {
+  isBookingWindowBlocked,
+  overlapsSalonWideBookingWindow,
+  overlapsStylistScopedBookingWindow,
+} from '@/lib/bookingBlocks';
+import {
+  BOOKING_SLOT_STEP_MINUTES,
+  getEarliestBookableSlotStart,
+  isSlotStartAllowedForBooking,
+} from '@/lib/bookingLeadTime';
 
 interface Service {
   id: string;
@@ -37,9 +46,13 @@ interface Booking {
 
 const BUFFER_TIME = 0; // minutes between appointments
 const ANYBODY_EMPLOYEE_ID = '__anybody__';
-const TIME_SLOT_STEP_MINUTES = 30;
 
 type BusinessHours = { openMinutes: number; closeMinutes: number } | null;
+
+type BookingSlotRow = {
+  time: string;
+  state: 'open' | 'salon_blocked' | 'staff_blocked' | 'fully_booked';
+};
 
 function minutesSinceMidnight(d: Date): number {
   return d.getHours() * 60 + d.getMinutes();
@@ -124,55 +137,83 @@ export default function Booking() {
   /** Set true only after failed submit (invalid phone); cleared when user edits phone. */
   const [phoneSubmitError, setPhoneSubmitError] = useState(false);
   const [availableEmployees, setAvailableEmployees] = useState<Employee[]>([]);
-  const [availableTimeSlots, setAvailableTimeSlots] = useState<string[]>([]);
+  const [timeSlotChoices, setTimeSlotChoices] = useState<BookingSlotRow[]>([]);
+  /** Bumps periodically so same-day slots respect minimum notice as time passes */
+  const [slotClock, setSlotClock] = useState(0);
   const [currentMonth, setCurrentMonth] = useState(new Date());
   /** 1 = service, 2 = stylist, 3 = date, 4 = time + contact + submit */
   const [bookingStep, setBookingStep] = useState(1);
 
-  useEffect(() => {
-    let cancelled = false;
-    (async () => {
+  const loadSiteDataForBooking = useCallback(async () => {
+    try {
+      const data = await fetchCmsSite();
+      if (data.configured && data.site && !data.error) {
+        const site = data.site;
+        if (Array.isArray(site.services)) {
+          setServices(site.services as Service[]);
+        }
+        if (Array.isArray(site.employees)) {
+          setEmployees(site.employees as Employee[]);
+        }
+        if (Array.isArray(site.bookings)) {
+          setBookings(site.bookings as Booking[]);
+        }
+        setBookingBlocks(coerceBookingBlocksList(site.bookingBlocks as unknown[]));
+        return;
+      }
+    } catch {
+      /* local fallback below */
+    }
+    const savedServices = localStorage.getItem('admin-services');
+    const savedEmployees = localStorage.getItem('admin-employees');
+    const savedBookings = localStorage.getItem('admin-bookings');
+    const savedBlocks = localStorage.getItem('admin-booking-blocks');
+    if (savedServices) setServices(JSON.parse(savedServices));
+    if (savedEmployees) setEmployees(JSON.parse(savedEmployees));
+    if (savedBookings) setBookings(JSON.parse(savedBookings));
+    if (savedBlocks) {
       try {
-        const data = await fetchCmsSite();
-        if (cancelled) return;
-        if (data.configured && data.site && !data.error) {
-          if (Array.isArray(data.site.services)) {
-            setServices(data.site.services as Service[]);
-          }
-          if (Array.isArray(data.site.employees)) {
-            setEmployees(data.site.employees as Employee[]);
-          }
-          if (Array.isArray(data.site.bookings)) {
-            setBookings(data.site.bookings as Booking[]);
-          }
-          if (Array.isArray(data.site.bookingBlocks)) {
-            setBookingBlocks(data.site.bookingBlocks as CmsBookingBlock[]);
-          }
-          return;
-        }
+        const parsed = JSON.parse(savedBlocks) as unknown[];
+        setBookingBlocks(coerceBookingBlocksList(parsed));
       } catch {
-        /* local fallback */
+        /* ignore */
       }
-      if (cancelled) return;
-      const savedServices = localStorage.getItem('admin-services');
-      const savedEmployees = localStorage.getItem('admin-employees');
-      const savedBookings = localStorage.getItem('admin-bookings');
-      const savedBlocks = localStorage.getItem('admin-booking-blocks');
-      if (savedServices) setServices(JSON.parse(savedServices));
-      if (savedEmployees) setEmployees(JSON.parse(savedEmployees));
-      if (savedBookings) setBookings(JSON.parse(savedBookings));
-      if (savedBlocks) {
-        try {
-          const parsed = JSON.parse(savedBlocks) as unknown[];
-          if (Array.isArray(parsed)) setBookingBlocks(parsed as CmsBookingBlock[]);
-        } catch {
-          /* ignore */
-        }
-      }
-    })();
-    return () => {
-      cancelled = true;
+    }
+  }, []);
+
+  useEffect(() => {
+    void loadSiteDataForBooking();
+  }, [loadSiteDataForBooking]);
+
+  useEffect(() => {
+    const onSiteUpdated = () => {
+      void loadSiteDataForBooking();
     };
+    const onStorage = (e: StorageEvent) => {
+      const k = e.key;
+      if (k === null || k === 'admin-booking-blocks' || k === 'admin-bookings' || k === 'admin-employees') {
+        void loadSiteDataForBooking();
+      }
+    };
+    const onVisible = () => {
+      if (document.visibilityState === 'visible') {
+        void loadSiteDataForBooking();
+        setSlotClock((n) => n + 1);
+      }
+    };
+    window.addEventListener(SITE_DATA_UPDATED_EVENT, onSiteUpdated);
+    window.addEventListener('storage', onStorage);
+    document.addEventListener('visibilitychange', onVisible);
+    return () => {
+      window.removeEventListener(SITE_DATA_UPDATED_EVENT, onSiteUpdated);
+      window.removeEventListener('storage', onStorage);
+      document.removeEventListener('visibilitychange', onVisible);
+    };
+  }, [loadSiteDataForBooking]);
+
+  useEffect(() => {
+    const id = window.setInterval(() => setSlotClock((n) => n + 1), 60_000);
+    return () => window.clearInterval(id);
   }, []);
 
   /** Prefill service from /booking?service=... (e.g. Services → Book Now) */
@@ -236,125 +277,167 @@ export default function Booking() {
     }
   }, [formData.service, services, employees]);
 
-  // Generate available time slots when service, employee, and date are selected
-  useEffect(() => {
-    if (!formData.service || !formData.employee || !formData.date) {
-      setAvailableTimeSlots([]);
-      return;
-    }
+  const buildTimeSlotChoices = useCallback(
+    (
+      date: string,
+      mode: { kind: 'stylist'; id: string } | { kind: 'any'; employees: Employee[] },
+      duration: number
+    ): BookingSlotRow[] => {
+      const rows: BookingSlotRow[] = [];
+      const [year, month, day] = date.split('-').map(Number);
+      const selectedDateObj = new Date(year, month - 1, day);
+      const today = new Date();
+      today.setHours(0, 0, 0, 0);
 
-    const selectedService = services.find(s => s.name === formData.service);
-    if (!selectedService) {
-      setAvailableTimeSlots([]);
-      return;
-    }
-
-    const serviceDuration = schedulingMinutes(selectedService.duration);
-    if (formData.employee === ANYBODY_EMPLOYEE_ID) {
-      const merged = new Set<string>();
-      for (const emp of availableEmployees) {
-        const empSlots = generateTimeSlots(formData.date, emp.id, serviceDuration);
-        for (const s of empSlots) merged.add(s);
+      if (selectedDateObj < today) {
+        return [];
       }
-      const slots = Array.from(merged).sort((a, b) => a.localeCompare(b));
-      setAvailableTimeSlots(slots);
-    } else {
-      const slots = generateTimeSlots(formData.date, formData.employee, serviceDuration);
-      setAvailableTimeSlots(slots);
-    }
-  }, [
-    formData.service,
-    formData.employee,
-    formData.date,
-    bookings,
-    bookingBlocks,
-    services,
-    availableEmployees,
-  ]);
 
-  // Generate time slots for a given date, employee, and service duration
-  const generateTimeSlots = (date: string, employeeId: string, duration: number): string[] => {
-    const slots: string[] = [];
-    // Parse date string (YYYY-MM-DD) in local timezone
-    const [year, month, day] = date.split('-').map(Number);
-    const selectedDateObj = new Date(year, month - 1, day);
-    const today = new Date();
-    today.setHours(0, 0, 0, 0);
-    
-    // Don't show slots for past dates
-    if (selectedDateObj < today) {
-      return [];
-    }
+      const hours = getBusinessHoursForDate(selectedDateObj);
+      if (!hours) {
+        return [];
+      }
 
-    const hours = getBusinessHoursForDate(selectedDateObj);
-    if (!hours) {
-      return [];
-    }
+      const rawLatestStartMinutes = hours.closeMinutes - (duration + BUFFER_TIME);
+      const latestStartMinutes =
+        Math.floor(rawLatestStartMinutes / BOOKING_SLOT_STEP_MINUTES) *
+        BOOKING_SLOT_STEP_MINUTES;
+      if (latestStartMinutes < hours.openMinutes) return [];
 
-    // Get existing bookings for this employee on this date
-    const employeeBookings = bookings.filter(b => {
-      if (b.employee !== employeeId) return false;
-      const start = bookingStartDateTime(b);
-      if (!start) return false;
-      return localDayKey(start) === localDayKey(selectedDateObj);
-    });
+      const now = new Date();
+      const earliestBookableStart = getEarliestBookableSlotStart(now);
 
-    // Latest start depends on the selected service length (and buffer).
-    // Example: close 7:00 PM with a 60-min service → last start 6:00 PM.
-    const rawLatestStartMinutes = hours.closeMinutes - (duration + BUFFER_TIME);
-    const latestStartMinutes =
-      Math.floor(rawLatestStartMinutes / TIME_SLOT_STEP_MINUTES) * TIME_SLOT_STEP_MINUTES;
-    if (latestStartMinutes < hours.openMinutes) return [];
+      const employeeBookingsOnDay = (employeeId: string) =>
+        bookings.filter((b) => {
+          if (b.employee !== employeeId) return false;
+          const start = bookingStartDateTime(b);
+          if (!start) return false;
+          return localDayKey(start) === localDayKey(selectedDateObj);
+        });
 
-    // Generate slots (30-minute increments) within business hours
-    for (
-      let startMinutes = hours.openMinutes;
-      startMinutes <= latestStartMinutes;
-      startMinutes += TIME_SLOT_STEP_MINUTES
-    ) {
-      const hour = Math.floor(startMinutes / 60);
-      const minute = startMinutes % 60;
-      const slotTime = `${hour.toString().padStart(2, '0')}:${minute.toString().padStart(2, '0')}`;
-      const slotDateTime = new Date(selectedDateObj);
-      slotDateTime.setHours(hour, minute, 0, 0);
-        
-        // Check if slot is in the past (for today)
-        if (selectedDateObj.toDateString() === today.toDateString() && slotDateTime < new Date()) {
+      const slotConflictsBooking = (employeeId: string, slotDateTime: Date, slotEndTime: Date) =>
+        employeeBookingsOnDay(employeeId).some((booking) => {
+          const bookingTime = bookingStartDateTime(booking);
+          if (!bookingTime) return false;
+          const bookingEndTime = new Date(bookingTime);
+          bookingEndTime.setMinutes(
+            bookingEndTime.getMinutes() + bookingDurationMinutes(booking) + BUFFER_TIME
+          );
+          return (
+            (slotDateTime >= bookingTime && slotDateTime < bookingEndTime) ||
+            (slotEndTime > bookingTime && slotEndTime <= bookingEndTime) ||
+            (slotDateTime <= bookingTime && slotEndTime >= bookingEndTime)
+          );
+        });
+
+      for (
+        let startMinutes = hours.openMinutes;
+        startMinutes <= latestStartMinutes;
+        startMinutes += BOOKING_SLOT_STEP_MINUTES
+      ) {
+        const hour = Math.floor(startMinutes / 60);
+        const minute = startMinutes % 60;
+        const slotTime = `${hour.toString().padStart(2, '0')}:${minute.toString().padStart(2, '0')}`;
+        const slotDateTime = new Date(selectedDateObj);
+        slotDateTime.setHours(hour, minute, 0, 0);
+
+        if (slotDateTime.getTime() < earliestBookableStart.getTime()) {
           continue;
         }
 
-        // Check if slot fits the service duration
         const slotEndTime = new Date(slotDateTime);
         slotEndTime.setMinutes(slotEndTime.getMinutes() + duration + BUFFER_TIME);
         if (minutesSinceMidnight(slotEndTime) > hours.closeMinutes) continue;
 
-        // Check if slot conflicts with existing bookings
-        const isAvailable = !employeeBookings.some(booking => {
-          const bookingTime = bookingStartDateTime(booking);
-          if (!bookingTime) return false;
-          const bookingEndTime = new Date(bookingTime);
-          bookingEndTime.setMinutes(bookingEndTime.getMinutes() + bookingDurationMinutes(booking) + BUFFER_TIME);
-          
-          // Check if slots overlap
-          return (slotDateTime >= bookingTime && slotDateTime < bookingEndTime) ||
-                 (slotEndTime > bookingTime && slotEndTime <= bookingEndTime) ||
-                 (slotDateTime <= bookingTime && slotEndTime >= bookingEndTime);
-        });
-
-        const overlapsBlock = isBookingWindowBlocked({
+        const salonClosed = overlapsSalonWideBookingWindow({
           dateYmd: date,
-          employeeId,
           slotStartLocal: slotDateTime,
           slotEndExclusiveLocal: slotEndTime,
           blocks: bookingBlocks,
         });
-        if (isAvailable && !overlapsBlock) {
-          slots.push(slotTime);
+
+        let state: BookingSlotRow['state'];
+
+        if (mode.kind === 'stylist') {
+          if (salonClosed) {
+            state = 'salon_blocked';
+          } else if (slotConflictsBooking(mode.id, slotDateTime, slotEndTime)) {
+            state = 'fully_booked';
+          } else if (
+            overlapsStylistScopedBookingWindow({
+              dateYmd: date,
+              employeeId: mode.id,
+              slotStartLocal: slotDateTime,
+              slotEndExclusiveLocal: slotEndTime,
+              blocks: bookingBlocks,
+            })
+          ) {
+            state = 'staff_blocked';
+          } else {
+            state = 'open';
+          }
+        } else if (salonClosed) {
+          state = 'salon_blocked';
+        } else {
+          const anyFree = mode.employees.some(
+            (e) =>
+              !slotConflictsBooking(e.id, slotDateTime, slotEndTime) &&
+              !overlapsStylistScopedBookingWindow({
+                dateYmd: date,
+                employeeId: e.id,
+                slotStartLocal: slotDateTime,
+                slotEndExclusiveLocal: slotEndTime,
+                blocks: bookingBlocks,
+              })
+          );
+          state = anyFree ? 'open' : 'fully_booked';
         }
+
+        rows.push({ time: slotTime, state });
+      }
+
+      return rows;
+    },
+    [bookings, bookingBlocks],
+  );
+
+  // Build time rows (open + greyed) when service, employee, and date are selected
+  useEffect(() => {
+    if (!formData.service || !formData.employee || !formData.date) {
+      setTimeSlotChoices([]);
+      return;
     }
 
-    return slots;
-  };
+    const selectedService = services.find((s) => s.name === formData.service);
+    if (!selectedService) {
+      setTimeSlotChoices([]);
+      return;
+    }
+
+    const serviceDuration = schedulingMinutes(selectedService.duration);
+    const mode: { kind: 'stylist'; id: string } | { kind: 'any'; employees: Employee[] } =
+      formData.employee === ANYBODY_EMPLOYEE_ID
+        ? { kind: 'any', employees: availableEmployees }
+        : { kind: 'stylist', id: formData.employee };
+
+    setTimeSlotChoices(buildTimeSlotChoices(formData.date, mode, serviceDuration));
+  }, [
+    formData.service,
+    formData.employee,
+    formData.date,
+    services,
+    availableEmployees,
+    slotClock,
+    buildTimeSlotChoices,
+  ]);
+
+  useEffect(() => {
+    if (!formData.timeSlot) return;
+    const row = timeSlotChoices.find((r) => r.time === formData.timeSlot);
+    if (!row || row.state !== 'open') {
+      setFormData((prev) => ({ ...prev, timeSlot: '' }));
+    }
+  }, [timeSlotChoices, formData.timeSlot]);
 
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
@@ -369,8 +452,54 @@ export default function Booking() {
       return;
     }
 
-    const selectedService = services.find(s => s.name === formData.service);
+    const selectedService = services.find((s) => s.name === formData.service);
     const serviceDuration = schedulingMinutes(selectedService?.duration);
+
+    const effectiveEmp =
+      formData.employee === ANYBODY_EMPLOYEE_ID ? '' : formData.employee.trim();
+    const parts = /^(\d{4})-(\d{2})-(\d{2})$/.exec(formData.date.trim());
+    const hm = /^(\d{1,2}):(\d{2})$/.exec(formData.timeSlot.trim());
+    if (!parts || !hm) {
+      alert('Invalid date or time.');
+      return;
+    }
+    const yy = parseInt(parts[1], 10);
+    const mo = parseInt(parts[2], 10);
+    const dd = parseInt(parts[3], 10);
+    const hh = parseInt(hm[1], 10);
+    const mins = parseInt(hm[2], 10);
+    const slotStart = new Date(yy, mo - 1, dd, hh, mins, 0, 0);
+    const slotEndExclusive = new Date(slotStart.getTime());
+    slotEndExclusive.setMinutes(slotEndExclusive.getMinutes() + serviceDuration + BUFFER_TIME);
+    if (!isSlotStartAllowedForBooking(slotStart, new Date())) {
+      alert(
+        'Appointments must be at least 30 minutes from now. Please choose a later time slot.'
+      );
+      return;
+    }
+    if (
+      isBookingWindowBlocked({
+        dateYmd: formData.date.trim(),
+        employeeId: effectiveEmp,
+        slotStartLocal: slotStart,
+        slotEndExclusiveLocal: slotEndExclusive,
+        blocks: bookingBlocks,
+      })
+    ) {
+      if (
+        overlapsSalonWideBookingWindow({
+          dateYmd: formData.date.trim(),
+          slotStartLocal: slotStart,
+          slotEndExclusiveLocal: slotEndExclusive,
+          blocks: bookingBlocks,
+        })
+      ) {
+        alert('Salon unavailable during this time. Please choose a different slot.');
+      } else {
+        alert('That time is in a blocked window. Please choose another slot.');
+      }
+      return;
+    }
 
     const formDataObj = new FormData();
     formDataObj.append('name', formData.name);
@@ -388,6 +517,13 @@ export default function Booking() {
       });
 
       const result = await response.json();
+
+      if (response.status === 400 || result?.error === 'min_notice') {
+        alert(
+          'Appointments must be at least 30 minutes from now. Please choose a later time slot.'
+        );
+        return;
+      }
 
       if (response.status === 409 || result?.error === 'time_blocked') {
         alert('That time is no longer available. Please choose a different slot.');
@@ -414,7 +550,7 @@ export default function Booking() {
         setFormData({ name: '', phone: '', service: '', employee: '', date: '', timeSlot: '' });
         setSelectedCategory('');
         setBookingStep(1);
-        setAvailableTimeSlots([]);
+        setTimeSlotChoices([]);
       }
     } catch (error) {
       console.error('Booking error:', error);
@@ -829,29 +965,67 @@ export default function Booking() {
             <div>
               <label className="block mb-3 text-sm font-medium text-lux-espresso">Select Time *</label>
               
-              {/* Time slots (compact grid) */}
-              {availableTimeSlots.length > 0 ? (
-                <div className="rounded-xl border border-champagne-200/70 bg-white p-3">
-                  <div className="grid grid-cols-3 gap-2 sm:grid-cols-4 md:grid-cols-5">
-                    {availableTimeSlots.map((slot) => {
-                      const isSelected = formData.timeSlot === slot;
-                      return (
-                        <button
-                          key={slot}
-                          type="button"
-                          onClick={() => setFormData({ ...formData, timeSlot: slot })}
-                          className={`
-                            rounded-md px-3 py-2 text-sm font-semibold transition
-                            ${isSelected
-                              ? 'bg-champagne-600 text-white shadow-sm'
-                              : 'border border-champagne-200/80 bg-lux-mist/40 text-lux-espresso hover:bg-champagne-100 hover:text-champagne-700'
-                            }
-                          `}
-                        >
-                          {slot}
-                        </button>
-                      );
-                    })}
+              {/* Time slots (compact grid — open selectable; blocked/booked greyed out) */}
+              {timeSlotChoices.length > 0 ? (
+                <div className="space-y-3">
+                  {timeSlotChoices.some((r) => r.state === 'salon_blocked') && (
+                    <p
+                      className="rounded-lg border border-amber-200/90 bg-amber-50 px-4 py-3 text-sm text-amber-950"
+                      role="status"
+                    >
+                      Salon unavailable during this time. Greyed-out slots cannot be booked.
+                    </p>
+                  )}
+                  {!timeSlotChoices.some((r) => r.state === 'open') && (
+                    <p className="rounded-lg border border-champagne-200/90 bg-champagne-50/90 px-4 py-3 text-sm text-lux-espresso">
+                      No open appointments left for this day with your selection. Blocks and existing
+                      bookings may limit times below.
+                    </p>
+                  )}
+                  <div className="rounded-xl border border-champagne-200/70 bg-white p-3">
+                    <div className="grid grid-cols-3 gap-2 sm:grid-cols-4 md:grid-cols-5">
+                      {timeSlotChoices.map((row) => {
+                        const isSelectable = row.state === 'open';
+                        const isSelected =
+                          Boolean(isSelectable && formData.timeSlot === row.time);
+
+                        let title =
+                          row.state === 'salon_blocked'
+                            ? 'Salon unavailable — whole-salon blocked window.'
+                            : row.state === 'staff_blocked'
+                              ? 'This stylist is unavailable for this window.'
+                              : row.state === 'fully_booked'
+                                ? 'This time slot is already booked.'
+                                : 'Select this time slot.';
+
+                        return (
+                          <button
+                            key={row.time}
+                            type="button"
+                            disabled={!isSelectable}
+                            title={title}
+                            aria-disabled={!isSelectable}
+                            onClick={() => {
+                              if (isSelectable) {
+                                setFormData({ ...formData, timeSlot: row.time });
+                              }
+                            }}
+                            className={[
+                              'rounded-md px-3 py-2 text-sm font-semibold transition',
+                              isSelectable
+                                ? isSelected
+                                  ? 'bg-champagne-600 text-white shadow-sm'
+                                  : 'border border-champagne-200/80 bg-lux-mist/40 text-lux-espresso hover:bg-champagne-100 hover:text-champagne-700'
+                                : row.state === 'salon_blocked'
+                                  ? 'cursor-not-allowed border border-neutral-300/70 bg-neutral-100 text-neutral-400 opacity-65 line-through decoration-neutral-400'
+                                  : 'cursor-not-allowed border border-champagne-200/50 bg-neutral-50 text-lux-espressoLight/55 opacity-75',
+                            ].join(' ')}
+                          >
+                            {row.time}
+                          </button>
+                        );
+                      })}
+                    </div>
                   </div>
                 </div>
               ) : (

@@ -9,7 +9,11 @@ import { WeekGrid } from './bookings/components/WeekGrid';
 import { migrateLegacyStoredContactAddress } from '../lib/siteContact';
 import { SITE_DATA_UPDATED_EVENT } from '../lib/cmsSiteClient';
 import { SITE_BRAND_NAME } from '../lib/siteBranding';
-import { normalizeCmsBookingBlock, type CmsBookingBlock } from '@/lib/cmsSiteTypes';
+import {
+  coerceBookingBlocksList,
+  normalizeCmsBookingBlock,
+  type CmsBookingBlock,
+} from '@/lib/cmsSiteTypes';
 
 interface Service {
   id: string;
@@ -115,6 +119,7 @@ export default function AdminPage() {
       }
       if (partial.bookingBlocks !== undefined) {
         localStorage.setItem('admin-booking-blocks', JSON.stringify(nextBookingBlocks));
+        window.dispatchEvent(new Event(SITE_DATA_UPDATED_EVENT));
       }
       if (partial.contact !== undefined) {
         window.dispatchEvent(new Event(SITE_DATA_UPDATED_EVENT));
@@ -162,6 +167,9 @@ export default function AdminPage() {
       alert(`Could not save to cloud (${res.status}). ${msg || 'Check S3 env vars on the server.'}`);
       return;
     }
+    if (partial.bookingBlocks !== undefined) {
+      window.dispatchEvent(new Event(SITE_DATA_UPDATED_EVENT));
+    }
     if (partial.contact !== undefined) {
       try {
         localStorage.setItem('admin-contact', JSON.stringify(nextContact));
@@ -189,9 +197,8 @@ export default function AdminPage() {
           if (Array.isArray(s.services)) setServices(s.services as Service[]);
           if (Array.isArray(s.employees)) setEmployees(s.employees as Employee[]);
           if (Array.isArray(s.bookings)) setBookings(s.bookings as Booking[]);
-          if (Array.isArray((s as { bookingBlocks?: unknown }).bookingBlocks)) {
-            setBookingBlocks((s as { bookingBlocks: CmsBookingBlock[] }).bookingBlocks);
-          }
+          const blkUnknown = (s as { bookingBlocks?: unknown[] }).bookingBlocks;
+          setBookingBlocks(coerceBookingBlocksList(blkUnknown));
           if (s.about && typeof s.about === 'object') {
             setAboutContent((prev) => ({ ...prev, ...s.about }));
           }
@@ -220,8 +227,8 @@ export default function AdminPage() {
           const savedBlocksElse = localStorage.getItem('admin-booking-blocks');
           if (savedBlocksElse) {
             try {
-              const bl = JSON.parse(savedBlocksElse) as unknown;
-              if (Array.isArray(bl)) setBookingBlocks(bl as CmsBookingBlock[]);
+              const bl = JSON.parse(savedBlocksElse) as unknown[];
+              setBookingBlocks(coerceBookingBlocksList(Array.isArray(bl) ? bl : []));
             } catch {
               /* ignore */
             }
@@ -242,8 +249,8 @@ export default function AdminPage() {
           const savedBlocksCatch = localStorage.getItem('admin-booking-blocks');
           if (savedBlocksCatch) {
             try {
-              const bl = JSON.parse(savedBlocksCatch) as unknown;
-              if (Array.isArray(bl)) setBookingBlocks(bl as CmsBookingBlock[]);
+              const bl = JSON.parse(savedBlocksCatch) as unknown[];
+              setBookingBlocks(coerceBookingBlocksList(Array.isArray(bl) ? bl : []));
             } catch {
               /* ignore */
             }
@@ -345,12 +352,15 @@ export default function AdminPage() {
     }
     const id =
       typeof crypto !== 'undefined' && 'randomUUID' in crypto ? crypto.randomUUID() : `${Date.now()}`;
+    const empChosen = bookingBlockDraft.employeeId.trim();
     const raw = {
       id,
       date: bookingBlockDraft.date.trim(),
       startTime: bookingBlockDraft.startTime,
       endTime: bookingBlockDraft.endTime,
-      employeeId: bookingBlockDraft.employeeId.trim() || undefined,
+      salonWide: !empChosen,
+      scope: empChosen ? ('stylist' as const) : ('salon' as const),
+      employeeId: empChosen || undefined,
     };
     const normalized = normalizeCmsBookingBlock(raw);
     if (!normalized) {
@@ -1059,8 +1069,10 @@ Saturday - Sunday: 10:00 AM - 6:00 PM`}
                 <div className="mt-10 border-t border-gray-200 pt-8">
                   <h3 className="text-lg font-semibold text-gray-800 mb-2">Block times on booking page</h3>
                   <p className="text-gray-600 text-sm mb-4">
-                    Visitors won&apos;t see these windows as available. Use whole-salon breaks or one stylist&apos;s away
-                    time. End time is exclusive (blocked through the minute before end).
+                    <strong>Whole salon</strong> blocks online booking with <em>every</em> technician plus &quot;Anyone&quot;
+                    mode. <strong>One technician</strong> only removes their slots — others stay bookable then. Hours use
+                    24‑hour time; the end time is exclusive (what you pick is the first minute that opens again — e.g.
+                    9:00–9:30 blocks 9:00 and does not remove a 10:00 start).
                   </p>
                   <div className="grid grid-cols-1 md:grid-cols-12 gap-3 items-end rounded-lg border border-gray-200 bg-white p-4">
                     <div className="md:col-span-3">
@@ -1103,7 +1115,7 @@ Saturday - Sunday: 10:00 AM - 6:00 PM`}
                         onChange={(e) => setBookingBlockDraft({ ...bookingBlockDraft, employeeId: e.target.value })}
                         className="w-full px-3 py-2 border border-gray-300 rounded-md text-sm"
                       >
-                        <option value="">Whole salon</option>
+                        <option value="">Whole salon · all technicians</option>
                         {employees.map((em) => (
                           <option key={em.id} value={em.id}>
                             {em.name} only
@@ -1126,8 +1138,15 @@ Saturday - Sunday: 10:00 AM - 6:00 PM`}
                       {[...bookingBlocks]
                         .sort((a, b) => a.date.localeCompare(b.date) || a.startTime.localeCompare(b.startTime))
                         .map((b) => {
-                          const emp = b.employeeId ? employees.find((e) => e.id === b.employeeId) : undefined;
-                          const who = emp ? `${emp.name} only` : b.employeeId ? 'Former staff slot' : 'Whole salon';
+                          const emp =
+                            !b.salonWide && b.employeeId ? employees.find((e) => e.id === b.employeeId) : undefined;
+                          const who = b.salonWide
+                            ? 'Whole salon · all technicians'
+                            : emp
+                              ? `${emp.name} only`
+                              : b.employeeId
+                                ? 'Staff (removed from list)'
+                                : 'Technician-specific';
                           return (
                             <li
                               key={b.id}

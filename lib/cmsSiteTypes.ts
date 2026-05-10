@@ -27,14 +27,16 @@ export interface CmsBooking {
 
 /**
  * Block online booking for a window on one calendar day (salon-local date).
- * Times are HH:MM 24h. The interval is half-open [startTime, endTime): endTime excludes that minute.
+ * Times are HH:MM 24h. Uses half-open [startTime, endTime): the start of endTime is the first instant that is allowed again.
  */
 export interface CmsBookingBlock {
   id: string;
   date: string;
   startTime: string;
   endTime: string;
-  /** If set, applies only to that employee; omit for whole-salon blocks. */
+  /** true = every technician (and "Anyone"); false = only `employeeId`. */
+  salonWide: boolean;
+  /** Required when salonWide is false */
   employeeId?: string;
 }
 
@@ -114,7 +116,8 @@ export function defaultCmsSite(): CmsSitePayload {
 }
 
 const YMD_RE = /^\d{4}-\d{2}-\d{2}$/;
-const HM_RE = /^(\d{1,2}):(\d{2})$/;
+/** Supports optional seconds (`HH:MM` or `HH:MM:SS`) from some clients. */
+const HM_RE = /^(\d{1,2}):(\d{2})(?::(\d{2}))?$/;
 
 export function normalizeCmsBookingBlock(raw: unknown): CmsBookingBlock | null {
   if (!raw || typeof raw !== 'object') return null;
@@ -140,13 +143,47 @@ export function normalizeCmsBookingBlock(raw: unknown): CmsBookingBlock | null {
   if (endM <= startM) return null;
   const pad = (h: number, m: number) =>
     `${String(h).padStart(2, '0')}:${String(m).padStart(2, '0')}`;
+
+  const scopeRaw = typeof o.scope === 'string' ? o.scope.trim().toLowerCase() : '';
+  const salonScope = scopeRaw === 'salon' || scopeRaw === 'whole_salon' || scopeRaw === 'all';
+  const stylistScope =
+    scopeRaw === 'stylist' || scopeRaw === 'employee' || scopeRaw === 'tech';
+
+  const swRaw = o.salonWide;
+  const swTruthy =
+    swRaw === true ||
+    swRaw === 1 ||
+    swRaw === '1' ||
+    (typeof swRaw === 'string' && ['true', 'yes', 'all'].includes(swRaw.trim().toLowerCase()));
+  const swFalsey =
+    swRaw === false ||
+    swRaw === 0 ||
+    (typeof swRaw === 'string' && ['false', 'no', '0'].includes(swRaw.trim().toLowerCase()));
+
+  let salonWide: boolean;
+  if (swTruthy || salonScope) {
+    salonWide = true;
+  } else if (swFalsey || stylistScope) {
+    salonWide = false;
+  } else {
+    salonWide = !employeeRaw;
+  }
+
+  if (!salonWide && !employeeRaw) return null;
+
   return {
     id,
     date,
     startTime: pad(sh, smin),
     endTime: pad(eh, emin),
-    employeeId: employeeRaw || undefined,
+    salonWide,
+    employeeId: salonWide ? undefined : employeeRaw,
   };
+}
+
+export function coerceBookingBlocksList(rawList: unknown[] | undefined): CmsBookingBlock[] {
+  if (!Array.isArray(rawList)) return [];
+  return rawList.map(normalizeCmsBookingBlock).filter((b): b is CmsBookingBlock => b !== null);
 }
 
 function num(raw: unknown, fallback: number): number {

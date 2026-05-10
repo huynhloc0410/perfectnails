@@ -8,6 +8,7 @@ import {
 } from '@/lib/s3CmsSite';
 import type { CmsSmsJob } from '@/lib/cmsSiteTypes';
 import { normalizePhoneE164 } from '@/lib/phone';
+import { isSlotStartAllowedForBooking } from '@/lib/bookingLeadTime';
 // Phone confirmation SMS temporarily disabled:
 // import { bookingConfirmationSms } from '@/lib/smsTemplates';
 // import { isTwilioConfigured, sendSms } from '@/lib/twilioServer';
@@ -27,6 +28,11 @@ export async function POST(req: Request) {
   const [year, month, day] = date.split('-').map(Number);
   const bookingDate = new Date(year, month - 1, day, parseInt(hours), parseInt(minutes), 0, 0);
 
+  const nowForLead = new Date();
+  if (!isSlotStartAllowedForBooking(bookingDate, nowForLead)) {
+    return NextResponse.json({ success: false, error: 'min_notice' }, { status: 400 });
+  }
+
   // In a real app, you'd save to a database
   // For now, we'll return the booking data and the client will save it
   const bookingDuration = parseInt(duration, 10) || 45;
@@ -41,7 +47,7 @@ export async function POST(req: Request) {
     duration: bookingDuration,
   };
 
-  const now = new Date();
+  const now = nowForLead;
   const phoneE164 = normalizePhoneE164(phone);
   // Confirm (SMS) temporarily disabled because phone verification isn't ready.
   // const twilioReady = isTwilioConfigured();
