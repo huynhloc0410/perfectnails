@@ -509,6 +509,8 @@ export default function Booking() {
     formDataObj.append('date', formData.date);
     formDataObj.append('timeSlot', formData.timeSlot);
     formDataObj.append('duration', serviceDuration.toString());
+    /** Same instant as slotStart — API uses this so min_notice matches the browser (server TZ is often UTC). */
+    formDataObj.append('slotStartIso', slotStart.toISOString());
 
     try {
       const response = await fetch('/api/booking', {

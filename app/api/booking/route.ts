@@ -22,11 +22,20 @@ export async function POST(req: Request) {
   const date = data.get("date") as string;
   const timeSlot = data.get("timeSlot") as string;
   const duration = data.get("duration") as string;
+  /** Client-built instant (browser local wall clock → ISO). Required on UTC servers: `new Date(y,m,d,h,m)` here uses *server* local, not the guest’s. */
+  const slotStartIso = (data.get('slotStartIso') as string | null)?.trim() ?? '';
 
-  // Combine date and time slot into a single datetime (parse date in local timezone)
-  const [hours, minutes] = timeSlot.split(':');
+  let bookingDate: Date;
+  const parsedFromIso = slotStartIso ? new Date(slotStartIso) : null;
+  if (parsedFromIso && Number.isFinite(parsedFromIso.getTime())) {
+    bookingDate = parsedFromIso;
+  } else {
+    const [hours, minutes] = timeSlot.split(':');
+    const [year, month, day] = date.split('-').map(Number);
+    bookingDate = new Date(year, month - 1, day, parseInt(hours, 10), parseInt(minutes, 10), 0, 0);
+  }
+
   const [year, month, day] = date.split('-').map(Number);
-  const bookingDate = new Date(year, month - 1, day, parseInt(hours), parseInt(minutes), 0, 0);
 
   const nowForLead = new Date();
   if (!isSlotStartAllowedForBooking(bookingDate, nowForLead)) {
