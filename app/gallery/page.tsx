@@ -17,6 +17,34 @@ function resolveImageSrc(url: string): string {
   return u;
 }
 
+function extractGalleryUploadTimestampMs(url: string): number | null {
+  const cleaned = (url || '').split('?')[0];
+  // Gallery images are uploaded as: `${prefix}/${Date.now()}-${originalName}`
+  // so the object key contains the epoch millis just before the first '-' after a slash.
+  const matches = Array.from(cleaned.matchAll(/\/(\d+)-/g));
+  const last = matches[matches.length - 1]?.[1];
+  if (!last) return null;
+  const n = Number(last);
+  return Number.isFinite(n) ? n : null;
+}
+
+function sortGalleryNewestFirst(images: string[]): string[] {
+  // Stable sort: keep original order when we can't extract timestamps.
+  return images
+    .map((url, index) => ({
+      url,
+      index,
+      ts: extractGalleryUploadTimestampMs(url),
+    }))
+    .sort((a, b) => {
+      const aTs = a.ts ?? -1;
+      const bTs = b.ts ?? -1;
+      if (bTs !== aTs) return bTs - aTs; // newest first
+      return a.index - b.index;
+    })
+    .map((x) => x.url);
+}
+
 export default function Gallery() {
   const [images, setImages] = useState<string[]>([]);
   const [lightboxIndex, setLightboxIndex] = useState<number | null>(null);
@@ -34,7 +62,7 @@ export default function Gallery() {
           data.site.gallery.length > 0 &&
           !data.error
         ) {
-          setImages(data.site.gallery as string[]);
+          setImages(sortGalleryNewestFirst(data.site.gallery as string[]));
           return;
         }
       } catch {
@@ -45,7 +73,7 @@ export default function Gallery() {
       if (savedGallery) {
         try {
           const parsed = JSON.parse(savedGallery) as string[];
-          if (Array.isArray(parsed)) setImages(parsed);
+          if (Array.isArray(parsed)) setImages(sortGalleryNewestFirst(parsed));
         } catch {
           /* ignore */
         }
