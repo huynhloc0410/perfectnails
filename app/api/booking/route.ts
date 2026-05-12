@@ -9,6 +9,7 @@ import {
 import type { CmsSmsJob } from '@/lib/cmsSiteTypes';
 import { normalizePhoneE164 } from '@/lib/phone';
 import { isSlotStartAllowedForBooking } from '@/lib/bookingLeadTime';
+import { isNonBookableAddonService } from '@/lib/booking/serviceEmployeeMatch';
 // Phone confirmation SMS temporarily disabled:
 // import { bookingConfirmationSms } from '@/lib/smsTemplates';
 // import { isTwilioConfigured, sendSms } from '@/lib/twilioServer';
@@ -85,6 +86,13 @@ export async function POST(req: Request) {
     try {
       const site = await readCmsSiteFromS3();
       if (site) {
+        const svcRow = Array.isArray(site.services)
+          ? site.services.find((s) => String((s as { name?: string }).name ?? '').trim() === String(service ?? '').trim())
+          : undefined;
+        if (!svcRow || isNonBookableAddonService(svcRow as { name: string; category?: string | null })) {
+          return NextResponse.json({ success: false, error: 'invalid_service' }, { status: 400 });
+        }
+
         const dateYmd = `${year}-${String(month).padStart(2, '0')}-${String(day).padStart(2, '0')}`;
         const empId = (employee || '').trim();
         const slotEndExclusive = new Date(bookingDate.getTime());

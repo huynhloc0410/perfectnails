@@ -1,6 +1,6 @@
 'use client';
 
-import { useState, useEffect, useCallback } from 'react';
+import { useState, useEffect, useCallback, useMemo } from 'react';
 import { useSearchParams } from 'next/navigation';
 import { ADMIN_BOOKINGS_BROADCAST } from '@/lib/admin/booking-broadcast';
 import { isValidUsCustomerPhone } from '@/lib/phone';
@@ -17,6 +17,7 @@ import {
   getEarliestBookableSlotStart,
   isSlotStartAllowedForBooking,
 } from '@/lib/bookingLeadTime';
+import { employeeCanPerformService, isNonBookableAddonService } from '@/lib/booking/serviceEmployeeMatch';
 
 interface Service {
   id: string;
@@ -216,11 +217,27 @@ export default function Booking() {
     return () => window.clearInterval(id);
   }, []);
 
-  /** Prefill service from /booking?service=... (e.g. Services → Book Now) */
+  /** Services that may be booked online (excludes add-on / "Additional …" line items). */
+  const bookableServices = useMemo(
+    () => services.filter((s) => !isNonBookableAddonService(s)),
+    [services],
+  );
+
+  /** If CMS drops bookable status for the current selection, reset the flow. */
+  useEffect(() => {
+    if (!formData.service) return;
+    const s = services.find((x) => x.name === formData.service);
+    if (!s || !isNonBookableAddonService(s)) return;
+    setFormData((prev) => ({ ...prev, service: '', employee: '', date: '', timeSlot: '' }));
+    setSelectedCategory('');
+    setBookingStep(1);
+  }, [services, formData.service]);
+
+  /** Prefill service from /booking?service=... (e.g. Services → Book Now). Skips add-on / non-bookable rows. */
   useEffect(() => {
     const fromUrl = serviceFromQuery?.trim();
-    if (!fromUrl || services.length === 0) return;
-    const match = services.find((s) => s.name === fromUrl);
+    if (!fromUrl || bookableServices.length === 0) return;
+    const match = bookableServices.find((s) => s.name === fromUrl);
     if (!match) return;
     setSelectedCategory(match.category || '');
     setFormData((prev) => {
@@ -228,7 +245,7 @@ export default function Booking() {
       return { ...prev, service: match.name, employee: '', date: '', timeSlot: '' };
     });
     setBookingStep(2);
-  }, [services, serviceFromQuery]);
+  }, [bookableServices, serviceFromQuery]);
 
   // Filter employees based on selected service
   useEffect(() => {
@@ -237,37 +254,15 @@ export default function Booking() {
       return;
     }
 
-    const selectedService = services.find(s => s.name === formData.service);
-    if (!selectedService) {
+    const selectedService = services.find((s) => s.name === formData.service);
+    if (!selectedService || isNonBookableAddonService(selectedService)) {
       setAvailableEmployees([]);
       return;
     }
 
-    // Determine which employees can do this service based on category
-    const serviceCategory = selectedService.category?.toLowerCase() || '';
-    const serviceName = selectedService.name.toLowerCase();
-
-    const filtered = employees.filter(employee => {
-      if (employee.role === 'Everything') return true;
-      
-      if (employee.role === 'Water') {
-        return serviceCategory === 'manicure' || 
-               serviceCategory === 'pedicure' ||
-               serviceName.includes('manicure') ||
-               serviceName.includes('pedicure');
-      }
-      
-      if (employee.role === 'Powder') {
-        return serviceCategory === 'acrylic' ||
-               serviceCategory === 'gel x' ||
-               serviceCategory === 'gel builder' ||
-               serviceName.includes('acrylic') ||
-               serviceName.includes('gel x') ||
-               serviceName.includes('gel builder');
-      }
-      
-      return false;
-    });
+    const filtered = employees.filter((employee) =>
+      employeeCanPerformService(employee, selectedService),
+    );
 
     setAvailableEmployees(filtered);
     
@@ -408,7 +403,7 @@ export default function Booking() {
       return;
     }
 
-    const selectedService = services.find((s) => s.name === formData.service);
+    const selectedService = bookableServices.find((s) => s.name === formData.service);
     if (!selectedService) {
       setTimeSlotChoices([]);
       return;
@@ -425,7 +420,7 @@ export default function Booking() {
     formData.service,
     formData.employee,
     formData.date,
-    services,
+    bookableServices,
     availableEmployees,
     slotClock,
     buildTimeSlotChoices,
@@ -453,7 +448,13 @@ export default function Booking() {
     }
 
     const selectedService = services.find((s) => s.name === formData.service);
-    const serviceDuration = schedulingMinutes(selectedService?.duration);
+    if (!selectedService || isNonBookableAddonService(selectedService)) {
+      alert(
+        'Please choose a main service. Add-ons and extras are arranged in the salon with your appointment, not booked alone online.',
+      );
+      return;
+    }
+    const serviceDuration = schedulingMinutes(selectedService.duration);
 
     const effectiveEmp =
       formData.employee === ANYBODY_EMPLOYEE_ID ? '' : formData.employee.trim();
@@ -520,6 +521,13 @@ export default function Booking() {
 
       const result = await response.json();
 
+      if (response.status === 400 && result?.error === 'invalid_service') {
+        alert(
+          'That service cannot be booked online. Choose a main service, or call us to add extras.',
+        );
+        return;
+      }
+
       if (response.status === 400 || result?.error === 'min_notice') {
         alert(
           'Appointments must be at least 30 minutes from now. Please choose a later time slot.'
@@ -560,16 +568,16 @@ export default function Booking() {
     }
   };
 
-  const selectedService = services.find(s => s.name === formData.service);
+  const selectedService = bookableServices.find((s) => s.name === formData.service);
   const categories = Array.from(
     new Set(
-      services
+      bookableServices
         .map((s) => (s.category || '').trim())
         .filter((c) => c.length > 0),
     ),
   ).sort((a, b) => a.localeCompare(b));
   const filteredServices = selectedCategory
-    ? services.filter((s) => (s.category || '').trim() === selectedCategory)
+    ? bookableServices.filter((s) => (s.category || '').trim() === selectedCategory)
     : [];
 
   // Calendar functions
@@ -699,7 +707,11 @@ export default function Booking() {
             <>
           <div>
             <label className="block mb-1 text-sm font-medium text-lux-espresso">Select Category *</label>
-            {categories.length > 0 ? (
+            {services.length > 0 && bookableServices.length === 0 ? (
+              <p className="text-sm text-lux-espressoLight/75">
+                Online booking lists main services only. Add-ons and additional services are scheduled with your main service in the salon — call us if you need help choosing.
+              </p>
+            ) : categories.length > 0 ? (
               <select
                 name="category"
                 value={selectedCategory}
@@ -731,7 +743,13 @@ export default function Booking() {
 
           <div>
             <label className="block mb-1 text-sm font-medium text-lux-espresso">Select Service *</label>
-            {services.length > 0 ? (
+            {services.length === 0 ? (
+              <p className="text-sm text-lux-espressoLight/75">No services available. Please contact us directly.</p>
+            ) : bookableServices.length === 0 ? (
+              <p className="text-sm text-lux-espressoLight/75">
+                No bookable services are listed yet. Please contact us directly.
+              </p>
+            ) : (
               <select
                 name="service"
                 value={formData.service}
@@ -752,8 +770,6 @@ export default function Booking() {
                   </option>
                 ))}
               </select>
-            ) : (
-              <p className="text-sm text-lux-espressoLight/75">No services available. Please contact us directly.</p>
             )}
             {selectedService && selectedService.duration !== 0 && (
               <p className="mt-1 text-xs text-lux-espressoLight/75">
