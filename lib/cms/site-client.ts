@@ -19,7 +19,7 @@ export interface CmsSiteApiResponse {
       phone?: string;
       email?: string;
       hours?: string;
-      socialMedia?: { facebook?: string; instagram?: string; twitter?: string };
+      socialMedia?: { facebook?: string; instagram?: string; yelp?: string; twitter?: string };
     };
     gallery?: string[];
     bookingBlocks?: unknown[];

@@ -192,7 +192,7 @@ export function BookingsCalendarClient() {
                   phone: '',
                   email: '',
                   hours: '',
-                  socialMedia: { facebook: '', instagram: '', twitter: '' },
+                  socialMedia: { facebook: '', instagram: '', yelp: '' },
                 },
           gallery: Array.isArray(s.gallery) ? s.gallery : [],
           bookingBlocks: Array.isArray((s as { bookingBlocks?: unknown }).bookingBlocks)

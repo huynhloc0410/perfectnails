@@ -5,6 +5,7 @@ import InnerPageHero from '../components/InnerPageHero';
 import {
   SITE_DEFAULT_ADDRESS,
   migrateLegacyStoredContactAddress,
+  normalizeContactSocialMedia,
 } from '@/lib/site/contact';
 import { fetchCmsSite } from '@/lib/cms/site-client';
 import { SITE_BRAND_NAME } from '@/lib/site/branding';
@@ -17,7 +18,7 @@ interface ContactContent {
   socialMedia: {
     facebook: string;
     instagram: string;
-    twitter: string;
+    yelp: string;
   };
 }
 
@@ -27,7 +28,7 @@ export default function Contact() {
     phone: '',
     email: '',
     hours: '',
-    socialMedia: { facebook: '', instagram: '', twitter: '' },
+    socialMedia: { facebook: '', instagram: '', yelp: '' },
   });
 
   useEffect(() => {
@@ -44,11 +45,7 @@ export default function Contact() {
             phone: c.phone || '',
             email: c.email || '',
             hours: c.hours || '',
-            socialMedia: {
-              facebook: c.socialMedia?.facebook || '',
-              instagram: c.socialMedia?.instagram || '',
-              twitter: c.socialMedia?.twitter || '',
-            },
+            socialMedia: normalizeContactSocialMedia(c.socialMedia),
           });
           return;
         }
@@ -57,7 +54,13 @@ export default function Contact() {
       }
       if (!cancelled) {
         const savedContact = localStorage.getItem('admin-contact');
-        if (savedContact) setContact(JSON.parse(savedContact));
+        if (savedContact) {
+          const parsed = JSON.parse(savedContact) as ContactContent;
+          setContact({
+            ...parsed,
+            socialMedia: normalizeContactSocialMedia(parsed.socialMedia),
+          });
+        }
       }
     })();
     return () => {
@@ -178,23 +181,23 @@ export default function Contact() {
               </a>
             )}
             
-            {contact.socialMedia.twitter && (
+            {contact.socialMedia.yelp && (
               <a
-                href={contact.socialMedia.twitter}
+                href={contact.socialMedia.yelp}
                 target="_blank"
                 rel="noopener noreferrer"
-                className="flex items-center font-medium text-lux-espressoLight transition hover:text-champagne-800"
+                className="flex items-center font-medium text-champagne-800 transition hover:text-champagne-950"
               >
-                <svg className="w-5 h-5 mr-2" fill="currentColor" viewBox="0 0 24 24">
-                  <path d="M23.953 4.57a10 10 0 01-2.825.775 4.958 4.958 0 002.163-2.723c-.951.555-2.005.959-3.127 1.184a4.92 4.92 0 00-8.384 4.482C7.69 8.095 4.067 6.13 1.64 3.162a4.822 4.822 0 00-.666 2.475c0 1.71.87 3.213 2.188 4.096a4.904 4.904 0 01-2.228-.616v.06a4.923 4.923 0 003.946 4.827 4.996 4.996 0 01-2.212.085 4.936 4.936 0 004.604 3.417 9.867 9.867 0 01-6.102 2.105c-.39 0-.779-.023-1.17-.067a13.995 13.995 0 007.557 2.209c9.053 0 13.998-7.496 13.998-13.985 0-.21 0-.42-.015-.63A9.935 9.935 0 0024 4.59z"/>
+                <svg className="mr-2 h-5 w-5 shrink-0" fill="currentColor" viewBox="0 0 24 24" aria-hidden>
+                  <path d="M12 17.27 18.18 21l-1.64-7.03L22 9.24l-7.19-.61L12 2 9.19 8.63 2 9.24l5.46 4.73L5.82 21 12 17.27Z" />
                 </svg>
-                Twitter
+                Yelp
               </a>
             )}
           </div>
 
           {!contact.address && !contact.phone && !contact.email && !contact.hours && 
-           !contact.socialMedia.facebook && !contact.socialMedia.instagram && !contact.socialMedia.twitter && (
+           !contact.socialMedia.facebook && !contact.socialMedia.instagram && !contact.socialMedia.yelp && (
             <p className="mt-4 text-sm text-lux-espressoLight/75">
               Contact information will appear here once updated in the admin panel.
             </p>

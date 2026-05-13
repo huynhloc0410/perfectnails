@@ -6,7 +6,7 @@ import { adminDashboardBaseFromPathname, adminLoginPathFromPathname } from '@/li
 import { addDays, formatWeekRangeLabel, mondayOfWeek, startOfLocalDay, toISODateString } from '@/lib/admin/week-calendar';
 import { WeeklyHeader } from './bookings/components/WeeklyHeader';
 import { WeekGrid } from './bookings/components/WeekGrid';
-import { migrateLegacyStoredContactAddress } from '@/lib/site/contact';
+import { migrateLegacyStoredContactAddress, normalizeContactSocialMedia } from '@/lib/site/contact';
 import { SITE_DATA_UPDATED_EVENT } from '@/lib/cms/site-client';
 import { SITE_BRAND_NAME } from '@/lib/site/branding';
 import {
@@ -65,7 +65,7 @@ export default function AdminPage() {
     phone: '', 
     email: '', 
     hours: '',
-    socialMedia: { facebook: '', instagram: '', twitter: '' }
+    socialMedia: { facebook: '', instagram: '', yelp: '' }
   });
   
   // Forms
@@ -207,7 +207,10 @@ export default function AdminPage() {
             setContactContent((prev) => ({
               ...prev,
               ...c,
-              socialMedia: { ...prev.socialMedia, ...(c.socialMedia || {}) },
+              socialMedia: normalizeContactSocialMedia({
+                ...prev.socialMedia,
+                ...(c.socialMedia || {}),
+              }),
             }));
           }
           if (Array.isArray(s.gallery) && s.gallery.length > 0) {
@@ -223,7 +226,13 @@ export default function AdminPage() {
           if (savedBookings) setBookings(JSON.parse(savedBookings));
           if (savedEmployees) setEmployees(JSON.parse(savedEmployees));
           if (savedAbout) setAboutContent(JSON.parse(savedAbout));
-          if (savedContact) setContactContent(JSON.parse(savedContact));
+          if (savedContact) {
+            const parsed = JSON.parse(savedContact) as typeof contactContent;
+            setContactContent({
+              ...parsed,
+              socialMedia: normalizeContactSocialMedia(parsed.socialMedia),
+            });
+          }
           const savedBlocksElse = localStorage.getItem('admin-booking-blocks');
           if (savedBlocksElse) {
             try {
@@ -245,7 +254,13 @@ export default function AdminPage() {
           if (savedBookings) setBookings(JSON.parse(savedBookings));
           if (savedEmployees) setEmployees(JSON.parse(savedEmployees));
           if (savedAbout) setAboutContent(JSON.parse(savedAbout));
-          if (savedContact) setContactContent(JSON.parse(savedContact));
+          if (savedContact) {
+            const parsed = JSON.parse(savedContact) as typeof contactContent;
+            setContactContent({
+              ...parsed,
+              socialMedia: normalizeContactSocialMedia(parsed.socialMedia),
+            });
+          }
           const savedBlocksCatch = localStorage.getItem('admin-booking-blocks');
           if (savedBlocksCatch) {
             try {
@@ -315,7 +330,7 @@ export default function AdminPage() {
                     phone: '',
                     email: '',
                     hours: '',
-                    socialMedia: { facebook: '', instagram: '', twitter: '' },
+                    socialMedia: { facebook: '', instagram: '', yelp: '' },
                   },
             gallery: urls,
           }),
@@ -1021,16 +1036,16 @@ Saturday - Sunday: 10:00 AM - 6:00 PM`}
                         />
                       </div>
                       <div>
-                        <label className="block text-xs text-gray-600 mb-1">Twitter</label>
+                        <label className="block text-xs text-gray-600 mb-1">Yelp</label>
                         <input
                           type="text"
-                          value={contactContent.socialMedia.twitter}
+                          value={contactContent.socialMedia.yelp}
                           onChange={(e) => setContactContent({ 
                             ...contactContent, 
-                            socialMedia: { ...contactContent.socialMedia, twitter: e.target.value }
+                            socialMedia: { ...contactContent.socialMedia, yelp: e.target.value }
                           })}
                           className="w-full px-3 py-2 border border-gray-300 rounded-md focus:ring-champagne-500 focus:border-champagne-500"
-                          placeholder="Twitter URL"
+                          placeholder="Yelp profile URL"
                         />
                       </div>
                     </div>

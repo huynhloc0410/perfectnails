@@ -1,3 +1,21 @@
+/** Facebook / Instagram / Yelp profile URLs from admin Contact. */
+export type ContactSocialMedia = { facebook: string; instagram: string; yelp: string };
+
+/**
+ * Normalizes stored `socialMedia` (S3 or localStorage). Legacy `twitter` is folded into `yelp`
+ * so existing data keeps a link until you replace it with a real Yelp URL in admin.
+ */
+export function normalizeContactSocialMedia(raw: unknown): ContactSocialMedia {
+  const sm = raw && typeof raw === 'object' ? (raw as Record<string, unknown>) : {};
+  const yelp = String(sm.yelp ?? '').trim();
+  const legacyTwitter = String(sm.twitter ?? '').trim();
+  return {
+    facebook: String(sm.facebook ?? '').trim(),
+    instagram: String(sm.instagram ?? '').trim(),
+    yelp: yelp || legacyTwitter,
+  };
+}
+
 /** Canonical salon address (hero, contact fallbacks, migrations). */
 export const SITE_DEFAULT_ADDRESS = '4030 E Bell Rd #110, Phoenix, AZ 85032';
 

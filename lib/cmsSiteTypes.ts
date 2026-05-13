@@ -1,3 +1,5 @@
+import { normalizeContactSocialMedia } from '@/lib/site/contact';
+
 export interface CmsService {
   id: string;
   name: string;
@@ -72,7 +74,7 @@ export interface CmsContact {
   phone: string;
   email: string;
   hours: string;
-  socialMedia: { facebook: string; instagram: string; twitter: string };
+  socialMedia: { facebook: string; instagram: string; yelp: string };
 }
 
 export interface CmsSitePayload {
@@ -109,7 +111,7 @@ export function defaultCmsSite(): CmsSitePayload {
       phone: '',
       email: '',
       hours: '',
-      socialMedia: { facebook: '', instagram: '', twitter: '' },
+      socialMedia: { facebook: '', instagram: '', yelp: '' },
     },
     gallery: [],
   };
@@ -267,14 +269,16 @@ export function normalizeCmsSite(raw: unknown): CmsSitePayload {
         : base.about,
     contact:
       o.contact && typeof o.contact === 'object'
-        ? {
-            ...base.contact,
-            ...(o.contact as CmsContact),
-            socialMedia: {
-              ...base.contact.socialMedia,
-              ...((o.contact as CmsContact).socialMedia || {}),
-            },
-          }
+        ? (() => {
+            const oc = o.contact as Record<string, unknown>;
+            return {
+              address: String(oc.address ?? base.contact.address),
+              phone: String(oc.phone ?? base.contact.phone),
+              email: String(oc.email ?? base.contact.email),
+              hours: String(oc.hours ?? base.contact.hours),
+              socialMedia: normalizeContactSocialMedia(oc.socialMedia),
+            };
+          })()
         : base.contact,
     gallery,
   };
