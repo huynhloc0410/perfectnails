@@ -1,5 +1,6 @@
 'use client';
 
+import { SITE_BRAND_NAME } from '@/lib/site/branding';
 import InnerPageHero from '../components/InnerPageHero';
 
 export default function PolicyPage() {
@@ -99,6 +100,26 @@ export default function PolicyPage() {
               <li>Promotions (such as 20% off specials) cannot be combined with other offers unless stated otherwise.</li>
               <li>Discounts must be mentioned at checkout.</li>
             </ul>
+          </section>
+
+          <section className="mb-8 rounded-xl border border-champagne-300/45 bg-white p-8 shadow-md ring-1 ring-champagne-100/50">
+            <h2 className="mb-4 font-display text-2xl font-medium text-lux-espresso">Text Messaging (SMS)</h2>
+            <p className="mb-4 leading-relaxed text-lux-espressoLight">
+              By providing your phone number when you book an appointment or contact us, you agree to receive
+              appointment-related text messages from {SITE_BRAND_NAME}, including booking confirmations and
+              appointment reminders. Message frequency varies based on your appointments. Message and data rates may
+              apply.
+            </p>
+            <p className="mb-4 leading-relaxed text-lux-espressoLight">
+              Reply <span className="font-medium text-lux-espresso">STOP</span> to unsubscribe from text messages at
+              any time. Reply <span className="font-medium text-lux-espresso">HELP</span> for help, or call us at
+              623-302-2156. Consent to receive text messages is not required to book an appointment or purchase our
+              services. We do not sell or share your mobile number with third parties for their marketing purposes.
+            </p>
+            <p className="leading-relaxed text-lux-espressoLight">
+              Carriers are not liable for delayed or undelivered messages. Message types may include appointment
+              confirmations, reminders, and occasional service updates related to your visit.
+            </p>
           </section>
 
           <section className="rounded-xl border border-champagne-400/35 bg-gradient-to-br from-champagne-50 via-lux-cream/60 to-champagne-100/80 p-8 shadow-md ring-1 ring-champagne-200/40">
