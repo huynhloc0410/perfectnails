@@ -1034,9 +1034,7 @@ export default function Booking() {
                                 ? isSelected
                                   ? 'bg-champagne-600 text-white shadow-sm'
                                   : 'border border-champagne-200/80 bg-lux-mist/40 text-lux-espresso hover:bg-champagne-100 hover:text-champagne-700'
-                                : row.state === 'salon_blocked'
-                                  ? 'cursor-not-allowed border border-neutral-300/70 bg-neutral-100 text-neutral-400 opacity-65 line-through decoration-neutral-400'
-                                  : 'cursor-not-allowed border border-champagne-200/50 bg-neutral-50 text-lux-espressoLight/55 opacity-75',
+                                : 'cursor-not-allowed border border-champagne-200/50 bg-neutral-50 text-lux-espressoLight/55 opacity-75',
                             ].join(' ')}
                           >
                             {row.time}

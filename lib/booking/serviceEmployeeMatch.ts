@@ -42,10 +42,12 @@ export function isNonBookableAddonService(service: ServiceLike): boolean {
   // Category bucket used only for add-ons / extras
   if (/^additional(\s+services?)?$/i.test(cat)) return true;
   if (/^add[-\s]?ons?$/i.test(cat) || /^extras?$/i.test(cat)) return true;
-  if (cat.startsWith('additional') && !/\b(manicure|pedicure)\b/.test(cat)) return true;
+  // Any category bucket starting with "Additional …" is add-on only (including "… Pedicure" sub-lines).
+  if (cat.startsWith('additional')) return true;
 
-  // Line items named like "Additional …" / "Additional service …"
+  // Line items named like "Additional …" / "Additional-…" (sub-services, not booked alone)
   if (name.startsWith('additional ') || name.startsWith('additional service')) return true;
+  if (/^additional\s*[-–:]/i.test(name)) return true;
 
   return false;
 }
