@@ -1,0 +1,5 @@
+Next-week Twilio reference (policy SMS disclosure).
+
+Deploy or verify /policy includes the Text Messaging (SMS) section: consent when a phone number is given, appointment confirmations and reminders, variable frequency, message and data rates, STOP to unsubscribe, HELP for assistance, consent not required to book, and no selling or sharing the mobile number for third-party marketing.
+
+Use this commit when Twilio asks for a public policy page with SMS disclosure.
