@@ -1,11 +1,12 @@
 'use client';
 
 import { useState, useEffect, useCallback, useMemo } from 'react';
-import Link from 'next/link';
 import { useSearchParams } from 'next/navigation';
 import { ADMIN_BOOKINGS_BROADCAST } from '@/lib/admin/booking-broadcast';
 import { isValidUsCustomerPhone } from '@/lib/phone';
-import { SITE_BRAND_NAME } from '@/lib/site/branding';
+// Booking SMS consent temporarily disabled — re-enable next week for Twilio verification:
+// import Link from 'next/link';
+// import { SITE_BRAND_NAME } from '@/lib/site/branding';
 import InnerPageHero from '../components/InnerPageHero';
 import { fetchCmsSite, SITE_DATA_UPDATED_EVENT } from '@/lib/cms/site-client';
 import { coerceBookingBlocksList, type CmsBookingBlock } from '@/lib/cmsSiteTypes';
@@ -139,7 +140,8 @@ export default function Booking() {
   const [bookingSuccessModalOpen, setBookingSuccessModalOpen] = useState(false);
   /** Set true only after failed submit (invalid phone); cleared when user edits phone. */
   const [phoneSubmitError, setPhoneSubmitError] = useState(false);
-  const [smsConsent, setSmsConsent] = useState(false);
+  // Booking SMS consent temporarily disabled — re-enable next week for Twilio verification:
+  // const [smsConsent, setSmsConsent] = useState(false);
   const [availableEmployees, setAvailableEmployees] = useState<Employee[]>([]);
   const [timeSlotChoices, setTimeSlotChoices] = useState<BookingSlotRow[]>([]);
   /** Bumps periodically so same-day slots respect minimum notice as time passes */
@@ -450,10 +452,11 @@ export default function Booking() {
       return;
     }
 
-    if (!smsConsent) {
-      alert('Please agree to the Privacy Policy and SMS Terms & Conditions to continue.');
-      return;
-    }
+    // Booking SMS consent temporarily disabled — re-enable next week for Twilio verification:
+    // if (!smsConsent) {
+    //   alert('Please agree to the Privacy Policy and SMS Terms & Conditions to continue.');
+    //   return;
+    // }
 
     const selectedService = services.find((s) => s.name === formData.service);
     if (!selectedService || isNonBookableAddonService(selectedService)) {
@@ -520,7 +523,8 @@ export default function Booking() {
     formDataObj.append('duration', serviceDuration.toString());
     /** Same instant as slotStart — API uses this so min_notice matches the browser (server TZ is often UTC). */
     formDataObj.append('slotStartIso', slotStart.toISOString());
-    formDataObj.append('smsConsent', 'true');
+    // Booking SMS consent temporarily disabled — re-enable next week for Twilio verification:
+    // formDataObj.append('smsConsent', 'true');
 
     try {
       const response = await fetch('/api/booking', {
@@ -566,7 +570,7 @@ export default function Booking() {
         
         setBookingSuccessModalOpen(true);
         setPhoneSubmitError(false);
-        setSmsConsent(false);
+        // setSmsConsent(false);
         setFormData({ name: '', phone: '', service: '', employee: '', date: '', timeSlot: '' });
         setSelectedCategory('');
         setBookingStep(1);
@@ -1113,6 +1117,7 @@ export default function Booking() {
                       </p>
                     )}
                   </div>
+                  {/* Booking SMS consent temporarily disabled — re-enable next week for Twilio verification:
                   <div className="rounded-lg border border-champagne-200/80 bg-champagne-50/40 p-4">
                     <label className="flex items-start gap-3 text-sm leading-relaxed text-lux-espressoLight">
                       <input
@@ -1137,6 +1142,7 @@ export default function Booking() {
                       </span>
                     </label>
                   </div>
+                  */}
                 </div>
               </div>
 
@@ -1157,8 +1163,8 @@ export default function Booking() {
                     !formData.date ||
                     !formData.timeSlot ||
                     !formData.name.trim() ||
-                    !formData.phone.trim() ||
-                    !smsConsent
+                    !formData.phone.trim()
+                    // !smsConsent
                   }
                 >
                   Book Now
