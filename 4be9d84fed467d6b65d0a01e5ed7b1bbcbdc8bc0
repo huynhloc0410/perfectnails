@@ -1,0 +1,5 @@
+Next-week Twilio reference (privacy, terms, and booking consent).
+
+Deploy or verify /privacy, /terms, and /booking. The booking form requires an SMS consent checkbox with links to both pages; /api/booking rejects requests without smsConsent. Footer and sitemap link Privacy and Terms.
+
+Use this commit (or tag twilio-sms-legal-2026-05-19) as the full legal bundle for toll-free or A2P verification.
