@@ -25,6 +25,11 @@ export async function POST(req: Request) {
   const duration = data.get("duration") as string;
   /** Client-built instant (browser local wall clock → ISO). Required on UTC servers: `new Date(y,m,d,h,m)` here uses *server* local, not the guest’s. */
   const slotStartIso = (data.get('slotStartIso') as string | null)?.trim() ?? '';
+  const smsConsent = data.get('smsConsent') === 'true';
+
+  if (!smsConsent) {
+    return NextResponse.json({ success: false, error: 'sms_consent_required' }, { status: 400 });
+  }
 
   let bookingDate: Date;
   const parsedFromIso = slotStartIso ? new Date(slotStartIso) : null;

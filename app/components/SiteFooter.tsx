@@ -127,6 +127,18 @@ export default function SiteFooter() {
           <span className="hidden text-champagne-300 sm:inline" aria-hidden>
             ·
           </span>
+          <Link href="/privacy" className="footer-action-link">
+            Privacy
+          </Link>
+          <span className="hidden text-champagne-300 sm:inline" aria-hidden>
+            ·
+          </span>
+          <Link href="/terms" className="footer-action-link">
+            Terms
+          </Link>
+          <span className="hidden text-champagne-300 sm:inline" aria-hidden>
+            ·
+          </span>
           <Link href="/booking" className="footer-action-link">
             Book
           </Link>
