@@ -1,14 +1,22 @@
-import { SITE_BRAND_NAME } from '@/lib/site/branding';
+import { SITE_BRAND_NAME, SITE_TIMEZONE } from '@/lib/site/branding';
+
+const SMS_LOCALE = 'en-US';
+const SMS_TZ = { timeZone: SITE_TIMEZONE } as const;
 
 export function formatApptTimeForSms(isoDate: string): string {
   const d = new Date(isoDate);
   if (!Number.isFinite(d.getTime())) return isoDate;
-  const date = d.toLocaleDateString('en-US', {
+  const date = d.toLocaleDateString(SMS_LOCALE, {
     weekday: 'short',
     month: 'short',
     day: '2-digit',
+    ...SMS_TZ,
   });
-  const time = d.toLocaleTimeString('en-US', { hour: 'numeric', minute: '2-digit' });
+  const time = d.toLocaleTimeString(SMS_LOCALE, {
+    hour: 'numeric',
+    minute: '2-digit',
+    ...SMS_TZ,
+  });
   return `${date} at ${time}`;
 }
 

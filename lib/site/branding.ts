@@ -24,6 +24,9 @@ export const SITE_SEO_KEYWORDS = [
 /** Single source for public-facing city/area copy — aligns with `SITE_DEFAULT_ADDRESS` (Phoenix). */
 export const SITE_PRIMARY_AREA = 'Phoenix, AZ';
 
+/** IANA timezone for appointments and SMS (Arizona does not observe DST). */
+export const SITE_TIMEZONE = 'America/Phoenix';
+
 /** Structured address for JSON-LD (matches default street; CMS may differ on live pages). */
 export const SITE_SCHEMA_POSTAL_ADDRESS = {
   streetAddress: '4030 E Bell Rd #110',
