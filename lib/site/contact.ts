@@ -19,8 +19,8 @@ export function normalizeContactSocialMedia(raw: unknown): ContactSocialMedia {
 /** Canonical salon address (hero, contact fallbacks, migrations). */
 export const SITE_DEFAULT_ADDRESS = '4030 E Bell Rd #110, Phoenix, AZ 85032';
 
-export const SITE_PHONE_DISPLAY = '(623) 302-2156';
-export const SITE_PHONE_HREF = 'tel:+16233022156';
+export const SITE_PHONE_DISPLAY = '(602) 996-3699';
+export const SITE_PHONE_HREF = 'tel:+16029963699';
 
 const LEGACY_ADDRESSES_LOWER = new Set([
   '10553 w pasadena ave, glendale, az 85305',

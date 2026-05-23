@@ -968,7 +968,7 @@ export default function AdminPage() {
                         value={contactContent.phone}
                         onChange={(e) => setContactContent({ ...contactContent, phone: e.target.value })}
                         className="w-full px-3 py-2 border border-gray-300 rounded-md focus:ring-champagne-500 focus:border-champagne-500"
-                        placeholder="(623) 302-2156"
+                        placeholder="(602) 996-3699"
                       />
                     </div>
                     <div>
@@ -1229,7 +1229,7 @@ Saturday - Sunday: 10:00 AM - 6:00 PM`}
                         value={employeeForm.phone}
                         onChange={(e) => setEmployeeForm({ ...employeeForm, phone: e.target.value })}
                         className="w-full px-3 py-2 border border-gray-300 rounded-md focus:ring-champagne-500 focus:border-champagne-500"
-                        placeholder="(623) 302-2156"
+                        placeholder="(602) 996-3699"
                       />
                     </div>
                     <div>

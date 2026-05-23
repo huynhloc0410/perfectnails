@@ -113,7 +113,7 @@ export default function PolicyPage() {
             <p className="mb-4 leading-relaxed text-lux-espressoLight">
               Reply <span className="font-medium text-lux-espresso">STOP</span> to unsubscribe from text messages at
               any time. Reply <span className="font-medium text-lux-espresso">HELP</span> for help, or call us at
-              623-302-2156. Consent to receive text messages is not required to book an appointment or purchase our
+              602-996-3699. Consent to receive text messages is not required to book an appointment or purchase our
               services. We do not sell or share your mobile number with third parties for their marketing purposes.
             </p>
             <p className="leading-relaxed text-lux-espressoLight">
@@ -130,7 +130,7 @@ export default function PolicyPage() {
             <div className="mt-5 space-y-1.5 text-center text-lux-espressoLight">
               <p className="font-semibold text-lux-espresso">Perfect Nails &amp; Spa</p>
               <p>
-                <span className="font-medium text-lux-espresso">Phone:</span> 623-302-2156
+                <span className="font-medium text-lux-espresso">Phone:</span> 602-996-3699
               </p>
               <p>
                 <span className="font-medium text-lux-espresso">Website:</span> perfectnailsandspas.com
