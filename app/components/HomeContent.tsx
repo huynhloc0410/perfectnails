@@ -134,18 +134,18 @@ export default function HomeContent() {
 
         <div className="relative z-10 mx-auto flex min-h-[min(78svh,720px)] w-full max-w-3xl flex-col px-6 pb-10 pt-[calc(3.5rem+env(safe-area-inset-top,0px))] sm:max-w-4xl sm:px-10 sm:pb-14 sm:pt-[calc(4rem+env(safe-area-inset-top,0px))] md:pb-16">
           <div className="flex w-full flex-1 flex-col items-center justify-start text-center">
-            <p className="hero-eyebrow inline-flex max-w-lg items-center justify-center rounded-full border border-champagne-400/45 bg-black/50 px-4 py-1.5 text-[11px] font-semibold uppercase tracking-[0.28em] text-champagne-100 shadow-[0_2px_16px_rgba(0,0,0,0.35)] backdrop-blur-md sm:text-xs sm:tracking-[0.3em]">
+            <p className="hero-eyebrow inline-flex max-w-lg items-center justify-center rounded-full border border-champagne-400/45 bg-black/50 px-4 py-1.5 text-[10px] font-semibold uppercase tracking-[0.26em] text-champagne-100 shadow-[0_2px_16px_rgba(0,0,0,0.35)] backdrop-blur-md sm:text-[10px] sm:tracking-[0.28em]">
               Nail studio · {SITE_PRIMARY_AREA}
             </p>
             <h1
               id="hero-heading"
-              className="font-display mt-3 max-w-2xl text-[2.125rem] font-medium leading-[1.15] tracking-[0.02em] text-white sm:mt-4 sm:text-5xl md:text-[3.25rem]"
+              className="font-display mt-2.5 max-w-2xl text-[1.75rem] font-medium leading-[1.15] tracking-[0.02em] text-white sm:mt-3 sm:text-4xl md:text-[2.5rem]"
             >
               {SITE_BRAND_NAME}
             </h1>
-            <div className="mx-auto mt-2.5 h-px w-14 bg-gradient-to-r from-transparent via-champagne-400/70 to-transparent sm:mt-3 sm:w-16" aria-hidden />
+            <div className="mx-auto mt-2 h-px w-12 bg-gradient-to-r from-transparent via-champagne-400/70 to-transparent sm:mt-2.5 sm:w-14" aria-hidden />
 
-            <p className="mt-2.5 max-w-md font-light leading-relaxed text-white/80 sm:mt-3 sm:max-w-lg sm:text-base">
+            <p className="mt-2 max-w-md text-sm font-light leading-relaxed text-white/75 sm:mt-2.5 sm:max-w-lg">
               {SITE_HERO_APPOINTMENT_LINE}
             </p>
 
@@ -154,7 +154,7 @@ export default function HomeContent() {
                 href="/services"
                 className="cta-flash-btn hero-cta-pulse group relative flex min-h-[3.35rem] flex-1 items-center justify-center overflow-hidden rounded-md border-2 border-champagne-300/85 bg-lux-espresso/50 px-5 py-3 text-center shadow-[0_0_0_1px_rgba(255,255,255,0.08)_inset,0_0_20px_rgba(168,138,61,0.25)] backdrop-blur-md transition duration-300 hover:border-champagne-200/95 hover:bg-lux-espresso/60 hover:shadow-[0_0_28px_rgba(212,175,55,0.35)] active:scale-[0.99] sm:min-h-[3.5rem] sm:px-8"
               >
-                <span className="font-display text-[0.95rem] font-medium tracking-[0.03em] text-white sm:text-[1.05rem]">
+                <span className="font-display text-base font-medium tracking-[0.03em] text-white sm:text-lg">
                   Services &amp; prices
                 </span>
                 <span
@@ -168,7 +168,7 @@ export default function HomeContent() {
                 href="/gallery"
                 className="cta-flash-btn hero-cta-pulse group relative flex min-h-[3.35rem] flex-1 items-center justify-center overflow-hidden rounded-md border-2 border-champagne-300/85 bg-lux-espresso/50 px-5 py-3 text-center shadow-[0_0_0_1px_rgba(255,255,255,0.08)_inset,0_0_20px_rgba(168,138,61,0.25)] backdrop-blur-md transition duration-300 hover:border-champagne-200/95 hover:bg-lux-espresso/60 hover:shadow-[0_0_28px_rgba(212,175,55,0.35)] active:scale-[0.99] sm:min-h-[3.5rem] sm:px-8"
               >
-                <span className="font-display text-[0.95rem] font-medium tracking-[0.03em] text-white sm:text-[1.05rem]">
+                <span className="font-display text-base font-medium tracking-[0.03em] text-white sm:text-lg">
                   Gallery
                 </span>
                 <span className="pointer-events-none absolute inset-0 opacity-0 transition duration-300 group-hover:opacity-100" aria-hidden>
@@ -182,15 +182,15 @@ export default function HomeContent() {
                 href={callHref}
                 className="cta-flash-btn hero-cta-pulse cta-call-primary relative flex w-full flex-col items-center justify-center gap-1 overflow-hidden rounded-md border-2 border-champagne-300/90 bg-lux-espresso/55 px-8 py-4 text-center shadow-[0_0_22px_rgba(168,138,61,0.28)] backdrop-blur-md transition hover:border-champagne-200 hover:bg-lux-espresso/65"
               >
-                <span className="flex items-center gap-3 text-[11px] font-semibold uppercase tracking-[0.28em] text-champagne-100">
-                  <PhoneIcon className="h-4 w-4 text-champagne-300" />
+                <span className="flex items-center gap-3 text-sm font-semibold uppercase tracking-[0.24em] text-champagne-100 sm:text-base">
+                  <PhoneIcon className="h-4 w-4 text-champagne-300 sm:h-5 sm:w-5" />
                   Call
                 </span>
                 <span className="font-display text-lg font-medium text-white sm:text-xl">{phoneDisplay}</span>
               </a>
               <Link
                 href="/booking"
-                className="cta-flash-btn hero-cta-pulse relative flex min-h-[3.25rem] w-full items-center justify-center overflow-hidden rounded-md border-2 border-champagne-400/70 bg-gradient-to-b from-champagne-700 to-champagne-900 px-8 py-3.5 text-center text-[13px] font-semibold uppercase tracking-[0.18em] text-champagne-50 shadow-[0_4px_22px_rgba(0,0,0,0.35)] transition hover:border-champagne-300 hover:from-champagne-600 hover:to-champagne-950 active:scale-[0.99]"
+                className="cta-flash-btn hero-cta-pulse relative flex min-h-[3.25rem] w-full items-center justify-center overflow-hidden rounded-md border-2 border-champagne-400/70 bg-gradient-to-b from-champagne-700 to-champagne-900 px-8 py-3.5 text-center text-base font-semibold uppercase tracking-[0.16em] text-champagne-50 shadow-[0_4px_22px_rgba(0,0,0,0.35)] transition hover:border-champagne-300 hover:from-champagne-600 hover:to-champagne-950 active:scale-[0.99] sm:text-lg"
               >
                 Book Now
               </Link>

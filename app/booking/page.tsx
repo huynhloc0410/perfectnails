@@ -139,7 +139,6 @@ export default function Booking() {
   const [bookingSuccessModalOpen, setBookingSuccessModalOpen] = useState(false);
   /** Set true only after failed submit (invalid phone); cleared when user edits phone. */
   const [phoneSubmitError, setPhoneSubmitError] = useState(false);
-  const [smsConsent, setSmsConsent] = useState(false);
   const [availableEmployees, setAvailableEmployees] = useState<Employee[]>([]);
   const [timeSlotChoices, setTimeSlotChoices] = useState<BookingSlotRow[]>([]);
   /** Bumps periodically so same-day slots respect minimum notice as time passes */
@@ -447,11 +446,6 @@ export default function Booking() {
 
     if (!isValidUsCustomerPhone(formData.phone)) {
       setPhoneSubmitError(true);
-      return;
-    }
-
-    if (!smsConsent) {
-      alert('Please agree to the Privacy Policy and SMS Terms & Conditions to continue.');
       return;
     }
 
@@ -1075,8 +1069,24 @@ export default function Booking() {
               )}
 
               <div className="mt-5 border-t border-champagne-200/80 pt-5">
-                <h3 className="font-display text-base font-medium text-lux-espresso">Your contact info</h3>
-                <p className="mt-1 text-xs text-lux-espressoLight/75">We&apos;ll use this to confirm your appointment.</p>
+                <p className="text-xs leading-relaxed text-lux-espressoLight/75">
+                  Your contact information will be used to confirm your appointment. By providing your phone number,
+                  you agree to the{' '}
+                  <Link
+                    href="/privacy"
+                    className="font-medium text-champagne-700 underline-offset-2 hover:underline"
+                  >
+                    Privacy Policy
+                  </Link>{' '}
+                  and{' '}
+                  <Link
+                    href="/terms"
+                    className="font-medium text-champagne-700 underline-offset-2 hover:underline"
+                  >
+                    SMS Terms &amp; Conditions
+                  </Link>{' '}
+                  and consent to receive appointment-related text messages from {SITE_BRAND_NAME}.
+                </p>
                 <div className="mt-4 space-y-4">
                   <div>
                     <label className="block mb-1 text-sm font-medium text-lux-espresso">Your name *</label>
@@ -1118,30 +1128,6 @@ export default function Booking() {
                       </p>
                     )}
                   </div>
-                  <div className="rounded-lg border border-champagne-200/80 bg-champagne-50/40 p-4">
-                    <label className="flex items-start gap-3 text-sm leading-relaxed text-lux-espressoLight">
-                      <input
-                        type="checkbox"
-                        name="smsConsent"
-                        checked={smsConsent}
-                        onChange={(e) => setSmsConsent(e.target.checked)}
-                        className="mt-0.5 size-4 shrink-0 rounded border-champagne-300 text-champagne-600 focus:ring-champagne-500"
-                        required
-                      />
-                      <span>
-                        I agree to the{' '}
-                        <Link href="/privacy" className="font-medium text-champagne-700 underline-offset-2 hover:underline">
-                          Privacy Policy
-                        </Link>{' '}
-                        and{' '}
-                        <Link href="/terms" className="font-medium text-champagne-700 underline-offset-2 hover:underline">
-                          SMS Terms &amp; Conditions
-                        </Link>
-                        , and consent to receive appointment-related SMS from {SITE_BRAND_NAME}. Message frequency
-                        may vary. Message and data rates may apply. Reply STOP to unsubscribe or HELP for assistance.
-                      </span>
-                    </label>
-                  </div>
                 </div>
               </div>
 
@@ -1162,8 +1148,7 @@ export default function Booking() {
                     !formData.date ||
                     !formData.timeSlot ||
                     !formData.name.trim() ||
-                    !formData.phone.trim() ||
-                    !smsConsent
+                    !formData.phone.trim()
                   }
                 >
                   Book Now
