@@ -565,7 +565,6 @@ export default function Booking() {
         
         setBookingSuccessModalOpen(true);
         setPhoneSubmitError(false);
-        setSmsConsent(false);
         setFormData({ name: '', phone: '', service: '', employee: '', date: '', timeSlot: '' });
         setSelectedCategory('');
         setBookingStep(1);
