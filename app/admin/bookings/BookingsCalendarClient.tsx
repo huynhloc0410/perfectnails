@@ -228,8 +228,6 @@ export function BookingsCalendarClient() {
     year: 'numeric',
   });
 
-  const smsDayLabel = dayTitle;
-
   return (
     <div className="min-h-screen bg-gray-50 py-8">
       <div className="mx-auto max-w-7xl px-4 sm:px-6 lg:px-8">
@@ -342,8 +340,7 @@ export function BookingsCalendarClient() {
                               customerName={booking.name}
                               phone={booking.phone}
                               service={booking.service}
-                              dateLabel={smsDayLabel}
-                              timeLabel={label}
+                              appointmentIso={booking.date}
                             />
                           </li>
                         );
