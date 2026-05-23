@@ -1,6 +1,7 @@
 import { NextRequest, NextResponse } from 'next/server';
 import { isS3CmsConfigured, readCmsSiteFromS3, writeCmsSiteToS3 } from '@/lib/s3CmsSite';
 import type { CmsSmsJob } from '@/lib/cmsSiteTypes';
+import { parseReminderHoursBefore } from '@/lib/bookingReminderJobs';
 import { bookingReminderSms } from '@/lib/smsTemplates';
 import { isTwilioConfigured, sendSms } from '@/lib/twilioServer';
 
@@ -52,7 +53,13 @@ export async function POST(req: NextRequest) {
     const booking = job.bookingId ? site.bookings.find((b) => b.id === job.bookingId) : undefined;
     const name = booking?.name || 'there';
     const isoDate = booking?.date || job.sendAt;
-    const body = bookingReminderSms({ name, isoDate });
+    const hoursBefore = parseReminderHoursBefore(job.id);
+    const body = bookingReminderSms({
+      name,
+      isoDate,
+      service: booking?.service ?? 'your appointment',
+      hoursBefore: hoursBefore === 24 || hoursBefore === 2 ? hoursBefore : undefined,
+    });
 
     try {
       const out = await sendSms({ to: job.to, body });

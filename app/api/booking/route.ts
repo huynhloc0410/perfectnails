@@ -10,6 +10,7 @@ import type { CmsSmsJob } from '@/lib/cmsSiteTypes';
 import { normalizePhoneE164 } from '@/lib/phone';
 import { isSlotStartAllowedForBooking } from '@/lib/bookingLeadTime';
 import { isNonBookableAddonService } from '@/lib/booking/serviceEmployeeMatch';
+import { buildBookingReminderJobs, parseReminderHoursBefore } from '@/lib/bookingReminderJobs';
 import { bookingConfirmationSms } from '@/lib/smsTemplates';
 import { isTwilioConfigured, sendSms } from '@/lib/twilioServer';
 
@@ -64,23 +65,20 @@ export async function POST(req: Request) {
   const now = nowForLead;
   const phoneE164 = normalizePhoneE164(phone);
   const twilioReady = isTwilioConfigured();
-  const confirmationBody = bookingConfirmationSms({ name, isoDate: booking.date });
+  const confirmationBody = bookingConfirmationSms({
+    name,
+    isoDate: booking.date,
+    service: booking.service,
+  });
 
-  const reminderAt = new Date(bookingDate.getTime() - 2 * 60 * 60 * 1000);
-  const shouldScheduleReminder = reminderAt.getTime() > now.getTime();
-  const reminderJob: CmsSmsJob | null =
-    phoneE164 && shouldScheduleReminder
-      ? {
-          id: `${booking.id}:reminder`,
-          kind: 'booking_reminder',
-          status: 'pending',
-          to: phoneE164,
-          bookingId: booking.id,
-          sendAt: reminderAt.toISOString(),
-          createdAt: now.toISOString(),
-          updatedAt: now.toISOString(),
-        }
-      : null;
+  const reminderJobs: CmsSmsJob[] = phoneE164
+    ? buildBookingReminderJobs({
+        bookingId: booking.id,
+        phoneE164,
+        appointmentAt: bookingDate,
+        now,
+      })
+    : [];
 
   if (isS3CmsConfigured()) {
     try {
@@ -109,9 +107,10 @@ export async function POST(req: Request) {
         }
 
         site.bookings = [...site.bookings, booking];
-        if (reminderJob) {
-          const existing = site.smsJobs?.some((j) => j.id === reminderJob.id);
-          if (!existing) site.smsJobs = [...(site.smsJobs || []), reminderJob];
+        if (reminderJobs.length > 0) {
+          const existingIds = new Set((site.smsJobs ?? []).map((j) => j.id));
+          const toAdd = reminderJobs.filter((j) => !existingIds.has(j.id));
+          if (toAdd.length > 0) site.smsJobs = [...(site.smsJobs || []), ...toAdd];
         }
         await writeCmsSiteToS3(site);
       }
@@ -143,14 +142,19 @@ export async function POST(req: Request) {
     booking,
     sms: {
       confirmation,
-      reminder: {
-        scheduled: Boolean(reminderJob && isS3CmsConfigured()),
-        sendAt: reminderJob?.sendAt,
+      reminders: {
+        scheduledCount: reminderJobs.length,
+        jobs: reminderJobs.map((j) => ({
+          id: j.id,
+          sendAt: j.sendAt,
+          hoursBefore: parseReminderHoursBefore(j.id) ?? undefined,
+        })),
+        persisted: Boolean(reminderJobs.length > 0 && isS3CmsConfigured()),
         reason:
-          !reminderJob
+          reminderJobs.length === 0
             ? !phoneE164
               ? 'invalid_phone'
-              : 'reminder_time_in_past'
+              : 'all_reminder_times_in_past'
             : !isS3CmsConfigured()
               ? 'no_persistent_storage'
               : undefined,
