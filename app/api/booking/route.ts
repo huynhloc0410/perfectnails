@@ -10,9 +10,8 @@ import type { CmsSmsJob } from '@/lib/cmsSiteTypes';
 import { normalizePhoneE164 } from '@/lib/phone';
 import { isSlotStartAllowedForBooking } from '@/lib/bookingLeadTime';
 import { isNonBookableAddonService } from '@/lib/booking/serviceEmployeeMatch';
-// Phone confirmation SMS temporarily disabled:
-// import { bookingConfirmationSms } from '@/lib/smsTemplates';
-// import { isTwilioConfigured, sendSms } from '@/lib/twilioServer';
+import { bookingConfirmationSms } from '@/lib/smsTemplates';
+import { isTwilioConfigured, sendSms } from '@/lib/twilioServer';
 
 export async function POST(req: Request) {
   const data = await req.formData();
@@ -25,12 +24,11 @@ export async function POST(req: Request) {
   const duration = data.get("duration") as string;
   /** Client-built instant (browser local wall clock → ISO). Required on UTC servers: `new Date(y,m,d,h,m)` here uses *server* local, not the guest’s. */
   const slotStartIso = (data.get('slotStartIso') as string | null)?.trim() ?? '';
-  // Booking SMS consent temporarily disabled — re-enable next week for Twilio verification:
-  // const smsConsent = data.get('smsConsent') === 'true';
-  //
-  // if (!smsConsent) {
-  //   return NextResponse.json({ success: false, error: 'sms_consent_required' }, { status: 400 });
-  // }
+  const smsConsent = data.get('smsConsent') === 'true';
+
+  if (!smsConsent) {
+    return NextResponse.json({ success: false, error: 'sms_consent_required' }, { status: 400 });
+  }
 
   let bookingDate: Date;
   const parsedFromIso = slotStartIso ? new Date(slotStartIso) : null;
@@ -65,28 +63,24 @@ export async function POST(req: Request) {
 
   const now = nowForLead;
   const phoneE164 = normalizePhoneE164(phone);
-  // Confirm (SMS) temporarily disabled because phone verification isn't ready.
-  // const twilioReady = isTwilioConfigured();
-  // const confirmationBody = bookingConfirmationSms({ name, isoDate: booking.date });
-  const twilioReady = false;
+  const twilioReady = isTwilioConfigured();
+  const confirmationBody = bookingConfirmationSms({ name, isoDate: booking.date });
 
-  // Reminder (SMS) temporarily disabled because phone verification isn't ready.
-  // const reminderAt = new Date(bookingDate.getTime() - 2 * 60 * 60 * 1000);
-  // const shouldScheduleReminder = reminderAt.getTime() > now.getTime();
-  // const reminderJob: CmsSmsJob | null =
-  //   phoneE164 && shouldScheduleReminder
-  //     ? {
-  //         id: `${booking.id}:reminder`,
-  //         kind: 'booking_reminder',
-  //         status: 'pending',
-  //         to: phoneE164,
-  //         bookingId: booking.id,
-  //         sendAt: reminderAt.toISOString(),
-  //         createdAt: now.toISOString(),
-  //         updatedAt: now.toISOString(),
-  //       }
-  //     : null;
-  const reminderJob: CmsSmsJob | null = null;
+  const reminderAt = new Date(bookingDate.getTime() - 2 * 60 * 60 * 1000);
+  const shouldScheduleReminder = reminderAt.getTime() > now.getTime();
+  const reminderJob: CmsSmsJob | null =
+    phoneE164 && shouldScheduleReminder
+      ? {
+          id: `${booking.id}:reminder`,
+          kind: 'booking_reminder',
+          status: 'pending',
+          to: phoneE164,
+          bookingId: booking.id,
+          sendAt: reminderAt.toISOString(),
+          createdAt: now.toISOString(),
+          updatedAt: now.toISOString(),
+        }
+      : null;
 
   if (isS3CmsConfigured()) {
     try {
@@ -134,10 +128,9 @@ export async function POST(req: Request) {
   if (twilioReady && phoneE164) {
     confirmation.attempted = true;
     try {
-      // const out = await sendSms({ to: phoneE164, body: confirmationBody });
-      // confirmation.sent = true;
-      // confirmation.messageSid = out.sid;
-      confirmation.sent = false;
+      const out = await sendSms({ to: phoneE164, body: confirmationBody });
+      confirmation.sent = true;
+      confirmation.messageSid = out.sid;
     } catch (e) {
       confirmation.sent = false;
       confirmation.error = e instanceof Error ? e.message : 'Failed to send confirmation SMS';
