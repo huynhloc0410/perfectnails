@@ -146,7 +146,6 @@ export function BookingsCalendarClient() {
     setBookings(nextBookings);
 
     try {
-      sessionStorage.removeItem(`admin-sms-confirm-${id}`);
       sessionStorage.removeItem(`admin-sms-reminder-${id}`);
     } catch {
       /* ignore */

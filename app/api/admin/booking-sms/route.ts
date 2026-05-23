@@ -1,12 +1,10 @@
 import { NextRequest, NextResponse } from 'next/server';
 import { ADMIN_SESSION_COOKIE, verifyAdminToken } from '@/lib/adminSessionVerify';
 import { normalizePhoneE164 } from '@/lib/phone';
-import { bookingConfirmationSms, bookingReminderSms } from '@/lib/smsTemplates';
+import { bookingReminderSms } from '@/lib/smsTemplates';
 import { isTwilioConfigured, sendSms } from '@/lib/twilioServer';
 
 export const dynamic = 'force-dynamic';
-
-type BookingSmsKind = 'confirmation' | 'reminder';
 
 export async function POST(req: NextRequest) {
   const token = req.cookies.get(ADMIN_SESSION_COOKIE)?.value;
@@ -26,13 +24,12 @@ export async function POST(req: NextRequest) {
   }
 
   const o = body && typeof body === 'object' ? (body as Record<string, unknown>) : {};
-  const kind = o.kind === 'confirmation' || o.kind === 'reminder' ? (o.kind as BookingSmsKind) : null;
   const name = String(o.name ?? '').trim();
   const phone = String(o.phone ?? '').trim();
   const service = String(o.service ?? '').trim();
   const isoDate = String(o.isoDate ?? '').trim();
 
-  if (!kind || !name || !phone || !service || !isoDate) {
+  if (!name || !phone || !service || !isoDate) {
     return NextResponse.json({ error: 'Missing required fields' }, { status: 400 });
   }
 
@@ -46,17 +43,14 @@ export async function POST(req: NextRequest) {
     return NextResponse.json({ error: 'Invalid phone number' }, { status: 400 });
   }
 
-  const text =
-    kind === 'confirmation'
-      ? bookingConfirmationSms({ name, isoDate, service })
-      : bookingReminderSms({ name, isoDate, service });
+  const text = bookingReminderSms({ name, isoDate, service });
 
   try {
     const out = await sendSms({ to, body: text });
-    return NextResponse.json({ ok: true, kind, messageSid: out.sid });
+    return NextResponse.json({ ok: true, messageSid: out.sid });
   } catch (e) {
     const message = e instanceof Error ? e.message : 'Failed to send SMS';
-    console.error('Admin booking SMS failed:', { kind, err: e });
+    console.error('Admin booking reminder SMS failed:', e);
     return NextResponse.json({ error: message }, { status: 502 });
   }
 }
