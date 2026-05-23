@@ -25,7 +25,7 @@ Copy secrets as needed; default setup runs without a `.env` for local demo.
 This project supports:
 
 - **Confirmation SMS**: sent immediately when a booking is created (`POST /api/booking`)
-- **Reminder SMS**: queued for **2 hours before** the appointment, then delivered by a cron call (`POST /api/cron/sms-reminders`)
+- **Reminder SMS**: queued for **24 hours** and **2 hours before** the appointment (each skipped if that time is already past when booking), then delivered by a cron call (`POST /api/cron/sms-reminders`)
 
 ### Required environment variables
 
