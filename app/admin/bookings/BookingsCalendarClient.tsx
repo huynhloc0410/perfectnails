@@ -11,6 +11,7 @@ import {
   startOfLocalDay,
   toISODateString,
 } from '@/lib/admin/week-calendar';
+import { adminBookingLegendSwatchClasses } from '@/lib/booking/booking-service-kind';
 import { groupBookingsByStartTime } from '@/lib/booking/time-display';
 import { BookingDetailCard } from './components/BookingDetailCard';
 import { WeeklyHeader } from './components/WeeklyHeader';
@@ -291,17 +292,26 @@ export function BookingsCalendarClient() {
                 <h2 className="text-xl font-semibold text-gray-900">{dayTitle}</h2>
                 <span className="text-sm font-medium text-gray-500">{selectedIso}</span>
               </div>
-              <div className="flex flex-wrap items-center gap-3 text-xs font-medium text-gray-600">
-                <span className="inline-flex items-center gap-1.5">
-                  <span className="h-3 w-3 rounded-sm border border-sky-300 bg-sky-50" aria-hidden />
+              <div className="flex flex-wrap items-center gap-4 text-xs font-semibold text-gray-700">
+                <span className="inline-flex items-center gap-2">
+                  <span
+                    className={`h-4 w-8 rounded-sm border-l-[4px] border-l-sky-700 ${adminBookingLegendSwatchClasses('pedicure')}`}
+                    aria-hidden
+                  />
                   Pedicure
                 </span>
-                <span className="inline-flex items-center gap-1.5">
-                  <span className="h-3 w-3 rounded-sm border border-amber-300 bg-amber-50" aria-hidden />
+                <span className="inline-flex items-center gap-2">
+                  <span
+                    className={`h-4 w-8 rounded-sm border-l-[4px] border-l-amber-600 ${adminBookingLegendSwatchClasses('manicure')}`}
+                    aria-hidden
+                  />
                   Manicure
                 </span>
-                <span className="inline-flex items-center gap-1.5">
-                  <span className="h-3 w-3 rounded-sm border border-red-300 bg-red-50" aria-hidden />
+                <span className="inline-flex items-center gap-2">
+                  <span
+                    className={`h-4 w-8 rounded-sm border-l-[4px] border-l-red-700 ${adminBookingLegendSwatchClasses('other')}`}
+                    aria-hidden
+                  />
                   Other services
                 </span>
               </div>

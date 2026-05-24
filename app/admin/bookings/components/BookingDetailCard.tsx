@@ -2,6 +2,9 @@
 
 import {
   adminBookingCardClasses,
+  adminBookingDetailTextClasses,
+  adminBookingKindBadgeClasses,
+  adminBookingKindLabel,
   adminBookingServiceTextClasses,
   getBookingServiceKind,
   type BookingServiceKind,
@@ -42,28 +45,36 @@ export function BookingDetailCard({
 }: BookingDetailCardProps) {
   const kind: BookingServiceKind = getBookingServiceKind(booking.service, serviceCatalog);
 
+  const detailText = adminBookingDetailTextClasses();
+
   return (
     <li
-      className={`w-full min-w-[14rem] max-w-md flex-1 basis-56 rounded-lg border p-4 shadow-sm transition ${adminBookingCardClasses(kind)}`}
+      className={`w-full min-w-[14rem] max-w-md flex-1 basis-56 rounded-lg p-4 transition ${adminBookingCardClasses(kind)}`}
     >
       <div className="flex items-start justify-between gap-2">
-        <p className="min-w-0 flex-1 text-base font-semibold leading-snug text-gray-900">{booking.name}</p>
+        <span
+          className={`inline-flex rounded-md px-2 py-0.5 text-[10px] font-bold uppercase tracking-wider ${adminBookingKindBadgeClasses(kind)}`}
+        >
+          {adminBookingKindLabel(kind)}
+        </span>
         <button
           type="button"
           onClick={() => onDelete(booking.id)}
-          className="shrink-0 rounded-md bg-red-600 px-2.5 py-1 text-xs font-semibold text-white transition hover:bg-red-700"
+          className="shrink-0 rounded-md bg-neutral-900/85 px-2.5 py-1 text-xs font-semibold text-white shadow-sm transition hover:bg-neutral-950"
         >
           Delete
         </button>
       </div>
-      <p className="mt-2 text-sm text-gray-600">Phone: {booking.phone}</p>
-      <p className={adminBookingServiceTextClasses(kind)}>Service: {booking.service}</p>
+      <p className="mt-3 text-base font-bold leading-snug text-neutral-950">{booking.name}</p>
+      <p className={`mt-2 ${detailText}`}>Phone: {booking.phone}</p>
+      <p className={`mt-1 ${adminBookingServiceTextClasses(kind)}`}>{booking.service}</p>
       {bookingEmployee && (
-        <p className="text-sm text-gray-600">
+        <p className={`mt-1 ${detailText}`}>
           Staff: <span className="font-semibold">{bookingEmployee.name}</span> ({bookingEmployee.role})
         </p>
       )}
-      <p className="mt-3 text-sm text-gray-500">Duration: {booking.duration || 45} min</p>
+      <p className={`mt-2 ${detailText}`}>Duration: {booking.duration || 45} min</p>
+      <div className="mt-3 rounded-md bg-white/75 p-2 backdrop-blur-sm">
       <BookingSmsButtons
         bookingId={booking.id}
         customerName={booking.name}
@@ -71,6 +82,7 @@ export function BookingDetailCard({
         service={booking.service}
         appointmentIso={booking.date}
       />
+      </div>
     </li>
   );
 }

@@ -45,24 +45,62 @@ export function getBookingServiceKind(
   return classifyHaystack(foldedName);
 }
 
+export function adminBookingKindLabel(kind: BookingServiceKind): string {
+  switch (kind) {
+    case 'pedicure':
+      return 'Pedicure';
+    case 'manicure':
+      return 'Manicure';
+    default:
+      return 'Other service';
+  }
+}
+
+/** Full card surface — strong fill + thick left stripe for quick scanning. */
 export function adminBookingCardClasses(kind: BookingServiceKind): string {
   switch (kind) {
     case 'pedicure':
-      return 'border-sky-300 bg-sky-50/90 hover:border-sky-400 hover:shadow-md';
+      return 'border border-sky-500/60 border-l-[8px] border-l-sky-700 bg-sky-300/75 shadow-md ring-1 ring-sky-600/15 hover:bg-sky-300 hover:shadow-lg';
     case 'manicure':
-      return 'border-amber-300 bg-amber-50/90 hover:border-amber-400 hover:shadow-md';
+      return 'border border-amber-500/60 border-l-[8px] border-l-amber-600 bg-amber-300/80 shadow-md ring-1 ring-amber-600/15 hover:bg-amber-300 hover:shadow-lg';
     default:
-      return 'border-red-300 bg-red-50/90 hover:border-red-400 hover:shadow-md';
+      return 'border border-red-500/60 border-l-[8px] border-l-red-700 bg-red-300/75 shadow-md ring-1 ring-red-600/15 hover:bg-red-300 hover:shadow-lg';
+  }
+}
+
+export function adminBookingKindBadgeClasses(kind: BookingServiceKind): string {
+  switch (kind) {
+    case 'pedicure':
+      return 'bg-sky-800 text-sky-50';
+    case 'manicure':
+      return 'bg-amber-800 text-amber-50';
+    default:
+      return 'bg-red-800 text-red-50';
+  }
+}
+
+export function adminBookingLegendSwatchClasses(kind: BookingServiceKind): string {
+  switch (kind) {
+    case 'pedicure':
+      return 'border border-sky-600 bg-sky-300';
+    case 'manicure':
+      return 'border border-amber-600 bg-amber-300';
+    default:
+      return 'border border-red-600 bg-red-300';
   }
 }
 
 export function adminBookingServiceTextClasses(kind: BookingServiceKind): string {
   switch (kind) {
     case 'pedicure':
-      return 'text-sm font-semibold text-sky-900';
+      return 'text-sm font-bold text-sky-950';
     case 'manicure':
-      return 'text-sm font-semibold text-amber-900';
+      return 'text-sm font-bold text-amber-950';
     default:
-      return 'text-sm font-semibold text-red-800';
+      return 'text-sm font-bold text-red-950';
   }
+}
+
+export function adminBookingDetailTextClasses(): string {
+  return 'text-sm text-neutral-800';
 }
