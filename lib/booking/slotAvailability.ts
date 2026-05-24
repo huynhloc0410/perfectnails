@@ -95,8 +95,10 @@ export function unassignedBookingCompetesForService(
 }
 
 /**
- * Overlapping bookings that affect capacity for `candidateService`.
- * Assigned bookings always count; unassigned only when they share eligible staff.
+ * Overlapping bookings that reduce capacity for `candidateService`.
+ * - Assigned: only if that stylist could perform the service being booked (Water pedicure
+ *   does not block Acrylic on Powder staff).
+ * - Unassigned: only if it competes for the same staff pool (e.g. another Acrylic on Powder).
  */
 export function bookingsForServiceCapacity(
   overlapping: SlotBooking[],
@@ -106,7 +108,11 @@ export function bookingsForServiceCapacity(
 ): SlotBooking[] {
   return overlapping.filter((booking) => {
     const empId = String(booking.employee ?? '').trim();
-    if (empId) return true;
+    if (empId) {
+      const employee = employees.find((e) => e.id === empId);
+      if (!employee) return false;
+      return employeeCanPerformService(employee, candidateService);
+    }
     return unassignedBookingCompetesForService(booking, candidateService, employees, services);
   });
 }
