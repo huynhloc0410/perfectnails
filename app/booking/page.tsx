@@ -1172,10 +1172,10 @@ export default function Booking() {
             />
             <div className="relative z-[101] w-full max-w-md rounded-2xl border border-champagne-200 bg-white p-6 shadow-xl">
               <h2 id="booking-success-title" className="font-display text-lg font-semibold text-lux-espresso">
-                Thank you
+                Thank you for your booking!
               </h2>
               <p className="mt-3 text-sm leading-relaxed text-lux-espressoLight">
-                Your booking was successful. You will receive a confirmation message within 5–10 minutes.
+                We have successfully received your appointment request. Have a wonderful day, and see you soon.
               </p>
               <button
                 type="button"
