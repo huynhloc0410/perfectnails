@@ -47,20 +47,31 @@ function bookingDurationMinutes(booking: SlotBooking): number {
   return Number.isFinite(n) && n > 0 ? n : 45;
 }
 
+function calendarPartsForBooking(
+  booking: SlotBooking,
+  dateYmdHint?: string,
+): { year: number; month: number; day: number } | null {
+  if (dateYmdHint && /^\d{4}-\d{2}-\d{2}$/.test(dateYmdHint)) {
+    const [year, month, day] = dateYmdHint.split('-').map(Number);
+    return { year, month, day };
+  }
+  if (typeof booking.date === 'string' && /^\d{4}-\d{2}-\d{2}$/.test(booking.date)) {
+    const [year, month, day] = booking.date.split('-').map(Number);
+    return { year, month, day };
+  }
+  const base = new Date(booking.date);
+  if (!Number.isFinite(base.getTime())) return null;
+  return { year: base.getFullYear(), month: base.getMonth() + 1, day: base.getDate() };
+}
+
 /** Local start/end for a booking row (half-open end). */
 export function parseBookingInterval(
   booking: SlotBooking,
   bufferMinutes = 0,
+  dateYmdHint?: string,
 ): BookingInterval | null {
-  let base: Date;
-  if (typeof booking.date === 'string' && /^\d{4}-\d{2}-\d{2}$/.test(booking.date)) {
-    const parsed = parseLocalDateYYYYMMDD(booking.date);
-    if (!parsed) return null;
-    base = parsed;
-  } else {
-    base = new Date(booking.date);
-  }
-  if (!Number.isFinite(base.getTime())) return null;
+  const parts = calendarPartsForBooking(booking, dateYmdHint);
+  if (!parts) return null;
 
   const t = (booking.timeSlot || '').trim();
   const m = /^(\d{1,2}):(\d{2})$/.exec(t);
@@ -69,14 +80,50 @@ export function parseBookingInterval(
     const hh = parseInt(m[1], 10);
     const mm = parseInt(m[2], 10);
     if (!Number.isFinite(hh) || !Number.isFinite(mm)) return null;
-    start = new Date(base.getFullYear(), base.getMonth(), base.getDate(), hh, mm, 0, 0);
+    start = new Date(parts.year, parts.month - 1, parts.day, hh, mm, 0, 0);
   } else {
-    start = base;
+    const base = new Date(booking.date);
+    if (!Number.isFinite(base.getTime())) return null;
+    if (localDayKey(base) === `${parts.year}-${String(parts.month).padStart(2, '0')}-${String(parts.day).padStart(2, '0')}`) {
+      start = base;
+    } else {
+      start = new Date(parts.year, parts.month - 1, parts.day, 0, 0, 0, 0);
+    }
   }
 
   const end = new Date(start.getTime());
   end.setMinutes(end.getMinutes() + bookingDurationMinutes(booking) + bufferMinutes);
   return { start, end };
+}
+
+/** True when an unassigned booking competes for the same staff pool as `candidateService`. */
+export function unassignedBookingCompetesForService(
+  booking: SlotBooking,
+  candidateService: SlotService,
+  employees: SlotEmployee[],
+  services: SlotService[],
+): boolean {
+  const bookingService = resolveService(booking.service, services);
+  const eligibleForCandidate = employees.filter((e) => employeeCanPerformService(e, candidateService));
+  const eligibleForBooking = employees.filter((e) => employeeCanPerformService(e, bookingService));
+  return eligibleForCandidate.some((c) => eligibleForBooking.some((b) => b.id === c.id));
+}
+
+/**
+ * Overlapping bookings that affect capacity for `candidateService`.
+ * Assigned bookings always count; unassigned only when they share eligible staff.
+ */
+export function bookingsForServiceCapacity(
+  overlapping: SlotBooking[],
+  candidateService: SlotService,
+  employees: SlotEmployee[],
+  services: SlotService[],
+): SlotBooking[] {
+  return overlapping.filter((booking) => {
+    const empId = String(booking.employee ?? '').trim();
+    if (empId) return true;
+    return unassignedBookingCompetesForService(booking, candidateService, employees, services);
+  });
 }
 
 function intervalsOverlap(a: BookingInterval, b: BookingInterval): boolean {
@@ -141,8 +188,8 @@ export function canAssignOverlappingBookings(opts: {
   const unassigned: Array<{ booking: SlotBooking; interval: BookingInterval }> = [];
 
   for (const booking of bookings) {
-    const interval = parseBookingInterval(booking, bufferMinutes);
-    if (!interval) return false;
+    const interval = parseBookingInterval(booking, bufferMinutes, dateYmd);
+    if (!interval) continue;
     if (localDayKey(interval.start) !== dateYmd) continue;
 
     const empId = String(booking.employee ?? '').trim();
@@ -209,7 +256,7 @@ export function bookingsOverlappingWindow(
 ): SlotBooking[] {
   const window: BookingInterval = { start: slotStart, end: slotEndExclusive };
   return bookings.filter((booking) => {
-    const interval = parseBookingInterval(booking, bufferMinutes);
+    const interval = parseBookingInterval(booking, bufferMinutes, dateYmd);
     if (!interval) return false;
     if (localDayKey(interval.start) !== dateYmd) return false;
     return intervalsOverlap(interval, window);
@@ -283,6 +330,13 @@ export function evaluateSlotState(opts: {
     bufferMinutes,
   );
 
+  const capacityBookings = bookingsForServiceCapacity(
+    overlapping,
+    service,
+    employees,
+    services,
+  );
+
   const candidate: SlotBooking = {
     id: '__candidate__',
     service: service.name,
@@ -293,7 +347,7 @@ export function evaluateSlotState(opts: {
   };
 
   const ok = canAssignOverlappingBookings({
-    bookings: [...overlapping, candidate],
+    bookings: [...capacityBookings, candidate],
     employees,
     services,
     blocks,
