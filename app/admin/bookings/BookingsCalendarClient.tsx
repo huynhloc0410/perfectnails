@@ -12,7 +12,7 @@ import {
   toISODateString,
 } from '@/lib/admin/week-calendar';
 import { groupBookingsByStartTime } from '@/lib/booking/time-display';
-import { BookingSmsButtons } from './components/BookingSmsButtons';
+import { BookingDetailCard } from './components/BookingDetailCard';
 import { WeeklyHeader } from './components/WeeklyHeader';
 import { WeekGrid } from './components/WeekGrid';
 
@@ -34,6 +34,11 @@ interface Booking {
   duration: number;
 }
 
+interface ServiceCatalogRow {
+  name?: string;
+  category?: string;
+}
+
 /** When true, days before today are not clickable. Keep false so past days stay open for history. */
 const DISABLE_PAST_DATES = false;
 
@@ -52,6 +57,7 @@ export function BookingsCalendarClient() {
 
   const [bookings, setBookings] = useState<Booking[]>([]);
   const [employees, setEmployees] = useState<Employee[]>([]);
+  const [serviceCatalog, setServiceCatalog] = useState<ServiceCatalogRow[]>([]);
   const [useCms, setUseCms] = useState(false);
 
   const rawDate = searchParams.get('date');
@@ -86,18 +92,23 @@ export function BookingsCalendarClient() {
           setUseCms(true);
           if (Array.isArray(s.bookings)) setBookings(s.bookings as Booking[]);
           if (Array.isArray(s.employees)) setEmployees(s.employees as Employee[]);
+          if (Array.isArray(s.services)) setServiceCatalog(s.services as ServiceCatalogRow[]);
         } else {
           const savedBookings = localStorage.getItem('admin-bookings');
           const savedEmployees = localStorage.getItem('admin-employees');
+          const savedServices = localStorage.getItem('admin-services');
           if (savedBookings) setBookings(JSON.parse(savedBookings));
           if (savedEmployees) setEmployees(JSON.parse(savedEmployees));
+          if (savedServices) setServiceCatalog(JSON.parse(savedServices));
         }
       } catch {
         if (!cancelled) {
           const savedBookings = localStorage.getItem('admin-bookings');
           const savedEmployees = localStorage.getItem('admin-employees');
+          const savedServices = localStorage.getItem('admin-services');
           if (savedBookings) setBookings(JSON.parse(savedBookings));
           if (savedEmployees) setEmployees(JSON.parse(savedEmployees));
+          if (savedServices) setServiceCatalog(JSON.parse(savedServices));
         }
       }
     })();
@@ -275,9 +286,25 @@ export function BookingsCalendarClient() {
           </div>
 
           <div className="p-6">
-            <div className="mb-4 flex flex-col gap-1 border-b border-gray-200 pb-4 sm:flex-row sm:items-baseline sm:justify-between">
-              <h2 className="text-xl font-semibold text-gray-900">{dayTitle}</h2>
-              <span className="text-sm font-medium text-gray-500">{selectedIso}</span>
+            <div className="mb-4 flex flex-col gap-3 border-b border-gray-200 pb-4 sm:flex-row sm:items-start sm:justify-between">
+              <div>
+                <h2 className="text-xl font-semibold text-gray-900">{dayTitle}</h2>
+                <span className="text-sm font-medium text-gray-500">{selectedIso}</span>
+              </div>
+              <div className="flex flex-wrap items-center gap-3 text-xs font-medium text-gray-600">
+                <span className="inline-flex items-center gap-1.5">
+                  <span className="h-3 w-3 rounded-sm border border-sky-300 bg-sky-50" aria-hidden />
+                  Pedicure
+                </span>
+                <span className="inline-flex items-center gap-1.5">
+                  <span className="h-3 w-3 rounded-sm border border-amber-300 bg-amber-50" aria-hidden />
+                  Manicure
+                </span>
+                <span className="inline-flex items-center gap-1.5">
+                  <span className="h-3 w-3 rounded-sm border border-red-300 bg-red-50" aria-hidden />
+                  Other services
+                </span>
+              </div>
             </div>
 
             {dayBookings.length === 0 ? (
@@ -306,42 +333,16 @@ export function BookingsCalendarClient() {
                     <ul className="flex min-w-0 flex-1 flex-wrap gap-3">
                       {atTime.map((booking) => {
                         const bookingEmployee = booking.employee
-                          ? employees.find((e) => e.id === booking.employee)
+                          ? employees.find((e) => e.id === booking.employee) ?? null
                           : null;
                         return (
-                          <li
+                          <BookingDetailCard
                             key={booking.id}
-                            className="w-full min-w-[14rem] max-w-md flex-1 basis-56 rounded-lg border border-gray-200 bg-white p-4 shadow-sm transition hover:border-champagne-300 hover:shadow-md"
-                          >
-                            <div className="flex items-start justify-between gap-2">
-                              <p className="min-w-0 flex-1 text-base font-semibold leading-snug text-gray-900">
-                                {booking.name}
-                              </p>
-                              <button
-                                type="button"
-                                onClick={() => void deleteBooking(booking.id)}
-                                className="shrink-0 rounded-md bg-red-600 px-2.5 py-1 text-xs font-semibold text-white transition hover:bg-red-700"
-                              >
-                                Delete
-                              </button>
-                            </div>
-                            <p className="mt-2 text-sm text-gray-600">Phone: {booking.phone}</p>
-                            <p className="text-sm text-gray-600">Service: {booking.service}</p>
-                            {bookingEmployee && (
-                              <p className="text-sm text-gray-600">
-                                Staff: <span className="font-semibold">{bookingEmployee.name}</span> (
-                                {bookingEmployee.role})
-                              </p>
-                            )}
-                            <p className="mt-3 text-sm text-gray-500">Duration: {booking.duration || 45} min</p>
-                            <BookingSmsButtons
-                              bookingId={booking.id}
-                              customerName={booking.name}
-                              phone={booking.phone}
-                              service={booking.service}
-                              appointmentIso={booking.date}
-                            />
-                          </li>
+                            booking={booking}
+                            bookingEmployee={bookingEmployee}
+                            serviceCatalog={serviceCatalog}
+                            onDelete={(id) => void deleteBooking(id)}
+                          />
                         );
                       })}
                     </ul>
