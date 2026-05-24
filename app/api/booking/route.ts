@@ -10,6 +10,7 @@ import type { CmsSmsJob } from '@/lib/cmsSiteTypes';
 import { normalizePhoneE164 } from '@/lib/phone';
 import { isSlotStartAllowedForBooking } from '@/lib/bookingLeadTime';
 import { isNonBookableAddonService } from '@/lib/booking/serviceEmployeeMatch';
+import { hasBookingCapacity } from '@/lib/booking/slotAvailability';
 import { buildBookingReminderJobs, parseReminderHoursBefore } from '@/lib/bookingReminderJobs';
 import { bookingConfirmationSms } from '@/lib/smsTemplates';
 import { isTwilioConfigured, sendSms } from '@/lib/twilioServer';
@@ -104,6 +105,29 @@ export async function POST(req: Request) {
         });
         if (blocked) {
           return NextResponse.json({ success: false, error: 'time_blocked' }, { status: 409 });
+        }
+
+        const siteEmployees = Array.isArray(site.employees)
+          ? (site.employees as { id: string; role: string }[])
+          : [];
+        const siteServices = Array.isArray(site.services)
+          ? (site.services as { name: string; category?: string | null; duration?: number }[])
+          : [];
+
+        if (
+          !hasBookingCapacity({
+            dateYmd,
+            slotStartLocal: bookingDate,
+            slotEndExclusiveLocal: slotEndExclusive,
+            service: svcRow as { name: string; category?: string | null; duration?: number },
+            employees: siteEmployees,
+            bookings: site.bookings,
+            services: siteServices,
+            blocks: site.bookingBlocks ?? [],
+            stylistId: empId || undefined,
+          })
+        ) {
+          return NextResponse.json({ success: false, error: 'no_capacity' }, { status: 409 });
         }
 
         site.bookings = [...site.bookings, booking];

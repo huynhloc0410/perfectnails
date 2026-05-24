@@ -20,6 +20,7 @@ import {
   isSlotStartAllowedForBooking,
 } from '@/lib/bookingLeadTime';
 import { employeeCanPerformService, isNonBookableAddonService } from '@/lib/booking/serviceEmployeeMatch';
+import { evaluateSlotState, hasBookingCapacity } from '@/lib/booking/slotAvailability';
 
 interface Service {
   id: string;
@@ -76,42 +77,6 @@ function getBusinessHoursForDate(dateLocal: Date): BusinessHours {
 function parseLocalDateYYYYMMDD(date: string): Date {
   const [year, month, day] = date.split('-').map(Number);
   return new Date(year, month - 1, day);
-}
-
-function localDayKey(d: Date): string {
-  return `${d.getFullYear()}-${String(d.getMonth() + 1).padStart(2, '0')}-${String(d.getDate()).padStart(2, '0')}`;
-}
-
-function bookingStartDateTime(booking: Booking): Date | null {
-  // Some legacy bookings may store only the date in `booking.date` and the time in `timeSlot`.
-  // To reliably detect overlaps, reconstruct a local datetime from both fields when possible.
-  let base: Date;
-  if (typeof booking.date === 'string' && /^\d{4}-\d{2}-\d{2}$/.test(booking.date)) {
-    base = parseLocalDateYYYYMMDD(booking.date);
-  } else {
-    base = new Date(booking.date);
-  }
-  if (!Number.isFinite(base.getTime())) return null;
-
-  const t = (booking.timeSlot || '').trim();
-  const m = /^(\d{1,2}):(\d{2})$/.exec(t);
-  if (m) {
-    const hh = parseInt(m[1], 10);
-    const mm = parseInt(m[2], 10);
-    if (Number.isFinite(hh) && Number.isFinite(mm)) {
-      const dt = new Date(base.getFullYear(), base.getMonth(), base.getDate(), hh, mm, 0, 0);
-      return dt;
-    }
-  }
-
-  // Fallback: whatever is in `booking.date` already includes a time.
-  return base;
-}
-
-function bookingDurationMinutes(booking: Booking): number {
-  const raw = (booking as unknown as { duration?: unknown }).duration;
-  const n = typeof raw === 'number' ? raw : parseInt(String(raw ?? ''), 10);
-  return Number.isFinite(n) && n > 0 ? n : 45;
 }
 
 /** Admin can set duration to 0 to hide time on Services; scheduling still uses 45 min. */
@@ -277,8 +242,9 @@ export default function Booking() {
   const buildTimeSlotChoices = useCallback(
     (
       date: string,
-      mode: { kind: 'stylist'; id: string } | { kind: 'any'; employees: Employee[] },
-      duration: number
+      mode: { kind: 'stylist'; id: string } | { kind: 'any' },
+      duration: number,
+      service: Service,
     ): BookingSlotRow[] => {
       const rows: BookingSlotRow[] = [];
       const [year, month, day] = date.split('-').map(Number);
@@ -304,28 +270,8 @@ export default function Booking() {
       const now = new Date();
       const earliestBookableStart = getEarliestBookableSlotStart(now);
 
-      const employeeBookingsOnDay = (employeeId: string) =>
-        bookings.filter((b) => {
-          if (b.employee !== employeeId) return false;
-          const start = bookingStartDateTime(b);
-          if (!start) return false;
-          return localDayKey(start) === localDayKey(selectedDateObj);
-        });
-
-      const slotConflictsBooking = (employeeId: string, slotDateTime: Date, slotEndTime: Date) =>
-        employeeBookingsOnDay(employeeId).some((booking) => {
-          const bookingTime = bookingStartDateTime(booking);
-          if (!bookingTime) return false;
-          const bookingEndTime = new Date(bookingTime);
-          bookingEndTime.setMinutes(
-            bookingEndTime.getMinutes() + bookingDurationMinutes(booking) + BUFFER_TIME
-          );
-          return (
-            (slotDateTime >= bookingTime && slotDateTime < bookingEndTime) ||
-            (slotEndTime > bookingTime && slotEndTime <= bookingEndTime) ||
-            (slotDateTime <= bookingTime && slotEndTime >= bookingEndTime)
-          );
-        });
+      const stylistId = mode.kind === 'stylist' ? mode.id : undefined;
+      const catalog = bookableServices.length > 0 ? bookableServices : services;
 
       for (
         let startMinutes = hours.openMinutes;
@@ -346,56 +292,25 @@ export default function Booking() {
         slotEndTime.setMinutes(slotEndTime.getMinutes() + duration + BUFFER_TIME);
         if (minutesSinceMidnight(slotEndTime) > hours.closeMinutes) continue;
 
-        const salonClosed = overlapsSalonWideBookingWindow({
+        const state = evaluateSlotState({
           dateYmd: date,
           slotStartLocal: slotDateTime,
           slotEndExclusiveLocal: slotEndTime,
+          service,
+          employees,
+          bookings,
+          services: catalog,
           blocks: bookingBlocks,
+          bufferMinutes: BUFFER_TIME,
+          stylistId,
         });
-
-        let state: BookingSlotRow['state'];
-
-        if (mode.kind === 'stylist') {
-          if (salonClosed) {
-            state = 'salon_blocked';
-          } else if (slotConflictsBooking(mode.id, slotDateTime, slotEndTime)) {
-            state = 'fully_booked';
-          } else if (
-            overlapsStylistScopedBookingWindow({
-              dateYmd: date,
-              employeeId: mode.id,
-              slotStartLocal: slotDateTime,
-              slotEndExclusiveLocal: slotEndTime,
-              blocks: bookingBlocks,
-            })
-          ) {
-            state = 'staff_blocked';
-          } else {
-            state = 'open';
-          }
-        } else if (salonClosed) {
-          state = 'salon_blocked';
-        } else {
-          const anyFree = mode.employees.some(
-            (e) =>
-              !slotConflictsBooking(e.id, slotDateTime, slotEndTime) &&
-              !overlapsStylistScopedBookingWindow({
-                dateYmd: date,
-                employeeId: e.id,
-                slotStartLocal: slotDateTime,
-                slotEndExclusiveLocal: slotEndTime,
-                blocks: bookingBlocks,
-              })
-          );
-          state = anyFree ? 'open' : 'fully_booked';
-        }
 
         rows.push({ time: slotTime, state });
       }
 
       return rows;
     },
-    [bookings, bookingBlocks],
+    [bookings, bookingBlocks, bookableServices, services, employees],
   );
 
   // Build time rows (open + greyed) when service, employee, and date are selected
@@ -412,18 +327,19 @@ export default function Booking() {
     }
 
     const serviceDuration = schedulingMinutes(selectedService.duration);
-    const mode: { kind: 'stylist'; id: string } | { kind: 'any'; employees: Employee[] } =
+    const mode: { kind: 'stylist'; id: string } | { kind: 'any' } =
       formData.employee === ANYBODY_EMPLOYEE_ID
-        ? { kind: 'any', employees: availableEmployees }
+        ? { kind: 'any' }
         : { kind: 'stylist', id: formData.employee };
 
-    setTimeSlotChoices(buildTimeSlotChoices(formData.date, mode, serviceDuration));
+    setTimeSlotChoices(
+      buildTimeSlotChoices(formData.date, mode, serviceDuration, selectedService),
+    );
   }, [
     formData.service,
     formData.employee,
     formData.date,
     bookableServices,
-    availableEmployees,
     slotClock,
     buildTimeSlotChoices,
   ]);
@@ -504,6 +420,27 @@ export default function Booking() {
       return;
     }
 
+    const catalog = bookableServices.length > 0 ? bookableServices : services;
+    if (
+      !hasBookingCapacity({
+        dateYmd: formData.date.trim(),
+        slotStartLocal: slotStart,
+        slotEndExclusiveLocal: slotEndExclusive,
+        service: selectedService,
+        employees,
+        bookings,
+        services: catalog,
+        blocks: bookingBlocks,
+        bufferMinutes: BUFFER_TIME,
+        stylistId: effectiveEmp || undefined,
+      })
+    ) {
+      alert(
+        'That time is no longer available for this service. Please choose another slot or call the salon.',
+      );
+      return;
+    }
+
     const formDataObj = new FormData();
     formDataObj.append('name', formData.name);
     formDataObj.append('phone', formData.phone);
@@ -533,6 +470,13 @@ export default function Booking() {
 
       if (response.status === 400 && result?.error === 'sms_consent_required') {
         alert('Please agree to the Privacy Policy and SMS Terms & Conditions to continue.');
+        return;
+      }
+
+      if (response.status === 409 && result?.error === 'no_capacity') {
+        alert(
+          'That time is no longer available for this service. Please choose another slot or call the salon.',
+        );
         return;
       }
 
