@@ -5,7 +5,10 @@ import {
   overlapsStylistScopedBookingWindow,
 } from '@/lib/bookingBlocks';
 import type { CmsBookingBlock } from '@/lib/cmsSiteTypes';
-import { employeeCanPerformService } from '@/lib/booking/serviceEmployeeMatch';
+import {
+  bookingServiceStaffFamily,
+  employeeCanPerformService,
+} from '@/lib/booking/serviceEmployeeMatch';
 
 export type SlotBooking = {
   id: string;
@@ -81,7 +84,11 @@ export function parseBookingInterval(booking: SlotBooking, bufferMinutes = 0): B
   return { start, end };
 }
 
-/** True when an unassigned booking competes for the same staff pool as `candidateService`. */
+/**
+ * Unassigned bookings only compete when they share a staff family with the candidate
+ * (Water vs Powder). Unassigned Pedicure does not reduce Acrylic capacity — Water staff
+ * absorb those; Everything stays available for Acrylic unless already assigned/blocked.
+ */
 export function unassignedBookingCompetesForService(
   booking: SlotBooking,
   candidateService: SlotService,
@@ -89,6 +96,17 @@ export function unassignedBookingCompetesForService(
   services: SlotService[],
 ): boolean {
   const bookingService = resolveService(booking.service, services);
+  const bookingFamily = bookingServiceStaffFamily(bookingService);
+  const candidateFamily = bookingServiceStaffFamily(candidateService);
+
+  if (
+    bookingFamily !== null &&
+    candidateFamily !== null &&
+    bookingFamily !== candidateFamily
+  ) {
+    return false;
+  }
+
   const eligibleForCandidate = employees.filter((e) => employeeCanPerformService(e, candidateService));
   const eligibleForBooking = employees.filter((e) => employeeCanPerformService(e, bookingService));
   return eligibleForCandidate.some((c) => eligibleForBooking.some((b) => b.id === c.id));
@@ -157,6 +175,26 @@ function isEmployeeFreeForInterval(
   return !employeeBusyIntervals(employeeId, intervalsByEmployee).some((busy) =>
     intervalsOverlap(busy, interval),
   );
+}
+
+/** Prefer Water/Powder specialists over Everything when simulating unassigned placement. */
+function specialistFirstRank(employee: SlotEmployee, service: SlotService): number {
+  const role = String(employee.role ?? '')
+    .trim()
+    .toLowerCase();
+  const family = bookingServiceStaffFamily(service);
+  if (family === 'water') {
+    if (role === 'water') return 0;
+    if (role === 'everything') return 1;
+    return 2;
+  }
+  if (family === 'powder') {
+    if (role === 'powder' || role === 'acrylic' || role === 'power') return 0;
+    if (role === 'everything') return 1;
+    return 2;
+  }
+  if (role === 'everything') return 1;
+  return 0;
 }
 
 /**
@@ -233,6 +271,9 @@ export function canAssignOverlappingBookings(opts: {
     });
 
     if (candidates.length === 0) return false;
+    candidates.sort(
+      (a, b) => specialistFirstRank(a, svc) - specialistFirstRank(b, svc),
+    );
     addBusyInterval(candidates[0].id, interval, intervalsByEmployee);
   }
 

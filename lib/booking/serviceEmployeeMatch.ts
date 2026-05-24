@@ -27,7 +27,42 @@ function normalizeRole(role: string): string {
     .trim()
     .toLowerCase();
   if (r === 'power') return 'powder';
+  if (r === 'acrylic') return 'powder';
   return r;
+}
+
+/** Manicure/pedicure vs acrylic/gel — used for capacity (Water vs Powder pools). */
+export type ServiceStaffFamily = 'water' | 'powder';
+
+export function bookingServiceStaffFamily(service: ServiceLike): ServiceStaffFamily | null {
+  const cat = accentFold(String(service.category ?? '').trim());
+  const name = accentFold(String(service.name ?? '').trim());
+  const hay = `${cat} ${name}`;
+
+  if (
+    hay.includes('manicure') ||
+    hay.includes('pedicure') ||
+    /\bmani\b/.test(hay) ||
+    /\bpedi\b/.test(hay) ||
+    cat.includes('manicure') ||
+    cat.includes('pedicure')
+  ) {
+    return 'water';
+  }
+
+  if (
+    hay.includes('acrylic') ||
+    hay.includes('gel x') ||
+    hay.includes('gel-x') ||
+    hay.includes('gel builder') ||
+    hay.includes('builder gel') ||
+    (/\bdip\b/.test(hay) && /\b(powder|nail)\b/.test(hay)) ||
+    /\bpolygel\b/.test(hay)
+  ) {
+    return 'powder';
+  }
+
+  return null;
 }
 
 /**
