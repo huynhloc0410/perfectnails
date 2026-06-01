@@ -2,35 +2,67 @@
 @tailwind components;
 @tailwind utilities;
 
-/* Welcome popup: subtle inline cat wave (CSS only) */
-@keyframes popup-cat-greet {
-  0%,
-  74%,
+/* Welcome popup: cat walks along the heading line (CSS only) */
+@keyframes popup-cat-walk-lr {
+  0% {
+    left: 0;
+  }
+  47% {
+    left: calc(100% - 1.15em);
+  }
+  53% {
+    left: calc(100% - 1.15em);
+  }
   100% {
-    transform: translate3d(0, 0, 0) rotate(0deg);
-  }
-  82% {
-    transform: translate3d(0, -2px, 0) rotate(14deg);
-  }
-  90% {
-    transform: translate3d(0, 0, 0) rotate(-9deg);
-  }
-  96% {
-    transform: translate3d(0, -1px, 0) rotate(7deg);
+    left: 0;
   }
 }
 
-.popup-cat-emoji {
-  display: inline-block;
-  font-size: 1em;
+@keyframes popup-cat-step {
+  0%,
+  100% {
+    transform: translate3d(0, 0, 0);
+  }
+  50% {
+    transform: translate3d(0, -3px, 0);
+  }
+}
+
+.popup-cat-heading {
+  position: relative;
+  display: block;
+  padding-top: 1.4em;
+}
+
+.popup-cat-walker {
+  position: absolute;
+  top: 0;
+  left: 0;
+  z-index: 1;
+  font-size: 0.95em;
   line-height: 1;
-  vertical-align: -0.05em;
-  transform-origin: 70% 85%;
-  animation: popup-cat-greet 5.5s ease-in-out infinite;
+  pointer-events: none;
+  animation: popup-cat-walk-lr 9s ease-in-out infinite;
+}
+
+.popup-cat-walker-bob {
+  display: inline-block;
+  animation: popup-cat-step 0.4s ease-in-out infinite;
 }
 
 @media (prefers-reduced-motion: reduce) {
-  .popup-cat-emoji {
+  .popup-cat-heading {
+    padding-top: 0;
+  }
+
+  .popup-cat-walker {
+    position: static;
+    display: inline;
+    margin-right: 0.2em;
+    animation: none;
+  }
+
+  .popup-cat-walker-bob {
     animation: none;
   }
 }

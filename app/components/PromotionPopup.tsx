@@ -20,12 +20,14 @@ export default function PromotionPopup() {
       <div className="w-full max-w-md rounded-2xl border border-[#d9ccb0] bg-lux-paper p-6 shadow-2xl">
         <h2
           id="promotion-popup-title"
-          className="text-xl font-semibold leading-snug text-[#2a241c] sm:text-2xl"
+          className="popup-cat-heading text-xl font-semibold leading-snug text-[#2a241c] sm:text-2xl"
         >
-          Wishing you a beautiful day{' '}
-          <span className="popup-cat-emoji" role="img" aria-label="waving cat">
-            🐱
+          <span className="popup-cat-walker" role="img" aria-label="cat walking">
+            <span className="popup-cat-walker-bob" aria-hidden>
+              🐱
+            </span>
           </span>
+          Wishing you a beautiful day
         </h2>
         <p id="promotion-popup-description" className="mt-3 text-sm leading-6 text-[#3b342b]">
           Life gets busy, so don't forget to take a little time for yourself. Whenever you're ready,
