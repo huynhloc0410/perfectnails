@@ -1,6 +1,7 @@
 "use client";
 
 import { useState } from "react";
+import PopupCartoonCat from "./PopupCartoonCat";
 
 export default function PromotionPopup() {
   const [isOpen, setIsOpen] = useState(true);
@@ -22,10 +23,8 @@ export default function PromotionPopup() {
           id="promotion-popup-title"
           className="popup-cat-heading text-xl font-semibold leading-snug text-[#2a241c] sm:text-2xl"
         >
-          <span className="popup-cat-walker" role="img" aria-label="cat walking">
-            <span className="popup-cat-walker-bob" aria-hidden>
-              🐱
-            </span>
+          <span className="popup-cat-travel">
+            <PopupCartoonCat />
           </span>
           Wishing you a beautiful day
         </h2>
