@@ -14,9 +14,14 @@ export default function PopupCartoonCat() {
           <span className="popup-cartoon-cat__head">
             <span className="popup-cartoon-cat__ear popup-cartoon-cat__ear--l" aria-hidden />
             <span className="popup-cartoon-cat__ear popup-cartoon-cat__ear--r" aria-hidden />
-            <span className="popup-cartoon-cat__eye popup-cartoon-cat__eye--l" aria-hidden />
-            <span className="popup-cartoon-cat__eye popup-cartoon-cat__eye--r" aria-hidden />
+            <span className="popup-cartoon-cat__eye popup-cartoon-cat__eye--l" aria-hidden>
+              <span className="popup-cartoon-cat__eye-shine" aria-hidden />
+            </span>
+            <span className="popup-cartoon-cat__eye popup-cartoon-cat__eye--r" aria-hidden>
+              <span className="popup-cartoon-cat__eye-shine" aria-hidden />
+            </span>
             <span className="popup-cartoon-cat__nose" aria-hidden />
+            <span className="popup-cartoon-cat__mouth" aria-hidden />
             <span className="popup-cartoon-cat__cheek popup-cartoon-cat__cheek--l" aria-hidden />
             <span className="popup-cartoon-cat__cheek popup-cartoon-cat__cheek--r" aria-hidden />
           </span>
