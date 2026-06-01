@@ -18,13 +18,12 @@ export default function PromotionPopup() {
       aria-describedby="promotion-popup-description"
     >
       <div className="w-full max-w-md rounded-2xl border border-[#d9ccb0] bg-lux-paper p-6 shadow-2xl">
-        <p className="text-xs font-semibold uppercase tracking-[0.2em] text-[#5e4a1c]">Limited-time offer</p>
-        <h2 id="promotion-popup-title" className="mt-2 text-2xl font-semibold text-[#2a241c]">
-          Grand Opening Celebration
+        <h2 id="promotion-popup-title" className="text-xl font-semibold leading-snug text-[#2a241c] sm:text-2xl">
+          Wishing you a wonderful day and a reason to smile. 😊
         </h2>
         <p id="promotion-popup-description" className="mt-3 text-sm leading-6 text-[#3b342b]">
-          We are pleased to welcome you with <strong>20% off all services</strong> through <strong>May 30, 2026</strong>.
-          Thank you for choosing us, and we look forward to serving you.
+          Life gets busy, so don't forget to take a little time for yourself. Whenever you're ready,
+          we'll be here to help you relax and leave with beautiful nails.
         </p>
 
         <div className="mt-6 flex justify-end">
