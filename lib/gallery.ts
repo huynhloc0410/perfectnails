@@ -24,23 +24,17 @@ export function sortGalleryNewestFirst(images: string[]): string[] {
     .map((x) => x.url);
 }
 
-/** Normalize gallery URL for <img> / next/image (relative paths stay site-relative). */
-export function resolveGalleryImageSrc(url: string, origin?: string): string {
+/** Normalize gallery URL for <img> (relative paths stay site-relative). */
+export function resolveGalleryImageSrc(url: string): string {
   const u = (url || '').trim();
   if (!u) return '';
   if (u.startsWith('http://') || u.startsWith('https://') || u.startsWith('data:')) {
     return u;
   }
-  if (u.startsWith('/') && origin) {
-    return `${origin.replace(/\/$/, '')}${u}`;
+  if (typeof window !== 'undefined' && u.startsWith('/')) {
+    return `${window.location.origin}${u}`;
   }
   return u;
 }
-
-/** Grid thumbnails: Next Image serves ~400px wide via `sizes`, not full uploads. */
-export const GALLERY_THUMB_SIZES =
-  '(max-width: 768px) 50vw, (max-width: 1024px) 33vw, 25vw';
-
-export const GALLERY_LIGHTBOX_SIZES = '(max-width: 1280px) 100vw, 1280px';
 
 export const GALLERY_PAGE_SIZE = 24;

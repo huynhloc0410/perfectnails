@@ -1,23 +1,17 @@
 'use client';
 
-import Image from 'next/image';
 import { useState, useEffect, useMemo } from 'react';
 import GalleryLightbox from '../components/GalleryLightbox';
 import InnerPageHero from '../components/InnerPageHero';
 import { fetchCmsSite } from '@/lib/cms/site-client';
 import {
   GALLERY_PAGE_SIZE,
-  GALLERY_THUMB_SIZES,
   resolveGalleryImageSrc,
   sortGalleryNewestFirst,
 } from '@/lib/gallery';
 
-type Props = {
-  initialImages: string[];
-};
-
-export default function GalleryClient({ initialImages }: Props) {
-  const [images, setImages] = useState<string[]>(initialImages);
+export default function GalleryClient() {
+  const [images, setImages] = useState<string[]>([]);
   const [visibleCount, setVisibleCount] = useState(GALLERY_PAGE_SIZE);
   const [lightboxIndex, setLightboxIndex] = useState<number | null>(null);
 
@@ -28,8 +22,6 @@ export default function GalleryClient({ initialImages }: Props) {
   const hasMore = images.length > visibleCount;
 
   useEffect(() => {
-    if (initialImages.length > 0) return;
-
     let cancelled = false;
     (async () => {
       try {
@@ -62,7 +54,7 @@ export default function GalleryClient({ initialImages }: Props) {
     return () => {
       cancelled = true;
     };
-  }, [initialImages.length]);
+  }, []);
 
   return (
     <div>
@@ -83,7 +75,7 @@ export default function GalleryClient({ initialImages }: Props) {
             <div className="grid grid-cols-2 gap-4 md:grid-cols-3 lg:grid-cols-4">
               {visibleImages.map((url, index) => {
                 const src = resolveGalleryImageSrc(url);
-                const priority = index < 4;
+                if (!src) return null;
                 return (
                   <button
                     key={`${src}-${index}`}
@@ -93,16 +85,13 @@ export default function GalleryClient({ initialImages }: Props) {
                   >
                     <span className="sr-only">Open image {index + 1} in viewer</span>
                     <div className="relative overflow-hidden rounded-lg bg-stone-100 shadow-[inset_0_0_0_1px_rgba(0,0,0,0.06)]">
-                      <div className="relative aspect-[4/5] w-full">
-                        <Image
+                      <div className="aspect-[4/5] w-full">
+                        <img
                           src={src}
                           alt=""
-                          fill
-                          sizes={GALLERY_THUMB_SIZES}
-                          className="object-cover transition-transform duration-300 group-hover:scale-[1.04] motion-reduce:group-hover:scale-100"
-                          loading={priority ? 'eager' : 'lazy'}
-                          priority={priority}
-                          quality={75}
+                          className="h-full w-full object-cover transition-transform duration-300 group-hover:scale-[1.04] motion-reduce:group-hover:scale-100"
+                          loading={index < 4 ? 'eager' : 'lazy'}
+                          decoding="async"
                         />
                       </div>
                       <div

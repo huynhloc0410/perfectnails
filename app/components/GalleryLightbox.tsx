@@ -1,8 +1,6 @@
 'use client';
 
-import Image from 'next/image';
 import { useCallback, useEffect, useRef } from 'react';
-import { GALLERY_LIGHTBOX_SIZES } from '@/lib/gallery';
 
 const SWIPE_THRESHOLD_PX = 48;
 
@@ -130,17 +128,13 @@ export default function GalleryLightbox({
             onPointerCancel={onPointerCancel}
             style={{ touchAction: canNav ? 'none' : 'auto' }}
           >
-            <div className="relative h-full w-full min-h-[200px]">
-              <Image
-                src={src}
-                alt={`Gallery image ${index + 1} — enlarged view`}
-                fill
-                sizes={GALLERY_LIGHTBOX_SIZES}
-                className="pointer-events-none object-contain select-none"
-                quality={85}
-                priority
-              />
-            </div>
+            <img
+              src={src}
+              alt={`Gallery image ${index + 1} — enlarged view`}
+              className="pointer-events-none max-h-full max-w-full object-contain select-none"
+              decoding="async"
+              draggable={false}
+            />
           </div>
 
           {canNav && (
