@@ -13,6 +13,8 @@ import {
 } from '@/lib/site/contact';
 import { summarizeHoursLabel } from '@/lib/site/hours';
 import { fetchCmsSite } from '@/lib/cms/site-client';
+import { normalizeCmsGalleryList } from '@/lib/cmsSiteTypes';
+import { galleryThumbSrc } from '@/lib/galleryDisplay';
 import { formatUsd } from '@/lib/format/currency';
 import { readLocalStorageJson } from '@/lib/storage/local-json';
 import {
@@ -84,7 +86,10 @@ export default function HomeContent() {
             setServicePreview(list.slice(0, 6));
           }
           if (Array.isArray(data.site.gallery) && data.site.gallery.length > 0) {
-            setGalleryPreview((data.site.gallery as string[]).slice(0, 4));
+            const thumbs = normalizeCmsGalleryList(data.site.gallery)
+              .slice(0, 4)
+              .map(galleryThumbSrc);
+            setGalleryPreview(thumbs);
           }
           return;
         }
@@ -104,8 +109,9 @@ export default function HomeContent() {
       }
       const list = readLocalStorageJson<PreviewService[]>('admin-services');
       if (Array.isArray(list) && list.length) setServicePreview(list.slice(0, 6));
-      const g = readLocalStorageJson<string[]>('admin-gallery');
-      if (Array.isArray(g) && g.length) setGalleryPreview(g.slice(0, 4));
+      const g = readLocalStorageJson<unknown>('admin-gallery');
+      const items = normalizeCmsGalleryList(g);
+      if (items.length) setGalleryPreview(items.slice(0, 4).map(galleryThumbSrc));
     })();
     return () => {
       cancelled = true;

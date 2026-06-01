@@ -21,7 +21,7 @@ export interface CmsSiteApiResponse {
       hours?: string;
       socialMedia?: { facebook?: string; instagram?: string; yelp?: string; twitter?: string };
     };
-    gallery?: string[];
+    gallery?: Array<string | { full?: string; thumb?: string; url?: string }>;
     bookingBlocks?: unknown[];
   };
   error?: string;

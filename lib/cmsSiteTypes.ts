@@ -77,6 +77,33 @@ export interface CmsContact {
   socialMedia: { facebook: string; instagram: string; yelp: string };
 }
 
+/** Gallery entry: full-size original + WebP thumbnail for grid. */
+export type CmsGalleryImage = {
+  full: string;
+  thumb: string;
+};
+
+export function normalizeCmsGalleryItem(raw: unknown): CmsGalleryImage | null {
+  if (typeof raw === 'string') {
+    const full = raw.trim();
+    if (!full) return null;
+    return { full, thumb: full };
+  }
+  if (raw && typeof raw === 'object') {
+    const o = raw as Record<string, unknown>;
+    const full = String(o.full ?? o.url ?? '').trim();
+    if (!full) return null;
+    const thumb = String(o.thumb ?? '').trim() || full;
+    return { full, thumb };
+  }
+  return null;
+}
+
+export function normalizeCmsGalleryList(raw: unknown): CmsGalleryImage[] {
+  if (!Array.isArray(raw)) return [];
+  return raw.map(normalizeCmsGalleryItem).filter((x): x is CmsGalleryImage => x !== null);
+}
+
 export interface CmsSitePayload {
   version: number;
   services: CmsService[];
@@ -89,8 +116,8 @@ export interface CmsSitePayload {
   smsJobs: CmsSmsJob[];
   about: CmsAbout;
   contact: CmsContact;
-  /** Public gallery image URLs (same bucket path or CDN as you configure). */
-  gallery: string[];
+  /** Gallery images: `full` for lightbox, `thumb` (WebP) for grid. */
+  gallery: CmsGalleryImage[];
   /** Unbookable intervals shown on the public booking page (and enforced on POST /api/booking). */
   bookingBlocks: CmsBookingBlock[];
 }
@@ -227,8 +254,7 @@ export function normalizeCmsSite(raw: unknown): CmsSitePayload {
   const base = defaultCmsSite();
   if (!raw || typeof raw !== 'object') return base;
   const o = raw as Record<string, unknown>;
-  const galleryRaw = Array.isArray(o.gallery) ? o.gallery : [];
-  const gallery = galleryRaw.filter((x): x is string => typeof x === 'string' && x.trim() !== '');
+  const gallery = normalizeCmsGalleryList(o.gallery);
   const bookingBlocksRaw = Array.isArray(o.bookingBlocks) ? o.bookingBlocks : [];
   const bookingBlocks = bookingBlocksRaw
     .map((x) => normalizeCmsBookingBlock(x))

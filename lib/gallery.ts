@@ -1,4 +1,6 @@
-/** Sort gallery URLs newest-first using upload timestamp in S3/local keys. */
+import type { CmsGalleryImage } from '@/lib/cmsSiteTypes';
+
+/** Sort gallery newest-first using upload timestamp in S3/local keys. */
 export function extractGalleryUploadTimestampMs(url: string): number | null {
   const cleaned = (url || '').split('?')[0];
   const matches = Array.from(cleaned.matchAll(/\/(\d+)-/g));
@@ -8,12 +10,12 @@ export function extractGalleryUploadTimestampMs(url: string): number | null {
   return Number.isFinite(n) ? n : null;
 }
 
-export function sortGalleryNewestFirst(images: string[]): string[] {
+export function sortGalleryNewestFirst(images: CmsGalleryImage[]): CmsGalleryImage[] {
   return images
-    .map((url, index) => ({
-      url,
+    .map((item, index) => ({
+      item,
       index,
-      ts: extractGalleryUploadTimestampMs(url),
+      ts: extractGalleryUploadTimestampMs(item.full),
     }))
     .sort((a, b) => {
       const aTs = a.ts ?? -1;
@@ -21,10 +23,10 @@ export function sortGalleryNewestFirst(images: string[]): string[] {
       if (bTs !== aTs) return bTs - aTs;
       return a.index - b.index;
     })
-    .map((x) => x.url);
+    .map((x) => x.item);
 }
 
-/** Normalize gallery URL for <img> (relative paths stay site-relative). */
+/** Normalize URL for <img> (relative paths stay site-relative). */
 export function resolveGalleryImageSrc(url: string): string {
   const u = (url || '').trim();
   if (!u) return '';
@@ -37,4 +39,4 @@ export function resolveGalleryImageSrc(url: string): string {
   return u;
 }
 
-export const GALLERY_PAGE_SIZE = 24;
+export const GALLERY_PAGE_SIZE = 36;

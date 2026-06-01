@@ -4,6 +4,9 @@ import { useState, useEffect, useMemo } from 'react';
 import GalleryLightbox from '../components/GalleryLightbox';
 import InnerPageHero from '../components/InnerPageHero';
 import { fetchCmsSite } from '@/lib/cms/site-client';
+import type { CmsGalleryImage } from '@/lib/cmsSiteTypes';
+import { normalizeCmsGalleryList } from '@/lib/cmsSiteTypes';
+import { galleryFullSrc, galleryThumbSrc } from '@/lib/galleryDisplay';
 import {
   GALLERY_PAGE_SIZE,
   resolveGalleryImageSrc,
@@ -11,7 +14,7 @@ import {
 } from '@/lib/gallery';
 
 export default function GalleryClient() {
-  const [images, setImages] = useState<string[]>([]);
+  const [images, setImages] = useState<CmsGalleryImage[]>([]);
   const [visibleCount, setVisibleCount] = useState(GALLERY_PAGE_SIZE);
   const [lightboxIndex, setLightboxIndex] = useState<number | null>(null);
 
@@ -19,6 +22,7 @@ export default function GalleryClient() {
     () => images.slice(0, visibleCount),
     [images, visibleCount]
   );
+  const lightboxUrls = useMemo(() => images.map((item) => galleryFullSrc(item)), [images]);
   const hasMore = images.length > visibleCount;
 
   useEffect(() => {
@@ -34,7 +38,7 @@ export default function GalleryClient() {
           data.site.gallery.length > 0 &&
           !data.error
         ) {
-          setImages(sortGalleryNewestFirst(data.site.gallery as string[]));
+          setImages(sortGalleryNewestFirst(normalizeCmsGalleryList(data.site.gallery)));
           return;
         }
       } catch {
@@ -44,8 +48,8 @@ export default function GalleryClient() {
       const savedGallery = localStorage.getItem('admin-gallery');
       if (savedGallery) {
         try {
-          const parsed = JSON.parse(savedGallery) as string[];
-          if (Array.isArray(parsed)) setImages(sortGalleryNewestFirst(parsed));
+          const parsed = JSON.parse(savedGallery) as unknown;
+          setImages(sortGalleryNewestFirst(normalizeCmsGalleryList(parsed)));
         } catch {
           /* ignore */
         }
@@ -73,12 +77,12 @@ export default function GalleryClient() {
         ) : (
           <>
             <div className="grid grid-cols-2 gap-4 md:grid-cols-3 lg:grid-cols-4">
-              {visibleImages.map((url, index) => {
-                const src = resolveGalleryImageSrc(url);
+              {visibleImages.map((item, index) => {
+                const src = resolveGalleryImageSrc(galleryThumbSrc(item));
                 if (!src) return null;
                 return (
                   <button
-                    key={`${src}-${index}`}
+                    key={`${item.full}-${index}`}
                     type="button"
                     onClick={() => setLightboxIndex(index)}
                     className="group relative block w-full rounded-xl border border-champagne-400/35 bg-gradient-to-b from-white to-stone-50/60 p-2 text-left shadow-sm ring-1 ring-champagne-200/40 transition hover:-translate-y-0.5 hover:border-champagne-500/50 hover:shadow-md hover:ring-champagne-400/50 focus:outline-none focus-visible:ring-2 focus-visible:ring-champagne-600 focus-visible:ring-offset-2"
@@ -136,7 +140,7 @@ export default function GalleryClient() {
       </div>
 
       <GalleryLightbox
-        images={images}
+        images={lightboxUrls}
         resolveSrc={resolveGalleryImageSrc}
         openIndex={lightboxIndex}
         onClose={() => setLightboxIndex(null)}

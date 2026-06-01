@@ -1,9 +1,11 @@
 import { S3Client, GetObjectCommand, PutObjectCommand } from '@aws-sdk/client-s3';
 import {
+  type CmsGalleryImage,
   type CmsSitePayload,
   defaultCmsSite,
   normalizeCmsSite,
 } from '@/lib/cmsSiteTypes';
+import { buildGalleryThumbWebp } from '@/lib/galleryImageProcessing';
 
 /** First non-empty trimmed value among env keys (copy/paste from other projects often uses different names). */
 function s3Env(...keys: string[]): string | undefined {
@@ -49,6 +51,12 @@ function getClient(): S3Client | null {
       secretAccessKey: s3Env('AWS_SECRET_ACCESS_KEY')!,
     },
   });
+}
+
+export function getS3ClientAndBucket(): { client: S3Client; bucket: string } | null {
+  const client = getClient();
+  if (!client) return null;
+  return { client, bucket: bucket() };
 }
 
 /** S3 object key, e.g. cms/site.json or my-prefix/perfectnails/site.json */
@@ -134,28 +142,73 @@ export function publicUrlForS3ObjectKey(key: string): string {
   return `https://${b}.s3.${r}.amazonaws.com/${encoded}`;
 }
 
-/** Upload a gallery image; returns HTTPS URL for <img src>. */
+/** Object key from a public S3 or CDN URL. */
+export function publicUrlToS3Key(url: string): string | null {
+  try {
+    const u = new URL(url.trim());
+    const path = u.pathname.replace(/^\//, '');
+    if (!path) return null;
+    return decodeURIComponent(path);
+  } catch {
+    return null;
+  }
+}
+
+async function putGalleryObject(
+  client: S3Client,
+  key: string,
+  body: Buffer,
+  contentType: string
+): Promise<void> {
+  await client.send(
+    new PutObjectCommand({
+      Bucket: bucket(),
+      Key: key,
+      Body: body,
+      ContentType: contentType,
+      CacheControl: 'public, max-age=31536000, immutable',
+    })
+  );
+}
+
+/** Upload full original + WebP thumbnail; returns both public URLs. */
+export async function uploadGalleryImagePair(params: {
+  buffer: Buffer;
+  contentType: string;
+  originalName: string;
+}): Promise<CmsGalleryImage> {
+  const ctx = getS3ClientAndBucket();
+  if (!ctx) throw new Error('S3 not configured');
+
+  const prefix = galleryUploadPrefix();
+  const safe = params.originalName.replace(/[^a-zA-Z0-9.-]/g, '_') || 'image';
+  const stamp = Date.now();
+  const base = safe.replace(/\.[^.]+$/, '') || 'image';
+  const fullKey = `${prefix}/${stamp}-${safe}`;
+  const thumbKey = `${prefix}/thumb/${stamp}-${base}.webp`;
+
+  const thumbBuffer = await buildGalleryThumbWebp(params.buffer);
+
+  await putGalleryObject(
+    ctx.client,
+    fullKey,
+    params.buffer,
+    params.contentType || 'application/octet-stream'
+  );
+  await putGalleryObject(ctx.client, thumbKey, thumbBuffer, 'image/webp');
+
+  return {
+    full: publicUrlForS3ObjectKey(fullKey),
+    thumb: publicUrlForS3ObjectKey(thumbKey),
+  };
+}
+
+/** @deprecated Use uploadGalleryImagePair — returns full URL only. */
 export async function uploadPublicGalleryImage(params: {
   buffer: Buffer;
   contentType: string;
   originalName: string;
 }): Promise<string> {
-  const client = getClient();
-  if (!client) throw new Error('S3 not configured');
-
-  const prefix = galleryUploadPrefix();
-  const safe = params.originalName.replace(/[^a-zA-Z0-9.-]/g, '_') || 'image';
-  const key = `${prefix}/${Date.now()}-${safe}`;
-
-  await client.send(
-    new PutObjectCommand({
-      Bucket: bucket(),
-      Key: key,
-      Body: params.buffer,
-      ContentType: params.contentType || 'application/octet-stream',
-      CacheControl: 'public, max-age=31536000, immutable',
-    })
-  );
-
-  return publicUrlForS3ObjectKey(key);
+  const pair = await uploadGalleryImagePair(params);
+  return pair.full;
 }

@@ -12,8 +12,11 @@ import { SITE_BRAND_NAME } from '@/lib/site/branding';
 import {
   coerceBookingBlocksList,
   normalizeCmsBookingBlock,
+  normalizeCmsGalleryList,
   type CmsBookingBlock,
+  type CmsGalleryImage,
 } from '@/lib/cmsSiteTypes';
+import { galleryHasDedicatedThumb, galleryThumbSrc } from '@/lib/galleryDisplay';
 
 interface Service {
   id: string;
@@ -47,7 +50,9 @@ export default function AdminPage() {
   const pathname = usePathname();
   const [activeTab, setActiveTab] = useState<'gallery' | 'services' | 'about' | 'contact' | 'bookings' | 'employees'>('gallery');
   const [services, setServices] = useState<Service[]>([]);
-  const [galleryImages, setGalleryImages] = useState<string[]>([]);
+  const [galleryImages, setGalleryImages] = useState<CmsGalleryImage[]>([]);
+  const [thumbMigrating, setThumbMigrating] = useState(false);
+  const [thumbMigrateStatus, setThumbMigrateStatus] = useState('');
   const [bookings, setBookings] = useState<Booking[]>([]);
   const [employees, setEmployees] = useState<Employee[]>([]);
   const [bookingBlocks, setBookingBlocks] = useState<CmsBookingBlock[]>([]);
@@ -87,7 +92,7 @@ export default function AdminPage() {
     bookings?: Booking[];
     about?: typeof aboutContent;
     contact?: typeof contactContent;
-    gallery?: string[];
+    gallery?: CmsGalleryImage[];
     bookingBlocks?: CmsBookingBlock[];
   }) => {
     const nextServices = partial.services ?? services;
@@ -214,7 +219,7 @@ export default function AdminPage() {
             }));
           }
           if (Array.isArray(s.gallery) && s.gallery.length > 0) {
-            setGalleryImages(s.gallery as string[]);
+            setGalleryImages(normalizeCmsGalleryList(s.gallery));
           }
         } else {
           const savedServices = localStorage.getItem('admin-services');
@@ -277,8 +282,8 @@ export default function AdminPage() {
       const savedGallery = localStorage.getItem('admin-gallery');
       if (savedGallery) {
         try {
-          const g = JSON.parse(savedGallery) as string[];
-          if (Array.isArray(g) && g.length > 0) {
+          const g = normalizeCmsGalleryList(JSON.parse(savedGallery));
+          if (g.length > 0) {
             setGalleryImages((prev) => (prev.length > 0 ? prev : g));
           }
         } catch {
@@ -307,7 +312,7 @@ export default function AdminPage() {
         if (!raw) return;
         const local = JSON.parse(raw) as unknown;
         if (!Array.isArray(local) || local.length === 0) return;
-        const urls = local.filter((x): x is string => typeof x === 'string' && x.trim() !== '');
+        const urls = normalizeCmsGalleryList(local);
         if (urls.length === 0) return;
         const s = d.site as Record<string, unknown>;
         const put = await fetch('/api/cms/site', {
@@ -407,7 +412,11 @@ export default function AdminPage() {
 
       if (response.ok) {
         const data = await response.json();
-        const newImages = [...galleryImages, data.url];
+        const entry: CmsGalleryImage =
+          data.full && data.thumb
+            ? { full: data.full, thumb: data.thumb }
+            : { full: data.url || data.full, thumb: data.thumb || data.url || data.full };
+        const newImages = [...galleryImages, entry];
         setGalleryImages(newImages);
         void persistSiteSnapshot({ gallery: newImages });
         alert('Image uploaded successfully!');
@@ -425,6 +434,49 @@ export default function AdminPage() {
       const newImages = galleryImages.filter((_, i) => i !== index);
       setGalleryImages(newImages);
       void persistSiteSnapshot({ gallery: newImages });
+    }
+  };
+
+  const legacyThumbCount = galleryImages.filter((item) => !galleryHasDedicatedThumb(item)).length;
+
+  const runGalleryThumbMigration = async () => {
+    if (!useCms) {
+      alert('Cloud CMS (S3) must be enabled to generate thumbnails for existing photos.');
+      return;
+    }
+    if (!confirm(`Generate WebP thumbnails for ${legacyThumbCount} photo(s)? This may take a few minutes.`)) {
+      return;
+    }
+    setThumbMigrating(true);
+    setThumbMigrateStatus('Starting…');
+    try {
+      let remaining = legacyThumbCount;
+      while (remaining > 0) {
+        const res = await fetch('/api/admin/migrate-gallery-thumbs?batch=5', {
+          method: 'POST',
+          credentials: 'same-origin',
+        });
+        const data = await res.json();
+        if (!res.ok) {
+          alert(data.error || 'Migration failed');
+          break;
+        }
+        if (Array.isArray(data.gallery)) {
+          setGalleryImages(normalizeCmsGalleryList(data.gallery));
+        }
+        remaining = typeof data.remaining === 'number' ? data.remaining : 0;
+        const errNote =
+          Array.isArray(data.errors) && data.errors.length > 0
+            ? ` (${data.errors.length} error(s) this batch)`
+            : '';
+        setThumbMigrateStatus(`${remaining} remaining${errNote}`);
+        if (!data.processed) break;
+      }
+      setThumbMigrateStatus(remaining === 0 ? 'All thumbnails ready.' : 'Stopped — check errors in server logs.');
+    } catch {
+      alert('Migration request failed');
+    } finally {
+      setThumbMigrating(false);
     }
   };
 
@@ -647,14 +699,38 @@ export default function AdminPage() {
                     </svg>
                     Upload Image
                   </label>
-                  <p className="text-gray-500 text-sm mt-2">Click to upload images to gallery</p>
+                  <p className="text-gray-500 text-sm mt-2">
+                    Uploads save a full image plus a WebP thumbnail for faster gallery loading.
+                  </p>
                 </div>
 
+                {useCms && legacyThumbCount > 0 && (
+                  <div className="mb-6 rounded-lg border border-amber-200 bg-amber-50 px-4 py-3 text-sm text-amber-950">
+                    <p className="font-medium">
+                      {legacyThumbCount} photo(s) need WebP thumbnails (one-time).
+                    </p>
+                    <p className="mt-1 text-amber-900/90">
+                      Run this once — you do not need to re-upload your gallery.
+                    </p>
+                    <button
+                      type="button"
+                      disabled={thumbMigrating}
+                      onClick={() => void runGalleryThumbMigration()}
+                      className="mt-3 rounded-md bg-amber-800 px-4 py-2 text-sm font-semibold text-white hover:bg-amber-900 disabled:opacity-60"
+                    >
+                      {thumbMigrating ? 'Generating thumbnails…' : 'Generate thumbnails for existing photos'}
+                    </button>
+                    {thumbMigrateStatus ? (
+                      <p className="mt-2 text-xs text-amber-900/80">{thumbMigrateStatus}</p>
+                    ) : null}
+                  </div>
+                )}
+
                 <div className="grid grid-cols-2 md:grid-cols-3 lg:grid-cols-4 gap-4">
-                  {galleryImages.map((url, index) => (
-                    <div key={index} className="relative group">
+                  {galleryImages.map((item, index) => (
+                    <div key={`${item.full}-${index}`} className="relative group">
                       <img
-                        src={url}
+                        src={galleryThumbSrc(item)}
                         alt={`Nail salon gallery image ${index + 1} - ${SITE_BRAND_NAME} professional nail art work`}
                         className="w-full h-48 object-cover rounded-lg"
                       />
