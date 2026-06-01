@@ -2,6 +2,39 @@
 @tailwind components;
 @tailwind utilities;
 
+/* Welcome popup: subtle inline cat wave (CSS only) */
+@keyframes popup-cat-greet {
+  0%,
+  74%,
+  100% {
+    transform: translate3d(0, 0, 0) rotate(0deg);
+  }
+  82% {
+    transform: translate3d(0, -2px, 0) rotate(14deg);
+  }
+  90% {
+    transform: translate3d(0, 0, 0) rotate(-9deg);
+  }
+  96% {
+    transform: translate3d(0, -1px, 0) rotate(7deg);
+  }
+}
+
+.popup-cat-emoji {
+  display: inline-block;
+  font-size: 1em;
+  line-height: 1;
+  vertical-align: -0.05em;
+  transform-origin: 70% 85%;
+  animation: popup-cat-greet 5.5s ease-in-out infinite;
+}
+
+@media (prefers-reduced-motion: reduce) {
+  .popup-cat-emoji {
+    animation: none;
+  }
+}
+
 html {
   overflow-x: hidden;
 }
