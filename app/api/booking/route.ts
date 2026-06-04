@@ -24,6 +24,8 @@ export async function POST(req: Request) {
   const date = data.get("date") as string;
   const timeSlot = data.get("timeSlot") as string;
   const duration = data.get("duration") as string;
+  const notesRaw = (data.get('notes') as string | null)?.trim() ?? '';
+  const notes = notesRaw.length > 500 ? notesRaw.slice(0, 500) : notesRaw;
   /** Client-built instant (browser local wall clock → ISO). Required on UTC servers: `new Date(y,m,d,h,m)` here uses *server* local, not the guest’s. */
   const slotStartIso = (data.get('slotStartIso') as string | null)?.trim() ?? '';
   const smsConsent = data.get('smsConsent') === 'true';
@@ -61,6 +63,7 @@ export async function POST(req: Request) {
     date: bookingDate.toISOString(),
     timeSlot,
     duration: bookingDuration,
+    ...(notes ? { notes } : {}),
   };
 
   const now = nowForLead;

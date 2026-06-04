@@ -31,6 +31,7 @@ type BookingDetailCardProps = {
     employee?: string;
     date: string;
     duration: number;
+    notes?: string;
   };
   bookingEmployee: Employee | null;
   serviceCatalog: ServiceCatalogRow[] | null;
@@ -74,6 +75,12 @@ export function BookingDetailCard({
         </p>
       )}
       <p className={`mt-2 ${detailText}`}>Duration: {booking.duration || 45} min</p>
+      {booking.notes?.trim() ? (
+        <p className={`mt-2 rounded-md border border-neutral-900/10 bg-white/80 px-2.5 py-2 text-sm leading-relaxed ${detailText}`}>
+          <span className="font-semibold text-neutral-950">Notes: </span>
+          {booking.notes.trim()}
+        </p>
+      ) : null}
       <div className="mt-3 rounded-md bg-white/75 p-2 backdrop-blur-sm">
       <BookingSmsButtons
         bookingId={booking.id}

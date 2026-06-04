@@ -33,6 +33,7 @@ interface Booking {
   date: string;
   timeSlot: string;
   duration: number;
+  notes?: string;
 }
 
 interface ServiceCatalogRow {

@@ -25,6 +25,8 @@ export interface CmsBooking {
   date: string;
   timeSlot: string;
   duration: number;
+  /** Optional message from the client (online booking form). */
+  notes?: string;
 }
 
 /**

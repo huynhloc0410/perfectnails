@@ -93,13 +93,14 @@ export default function Booking() {
   const [bookings, setBookings] = useState<Booking[]>([]);
   const [bookingBlocks, setBookingBlocks] = useState<CmsBookingBlock[]>([]);
   const [selectedCategory, setSelectedCategory] = useState<string>('');
-  const [formData, setFormData] = useState({ 
-    name: '', 
-    phone: '', 
-    service: '', 
+  const [formData, setFormData] = useState({
+    name: '',
+    phone: '',
+    notes: '',
+    service: '',
     employee: '',
     date: '',
-    timeSlot: ''
+    timeSlot: '',
   });
   const [bookingSuccessModalOpen, setBookingSuccessModalOpen] = useState(false);
   /** Set true only after failed submit (invalid phone); cleared when user edits phone. */
@@ -444,6 +445,7 @@ export default function Booking() {
     const formDataObj = new FormData();
     formDataObj.append('name', formData.name);
     formDataObj.append('phone', formData.phone);
+    formDataObj.append('notes', formData.notes.trim());
     formDataObj.append('service', formData.service);
     formDataObj.append('employee', formData.employee === ANYBODY_EMPLOYEE_ID ? '' : formData.employee);
     formDataObj.append('date', formData.date);
@@ -509,7 +511,15 @@ export default function Booking() {
         
         setBookingSuccessModalOpen(true);
         setPhoneSubmitError(false);
-        setFormData({ name: '', phone: '', service: '', employee: '', date: '', timeSlot: '' });
+        setFormData({
+          name: '',
+          phone: '',
+          notes: '',
+          service: '',
+          employee: '',
+          date: '',
+          timeSlot: '',
+        });
         setSelectedCategory('');
         setBookingStep(1);
         setTimeSlotChoices([]);
@@ -1109,6 +1119,24 @@ export default function Booking() {
                         Wrong phone number
                       </p>
                     )}
+                  </div>
+                  <div>
+                    <label htmlFor="booking-notes" className="block mb-1 text-sm font-medium text-lux-espresso">
+                      Notes <span className="font-normal text-lux-espressoLight/80">(optional)</span>
+                    </label>
+                    <textarea
+                      id="booking-notes"
+                      name="notes"
+                      value={formData.notes}
+                      onChange={(e) => setFormData({ ...formData, notes: e.target.value })}
+                      placeholder="Allergies, design ideas, preferred shape, or anything we should know before your visit"
+                      rows={3}
+                      maxLength={500}
+                      className="w-full resize-y rounded-md border border-champagne-300/70 px-4 py-2 text-sm leading-relaxed focus:border-champagne-500 focus:ring-champagne-500"
+                    />
+                    <p className="mt-1 text-xs text-lux-espressoLight/75">
+                      {formData.notes.length}/500 characters
+                    </p>
                   </div>
                 </div>
               </div>

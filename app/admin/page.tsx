@@ -43,6 +43,7 @@ interface Booking {
   date: string;
   timeSlot: string; // Format: "HH:MM"
   duration: number;
+  notes?: string;
 }
 
 export default function AdminPage() {
