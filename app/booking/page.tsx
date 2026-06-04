@@ -611,6 +611,25 @@ export default function Booking() {
   const maxDate = new Date();
   maxDate.setDate(maxDate.getDate() + 30);
 
+  /** Same rules as Continue — step is reachable when required fields for that step are filled. */
+  const canReachBookingStep = (step: number): boolean => {
+    if (step <= 1) return true;
+    if (step === 2) return Boolean(selectedCategory && formData.service);
+    if (step === 3) return Boolean(formData.service && formData.employee);
+    if (step === 4) return Boolean(formData.service && formData.employee && formData.date);
+    return false;
+  };
+
+  const isBookingStepClickable = (step: number): boolean =>
+    step <= bookingStep || canReachBookingStep(step);
+
+  const goToBookingStep = (step: number) => {
+    if (step === bookingStep) return;
+    if (step < bookingStep || canReachBookingStep(step)) {
+      setBookingStep(step);
+    }
+  };
+
   return (
     <div>
       <InnerPageHero
@@ -631,20 +650,40 @@ export default function Booking() {
               const n = i + 1;
               const active = bookingStep === n;
               const done = bookingStep > n;
+              const clickable = isBookingStepClickable(n);
               return (
                 <li key={label} className="flex items-center gap-1.5 text-xs font-semibold sm:text-sm">
-                  <span
-                    className={`flex h-7 w-7 shrink-0 items-center justify-center rounded-full text-xs sm:h-8 sm:w-8 ${
-                      done
-                        ? 'bg-champagne-600 text-white'
-                        : active
-                          ? 'bg-champagne-100 text-champagne-900 ring-2 ring-champagne-500/50'
-                          : 'bg-lux-mist/80 text-lux-espressoLight/80'
+                  <button
+                    type="button"
+                    onClick={() => goToBookingStep(n)}
+                    disabled={!clickable}
+                    aria-current={active ? 'step' : undefined}
+                    aria-label={
+                      active
+                        ? `${label}, current step`
+                        : clickable
+                          ? `Go to ${label}`
+                          : `${label}, complete previous steps first`
+                    }
+                    className={`flex items-center gap-1.5 rounded-md transition focus:outline-none focus-visible:ring-2 focus-visible:ring-champagne-500 focus-visible:ring-offset-2 ${
+                      clickable ? 'cursor-pointer hover:opacity-90' : 'cursor-not-allowed opacity-60'
                     }`}
                   >
-                    {done ? '✓' : n}
-                  </span>
-                  <span className={active || done ? 'text-lux-espresso' : 'text-lux-espressoLight/75'}>{label}</span>
+                    <span
+                      className={`flex h-7 w-7 shrink-0 items-center justify-center rounded-full text-xs sm:h-8 sm:w-8 ${
+                        done
+                          ? 'bg-champagne-600 text-white'
+                          : active
+                            ? 'bg-champagne-100 text-champagne-900 ring-2 ring-champagne-500/50'
+                            : 'bg-lux-mist/80 text-lux-espressoLight/80'
+                      }`}
+                    >
+                      {done ? '✓' : n}
+                    </span>
+                    <span className={active || done ? 'text-lux-espresso' : 'text-lux-espressoLight/75'}>
+                      {label}
+                    </span>
+                  </button>
                   {i < 3 && (
                     <span className="mx-1 hidden text-lux-line sm:inline" aria-hidden>
                       /
