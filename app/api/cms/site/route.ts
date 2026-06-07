@@ -6,8 +6,8 @@ import {
   isS3CmsConfigured,
   readCmsSiteFromS3,
   s3EnvMissingParts,
-  writeCmsSiteToS3,
 } from '@/lib/s3CmsSite';
+import { persistCmsSite } from '@/lib/cms/persistCmsSite';
 
 export const dynamic = 'force-dynamic';
 
@@ -65,7 +65,7 @@ export async function PUT(req: NextRequest) {
 
   const site = normalizeCmsSite(body);
   try {
-    await writeCmsSiteToS3(site);
+    await persistCmsSite(site);
     return NextResponse.json({ ok: true });
   } catch (e) {
     console.error('PUT /api/cms/site S3 error:', e);

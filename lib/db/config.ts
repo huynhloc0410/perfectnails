@@ -1,0 +1,32 @@
+import { runtimeEnv } from '@/lib/runtimeEnv';
+
+/** True when DATABASE_URL is set at runtime. */
+export function isDatabaseConfigured(): boolean {
+  const url = runtimeEnv('DATABASE_URL');
+  return !!url && url.trim().length > 0;
+}
+
+/** Dual-write to Postgres when DATABASE_URL is set. Set CMS_WRITE_DB=false to disable. */
+export function isDualWriteToDbEnabled(): boolean {
+  if (!isDatabaseConfigured()) return false;
+  const flag = runtimeEnv('CMS_WRITE_DB')?.trim().toLowerCase();
+  if (flag === 'false' || flag === '0' || flag === 'no') return false;
+  return true;
+}
+
+export function databaseUrlFromEnv(): string | undefined {
+  return runtimeEnv('DATABASE_URL')?.trim() || undefined;
+}
+
+/** SSL for Render external URLs; internal URLs often omit sslmode. */
+export function pgSslOption(): boolean | { rejectUnauthorized: boolean } | undefined {
+  const url = databaseUrlFromEnv() ?? '';
+  if (!url) return undefined;
+  if (/sslmode=(require|verify-full|verify-ca)/i.test(url)) {
+    return { rejectUnauthorized: false };
+  }
+  if (url.includes('.render.com')) {
+    return { rejectUnauthorized: false };
+  }
+  return undefined;
+}

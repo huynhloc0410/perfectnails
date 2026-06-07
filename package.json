@@ -11,11 +11,21 @@
     "dev:webpack": "next dev",
     "dev:clean": "npm run clean && next dev --turbo",
     "build": "next build",
-    "start": "next start"
+    "start": "next start",
+    "postinstall": "prisma generate",
+    "db:schema": "bash scripts/apply-db-schema.sh",
+    "db:seed": "psql \"$DATABASE_URL\" -v ON_ERROR_STOP=1 -f db/nailsbyni/002_seed.sql",
+    "db:verify": "psql \"$DATABASE_URL\" -v ON_ERROR_STOP=1 -f db/nailsbyni/verify.sql",
+    "db:generate": "prisma generate",
+    "db:migrate-from-s3": "tsx scripts/migrate-cms-s3-to-postgres.ts",
+    "db:migrate-from-s3:dry": "tsx scripts/migrate-cms-s3-to-postgres.ts --dry-run",
+    "db:patch-customers": "psql \"$DATABASE_URL\" -v ON_ERROR_STOP=1 -f db/nailsbyni/003_customers_single_name.sql"
   },
   "dependencies": {
     "@aws-sdk/client-s3": "^3.1024.0",
+    "@prisma/client": "^5.22.0",
     "next": "14.2.35",
+    "pg": "^8.21.0",
     "react": "18.2.0",
     "react-dom": "18.2.0",
     "sharp": "^0.34.5",
@@ -23,13 +33,16 @@
   },
   "devDependencies": {
     "@types/node": "20.14.0",
+    "@types/pg": "^8.20.0",
     "@types/react": "18.2.79",
     "@types/react-dom": "18.2.25",
     "autoprefixer": "10.4.14",
     "baseline-browser-mapping": "^2.10.14",
     "eslint": "8.40.0",
     "postcss": "8.4.21",
+    "prisma": "^5.22.0",
     "tailwindcss": "3.4.1",
+    "tsx": "^4.22.4",
     "typescript": "5.0.4"
   },
   "repository": {

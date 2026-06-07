@@ -1,0 +1,2 @@
+-- Deprecated: use db/nailsbyni/001_schema.sql
+-- Run: npm run db:schema

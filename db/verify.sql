@@ -1,0 +1,1 @@
+-- Deprecated: use db/nailsbyni/verify.sql

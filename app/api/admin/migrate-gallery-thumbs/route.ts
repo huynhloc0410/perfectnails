@@ -1,7 +1,8 @@
 import { NextRequest, NextResponse } from 'next/server';
 import { ADMIN_SESSION_COOKIE, verifyAdminToken } from '@/lib/adminSessionVerify';
 import { migrateGalleryThumbsBatch } from '@/lib/galleryImages';
-import { isS3CmsConfigured, readCmsSiteFromS3, writeCmsSiteToS3 } from '@/lib/s3CmsSite';
+import { isS3CmsConfigured, readCmsSiteFromS3 } from '@/lib/s3CmsSite';
+import { persistCmsSite } from '@/lib/cms/persistCmsSite';
 
 export const dynamic = 'force-dynamic';
 export const maxDuration = 60;
@@ -30,7 +31,7 @@ export async function POST(req: NextRequest) {
 
     const result = await migrateGalleryThumbsBatch(site.gallery, batch);
     site.gallery = result.gallery;
-    await writeCmsSiteToS3(site);
+    await persistCmsSite(site);
 
     return NextResponse.json({
       ok: true,

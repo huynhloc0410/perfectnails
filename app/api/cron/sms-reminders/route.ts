@@ -1,5 +1,6 @@
 import { NextRequest, NextResponse } from 'next/server';
-import { isS3CmsConfigured, readCmsSiteFromS3, writeCmsSiteToS3 } from '@/lib/s3CmsSite';
+import { isS3CmsConfigured, readCmsSiteFromS3 } from '@/lib/s3CmsSite';
+import { persistCmsSite } from '@/lib/cms/persistCmsSite';
 import type { CmsSmsJob } from '@/lib/cmsSiteTypes';
 import { parseReminderHoursBefore } from '@/lib/bookingReminderJobs';
 import { bookingReminderSms } from '@/lib/smsTemplates';
@@ -79,7 +80,7 @@ export async function POST(req: NextRequest) {
   }
 
   site.smsJobs = jobs;
-  await writeCmsSiteToS3(site);
+  await persistCmsSite(site);
 
   return NextResponse.json({ ok: true, processed, sent, errored });
 }

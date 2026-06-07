@@ -1,0 +1,585 @@
+generator client {
+  provider = "prisma-client-js"
+}
+
+datasource db {
+  provider = "postgresql"
+  url      = env("DATABASE_URL")
+}
+
+enum EmploymentStatus {
+  active
+  inactive
+  terminated
+}
+
+enum BookingStatus {
+  pending
+  confirmed
+  completed
+  cancelled
+  no_show
+}
+
+enum PaymentMethod {
+  cash
+  card
+  zelle
+  venmo
+  gift_card
+}
+
+enum PaymentStatus {
+  pending
+  paid
+  refunded
+  voided
+}
+
+enum SmsMessageType {
+  confirmation
+  reminder
+  follow_up
+  marketing
+}
+
+enum SmsDeliveryStatus {
+  queued
+  sent
+  delivered
+  failed
+  undelivered
+}
+
+enum EmailDeliveryStatus {
+  queued
+  sent
+  failed
+  bounced
+}
+
+enum LoyaltyTxType {
+  earn
+  redeem
+  adjust
+  expire
+}
+
+enum FileStorageProvider {
+  r2
+  s3
+  local
+}
+
+model LegacyIdMapping {
+  entityType String   @map("entity_type") @db.VarChar(32)
+  legacyId   String   @map("legacy_id") @db.VarChar(128)
+  uuid       String   @db.Uuid
+  createdAt  DateTime @default(now()) @map("created_at")
+
+  @@id([entityType, legacyId])
+  @@index([uuid])
+  @@map("legacy_id_mappings")
+}
+
+model Salon {
+  id        String    @id @default(dbgenerated("gen_random_uuid()")) @db.Uuid
+  name      String    @db.VarChar(200)
+  phone     String?   @db.VarChar(30)
+  email     String?   @db.VarChar(255)
+  address   String?
+  timezone  String    @default("America/Phoenix") @db.VarChar(64)
+  isActive  Boolean   @default(true) @map("is_active")
+  deletedAt DateTime? @map("deleted_at")
+  createdAt DateTime  @default(now()) @map("created_at")
+  updatedAt DateTime  @updatedAt @map("updated_at")
+
+  businessSettings BusinessSettings?
+  categories       Category[]
+  services         Service[]
+  employees        Employee[]
+  customers        Customer[]
+  bookings         Booking[]
+  galleryPhotos    GalleryPhoto[]
+  giftCards        GiftCard[]
+  smsLogs          SmsLog[]
+  emailLogs        EmailLog[]
+  bookingBlocks    SalonBookingBlock[]
+  loyaltyAccounts  LoyaltyAccount[]
+  files            File[]
+  adminUsers       AdminUser[]
+  auditLogs        AuditLog[]
+
+  @@map("salons")
+}
+
+model BusinessSettings {
+  salonId                 String   @id @map("salon_id") @db.Uuid
+  cancellationPolicyText  String?  @map("cancellation_policy_text")
+  cancellationHoursBefore Int      @default(24) @map("cancellation_hours_before")
+  bookingLeadTimeMinutes  Int      @default(60) @map("booking_lead_time_minutes")
+  reminderHoursBefore     Int[]    @map("reminder_hours_before")
+  maxAdvanceBookingDays   Int      @default(90) @map("max_advance_booking_days")
+  defaultTaxRate          Decimal  @default(0) @map("default_tax_rate") @db.Decimal(6, 4)
+  onlineBookingEnabled    Boolean  @default(true) @map("online_booking_enabled")
+  smsEnabled              Boolean  @default(true) @map("sms_enabled")
+  marketingSmsEnabled     Boolean  @default(false) @map("marketing_sms_enabled")
+  settingsJson            Json     @default("{}") @map("settings_json")
+  createdAt               DateTime @default(now()) @map("created_at")
+  updatedAt               DateTime @updatedAt @map("updated_at")
+
+  salon Salon @relation(fields: [salonId], references: [id], onDelete: Cascade)
+
+  @@map("business_settings")
+}
+
+model Category {
+  id           String    @id @default(dbgenerated("gen_random_uuid()")) @db.Uuid
+  salonId      String    @map("salon_id") @db.Uuid
+  name         String    @db.VarChar(100)
+  description  String?
+  displayOrder Int       @default(0) @map("display_order")
+  isActive     Boolean   @default(true) @map("is_active")
+  deletedAt    DateTime? @map("deleted_at")
+  createdAt    DateTime  @default(now()) @map("created_at")
+  updatedAt    DateTime  @updatedAt @map("updated_at")
+
+  salon    Salon     @relation(fields: [salonId], references: [id], onDelete: Cascade)
+  services Service[]
+
+  @@index([salonId])
+  @@map("categories")
+}
+
+model Service {
+  id                   String    @id @default(dbgenerated("gen_random_uuid()")) @db.Uuid
+  salonId              String    @map("salon_id") @db.Uuid
+  categoryId           String    @map("category_id") @db.Uuid
+  name                 String    @db.VarChar(150)
+  description          String?
+  durationMinutes      Int       @default(45) @map("duration_minutes")
+  price                Decimal   @default(0) @db.Decimal(10, 2)
+  displayOrder         Int       @default(0) @map("display_order")
+  onlineBookingEnabled Boolean   @default(true) @map("online_booking_enabled")
+  isActive             Boolean   @default(true) @map("is_active")
+  deletedAt            DateTime? @map("deleted_at")
+  createdAt            DateTime  @default(now()) @map("created_at")
+  updatedAt            DateTime  @updatedAt @map("updated_at")
+
+  salon            Salon             @relation(fields: [salonId], references: [id], onDelete: Cascade)
+  category         Category          @relation(fields: [categoryId], references: [id])
+  employeeServices EmployeeService[]
+  bookingServices  BookingService[]
+  galleryPhotos    GalleryPhoto[]
+
+  @@index([salonId])
+  @@index([categoryId])
+  @@map("services")
+}
+
+model Employee {
+  id               String            @id @default(dbgenerated("gen_random_uuid()")) @db.Uuid
+  salonId          String            @map("salon_id") @db.Uuid
+  firstName        String            @map("first_name") @db.VarChar(100)
+  lastName         String            @default("") @map("last_name") @db.VarChar(100)
+  nickname         String?           @db.VarChar(100)
+  phone            String?           @db.VarChar(30)
+  email            String?           @db.VarChar(255)
+  avatarUrl        String?           @map("avatar_url")
+  bio              String?
+  hireDate         DateTime?         @map("hire_date") @db.Date
+  employmentStatus EmploymentStatus  @default(active) @map("employment_status")
+  displayOrder     Int               @default(0) @map("display_order")
+  deletedAt        DateTime?         @map("deleted_at")
+  createdAt        DateTime          @default(now()) @map("created_at")
+  updatedAt        DateTime          @updatedAt @map("updated_at")
+
+  salon            Salon                 @relation(fields: [salonId], references: [id], onDelete: Cascade)
+  employeeServices EmployeeService[]
+  availability     EmployeeAvailability[]
+  timeOff          EmployeeTimeOff[]
+  assignments      BookingAssignment[]
+  galleryPhotos    GalleryPhoto[]
+  bookingBlocks    SalonBookingBlock[]
+
+  @@index([salonId])
+  @@map("employees")
+}
+
+model EmployeeService {
+  employeeId String   @map("employee_id") @db.Uuid
+  serviceId  String   @map("service_id") @db.Uuid
+  createdAt  DateTime @default(now()) @map("created_at")
+
+  employee Employee @relation(fields: [employeeId], references: [id], onDelete: Cascade)
+  service  Service  @relation(fields: [serviceId], references: [id], onDelete: Cascade)
+
+  @@id([employeeId, serviceId])
+  @@map("employee_services")
+}
+
+model EmployeeAvailability {
+  id         String   @id @default(dbgenerated("gen_random_uuid()")) @db.Uuid
+  employeeId String   @map("employee_id") @db.Uuid
+  dayOfWeek  Int      @map("day_of_week") @db.SmallInt
+  startTime  DateTime @map("start_time") @db.Time(6)
+  endTime    DateTime @map("end_time") @db.Time(6)
+  isActive   Boolean  @default(true) @map("is_active")
+  createdAt  DateTime @default(now()) @map("created_at")
+  updatedAt  DateTime @updatedAt @map("updated_at")
+
+  employee Employee @relation(fields: [employeeId], references: [id], onDelete: Cascade)
+
+  @@index([employeeId, dayOfWeek])
+  @@map("employee_availability")
+}
+
+model EmployeeTimeOff {
+  id            String   @id @default(dbgenerated("gen_random_uuid()")) @db.Uuid
+  employeeId    String   @map("employee_id") @db.Uuid
+  startDatetime DateTime @map("start_datetime")
+  endDatetime   DateTime @map("end_datetime")
+  reason        String?  @db.VarChar(100)
+  notes         String?
+  createdAt     DateTime @default(now()) @map("created_at")
+  updatedAt     DateTime @updatedAt @map("updated_at")
+
+  employee Employee @relation(fields: [employeeId], references: [id], onDelete: Cascade)
+
+  @@index([employeeId, startDatetime, endDatetime])
+  @@map("employee_time_off")
+}
+
+model Customer {
+  id             String    @id @default(dbgenerated("gen_random_uuid()")) @db.Uuid
+  salonId        String    @map("salon_id") @db.Uuid
+  name           String    @db.VarChar(200)
+  phone          String    @db.VarChar(30)
+  email          String?   @db.VarChar(255)
+  birthday       DateTime? @db.Date
+  notes          String?
+  smsOptIn       Boolean   @default(false) @map("sms_opt_in")
+  marketingOptIn Boolean   @default(false) @map("marketing_opt_in")
+  deletedAt      DateTime? @map("deleted_at")
+  createdAt      DateTime  @default(now()) @map("created_at")
+  updatedAt      DateTime  @updatedAt @map("updated_at")
+
+  salon           Salon            @relation(fields: [salonId], references: [id], onDelete: Cascade)
+  addresses       CustomerAddress[]
+  bookings        Booking[]
+  smsLogs         SmsLog[]
+  loyaltyAccounts LoyaltyAccount[]
+
+  @@index([phone])
+  @@index([salonId, phone])
+  @@map("customers")
+}
+
+model CustomerAddress {
+  id         String   @id @default(dbgenerated("gen_random_uuid()")) @db.Uuid
+  customerId String   @map("customer_id") @db.Uuid
+  label      String?  @db.VarChar(50)
+  line1      String   @db.VarChar(255)
+  line2      String?  @db.VarChar(255)
+  city       String   @db.VarChar(100)
+  state      String   @db.VarChar(50)
+  postalCode String   @map("postal_code") @db.VarChar(20)
+  country    String   @default("US") @db.Char(2)
+  isDefault  Boolean  @default(false) @map("is_default")
+  createdAt  DateTime @default(now()) @map("created_at")
+  updatedAt  DateTime @updatedAt @map("updated_at")
+
+  customer Customer @relation(fields: [customerId], references: [id], onDelete: Cascade)
+
+  @@index([customerId])
+  @@map("customer_addresses")
+}
+
+model Booking {
+  id              String        @id @default(dbgenerated("gen_random_uuid()")) @db.Uuid
+  salonId         String        @map("salon_id") @db.Uuid
+  customerId      String        @map("customer_id") @db.Uuid
+  bookingNumber   String        @map("booking_number") @db.VarChar(32)
+  status          BookingStatus @default(pending)
+  appointmentDate DateTime      @map("appointment_date") @db.Date
+  startDatetime   DateTime      @map("start_datetime")
+  endDatetime     DateTime      @map("end_datetime")
+  notes           String?
+  internalNotes   String?       @map("internal_notes")
+  subtotal        Decimal       @default(0) @db.Decimal(10, 2)
+  tax             Decimal       @default(0) @db.Decimal(10, 2)
+  total           Decimal       @default(0) @db.Decimal(10, 2)
+  depositAmount   Decimal       @default(0) @map("deposit_amount") @db.Decimal(10, 2)
+  cancelledAt     DateTime?     @map("cancelled_at")
+  completedAt     DateTime?     @map("completed_at")
+  createdAt       DateTime      @default(now()) @map("created_at")
+  updatedAt       DateTime      @updatedAt @map("updated_at")
+
+  salon           Salon            @relation(fields: [salonId], references: [id], onDelete: Cascade)
+  customer        Customer         @relation(fields: [customerId], references: [id])
+  bookingServices BookingService[]
+  payments        Payment[]
+  deposits        Deposit[]
+  smsLogs         SmsLog[]
+  loyaltyTx       LoyaltyTransaction[]
+
+  @@unique([salonId, bookingNumber])
+  @@index([appointmentDate])
+  @@index([status])
+  @@index([customerId])
+  @@index([salonId, startDatetime])
+  @@map("bookings")
+}
+
+model BookingService {
+  id                String   @id @default(dbgenerated("gen_random_uuid()")) @db.Uuid
+  bookingId         String   @map("booking_id") @db.Uuid
+  serviceId         String?  @map("service_id") @db.Uuid
+  serviceName       String   @map("service_name") @db.VarChar(150)
+  priceAtBooking    Decimal  @map("price_at_booking") @db.Decimal(10, 2)
+  durationAtBooking Int      @map("duration_at_booking")
+  displayOrder      Int      @default(0) @map("display_order")
+  createdAt         DateTime @default(now()) @map("created_at")
+
+  booking     Booking              @relation(fields: [bookingId], references: [id], onDelete: Cascade)
+  service     Service?             @relation(fields: [serviceId], references: [id])
+  assignments BookingAssignment[]
+
+  @@index([bookingId])
+  @@map("booking_services")
+}
+
+model BookingAssignment {
+  id               String   @id @default(dbgenerated("gen_random_uuid()")) @db.Uuid
+  bookingServiceId String   @map("booking_service_id") @db.Uuid
+  employeeId       String   @map("employee_id") @db.Uuid
+  assignedAt       DateTime @default(now()) @map("assigned_at")
+
+  bookingService BookingService @relation(fields: [bookingServiceId], references: [id], onDelete: Cascade)
+  employee       Employee       @relation(fields: [employeeId], references: [id])
+
+  @@unique([bookingServiceId, employeeId])
+  @@index([employeeId])
+  @@map("booking_assignments")
+}
+
+model Payment {
+  id                   String        @id @default(dbgenerated("gen_random_uuid()")) @db.Uuid
+  bookingId            String        @map("booking_id") @db.Uuid
+  amount               Decimal       @db.Decimal(10, 2)
+  paymentMethod        PaymentMethod @map("payment_method")
+  status               PaymentStatus @default(pending)
+  transactionReference String?       @map("transaction_reference") @db.VarChar(255)
+  paidAt               DateTime?     @map("paid_at")
+  createdAt            DateTime      @default(now()) @map("created_at")
+  updatedAt            DateTime      @updatedAt @map("updated_at")
+
+  booking Booking @relation(fields: [bookingId], references: [id], onDelete: Cascade)
+
+  @@index([bookingId])
+  @@map("payments")
+}
+
+model Deposit {
+  id         String    @id @default(dbgenerated("gen_random_uuid()")) @db.Uuid
+  bookingId  String    @map("booking_id") @db.Uuid
+  amount     Decimal   @db.Decimal(10, 2)
+  paidAt     DateTime? @map("paid_at")
+  refundedAt DateTime? @map("refunded_at")
+  createdAt  DateTime  @default(now()) @map("created_at")
+  updatedAt  DateTime  @updatedAt @map("updated_at")
+
+  booking Booking @relation(fields: [bookingId], references: [id], onDelete: Cascade)
+
+  @@index([bookingId])
+  @@map("deposits")
+}
+
+model GiftCard {
+  id             String    @id @default(dbgenerated("gen_random_uuid()")) @db.Uuid
+  salonId        String    @map("salon_id") @db.Uuid
+  code           String    @db.VarChar(32)
+  balance        Decimal   @default(0) @db.Decimal(10, 2)
+  originalAmount Decimal   @map("original_amount") @db.Decimal(10, 2)
+  expirationDate DateTime? @map("expiration_date") @db.Date
+  isActive       Boolean   @default(true) @map("is_active")
+  deletedAt      DateTime? @map("deleted_at")
+  createdAt      DateTime  @default(now()) @map("created_at")
+  updatedAt      DateTime  @updatedAt @map("updated_at")
+
+  salon Salon @relation(fields: [salonId], references: [id], onDelete: Cascade)
+
+  @@map("gift_cards")
+}
+
+model LoyaltyAccount {
+  id            String   @id @default(dbgenerated("gen_random_uuid()")) @db.Uuid
+  salonId       String   @map("salon_id") @db.Uuid
+  customerId    String   @map("customer_id") @db.Uuid
+  pointsBalance Int      @default(0) @map("points_balance")
+  createdAt     DateTime @default(now()) @map("created_at")
+  updatedAt     DateTime @updatedAt @map("updated_at")
+
+  salon        Salon                @relation(fields: [salonId], references: [id], onDelete: Cascade)
+  customer     Customer             @relation(fields: [customerId], references: [id], onDelete: Cascade)
+  transactions LoyaltyTransaction[]
+
+  @@unique([salonId, customerId])
+  @@map("loyalty_accounts")
+}
+
+model LoyaltyTransaction {
+  id               String        @id @default(dbgenerated("gen_random_uuid()")) @db.Uuid
+  loyaltyAccountId String        @map("loyalty_account_id") @db.Uuid
+  bookingId        String?       @map("booking_id") @db.Uuid
+  txType           LoyaltyTxType @map("tx_type")
+  points           Int
+  description      String?
+  createdAt        DateTime      @default(now()) @map("created_at")
+
+  loyaltyAccount LoyaltyAccount @relation(fields: [loyaltyAccountId], references: [id], onDelete: Cascade)
+  booking        Booking?       @relation(fields: [bookingId], references: [id])
+
+  @@index([loyaltyAccountId, createdAt(sort: Desc)])
+  @@map("loyalty_transactions")
+}
+
+model GalleryPhoto {
+  id           String    @id @default(dbgenerated("gen_random_uuid()")) @db.Uuid
+  salonId      String    @map("salon_id") @db.Uuid
+  imageUrl     String    @map("image_url")
+  thumbnailUrl String    @map("thumbnail_url")
+  title        String?   @db.VarChar(200)
+  description  String?
+  serviceId    String?   @map("service_id") @db.Uuid
+  employeeId   String?   @map("employee_id") @db.Uuid
+  featured     Boolean   @default(false)
+  displayOrder Int       @default(0) @map("display_order")
+  deletedAt    DateTime? @map("deleted_at")
+  createdAt    DateTime  @default(now()) @map("created_at")
+  updatedAt    DateTime  @updatedAt @map("updated_at")
+
+  salon    Salon     @relation(fields: [salonId], references: [id], onDelete: Cascade)
+  service  Service?  @relation(fields: [serviceId], references: [id])
+  employee Employee? @relation(fields: [employeeId], references: [id])
+
+  @@index([salonId, featured, displayOrder])
+  @@map("gallery_photos")
+}
+
+model SmsLog {
+  id           String            @id @default(dbgenerated("gen_random_uuid()")) @db.Uuid
+  salonId      String            @map("salon_id") @db.Uuid
+  bookingId    String?           @map("booking_id") @db.Uuid
+  customerId   String?           @map("customer_id") @db.Uuid
+  phoneNumber  String            @map("phone_number") @db.VarChar(30)
+  messageType  SmsMessageType    @map("message_type")
+  messageBody  String            @default("") @map("message_body")
+  twilioSid    String?           @map("twilio_sid") @db.VarChar(64)
+  status       SmsDeliveryStatus @default(queued)
+  sentAt       DateTime?         @map("sent_at")
+  errorMessage String?           @map("error_message")
+  createdAt    DateTime          @default(now()) @map("created_at")
+
+  salon    Salon     @relation(fields: [salonId], references: [id], onDelete: Cascade)
+  booking  Booking?  @relation(fields: [bookingId], references: [id])
+  customer Customer? @relation(fields: [customerId], references: [id])
+
+  @@index([bookingId])
+  @@index([phoneNumber])
+  @@index([salonId, sentAt(sort: Desc)])
+  @@map("sms_logs")
+}
+
+model EmailLog {
+  id        String              @id @default(dbgenerated("gen_random_uuid()")) @db.Uuid
+  salonId   String              @map("salon_id") @db.Uuid
+  recipient String              @db.VarChar(255)
+  subject   String              @db.VarChar(500)
+  body      String
+  status    EmailDeliveryStatus @default(queued)
+  sentAt    DateTime?           @map("sent_at")
+  createdAt DateTime            @default(now()) @map("created_at")
+
+  salon Salon @relation(fields: [salonId], references: [id], onDelete: Cascade)
+
+  @@index([salonId, sentAt(sort: Desc)])
+  @@map("email_logs")
+}
+
+model AdminUser {
+  id           String    @id @default(dbgenerated("gen_random_uuid()")) @db.Uuid
+  salonId      String?   @map("salon_id") @db.Uuid
+  email        String    @unique @db.VarChar(255)
+  passwordHash String    @map("password_hash")
+  fullName     String?   @map("full_name") @db.VarChar(200)
+  isActive     Boolean   @default(true) @map("is_active")
+  lastLoginAt  DateTime? @map("last_login_at")
+  createdAt    DateTime  @default(now()) @map("created_at")
+  updatedAt    DateTime  @updatedAt @map("updated_at")
+
+  salon     Salon?     @relation(fields: [salonId], references: [id])
+  auditLogs AuditLog[]
+  files     File[]
+
+  @@map("admin_users")
+}
+
+model AuditLog {
+  id         String   @id @default(dbgenerated("gen_random_uuid()")) @db.Uuid
+  salonId    String?  @map("salon_id") @db.Uuid
+  userId     String?  @map("user_id") @db.Uuid
+  entityType String   @map("entity_type") @db.VarChar(64)
+  entityId   String   @map("entity_id") @db.Uuid
+  action     String   @db.VarChar(64)
+  oldValues  Json?    @map("old_values")
+  newValues  Json?    @map("new_values")
+  ipAddress  String?  @map("ip_address") @db.Inet
+  createdAt  DateTime @default(now()) @map("created_at")
+
+  salon Salon?     @relation(fields: [salonId], references: [id])
+  user  AdminUser? @relation(fields: [userId], references: [id])
+
+  @@index([entityType, entityId])
+  @@index([salonId, createdAt(sort: Desc)])
+  @@map("audit_logs")
+}
+
+model File {
+  id         String              @id @default(dbgenerated("gen_random_uuid()")) @db.Uuid
+  salonId    String?             @map("salon_id") @db.Uuid
+  provider   FileStorageProvider @default(s3)
+  bucket     String              @db.VarChar(255)
+  objectKey  String              @map("object_key")
+  publicUrl  String?             @map("public_url")
+  mimeType   String?             @map("mime_type") @db.VarChar(127)
+  byteSize   BigInt?             @map("byte_size")
+  uploadedBy String?             @map("uploaded_by") @db.Uuid
+  metadata   Json                @default("{}")
+  createdAt  DateTime            @default(now()) @map("created_at")
+
+  salon    Salon?     @relation(fields: [salonId], references: [id])
+  uploader AdminUser? @relation(fields: [uploadedBy], references: [id])
+
+  @@unique([provider, bucket, objectKey])
+  @@index([salonId])
+  @@map("files")
+}
+
+model SalonBookingBlock {
+  id         String    @id @default(dbgenerated("gen_random_uuid()")) @db.Uuid
+  salonId    String    @map("salon_id") @db.Uuid
+  employeeId String?   @map("employee_id") @db.Uuid
+  blockDate  DateTime  @map("block_date") @db.Date
+  startTime  DateTime  @map("start_time") @db.Time(6)
+  endTime    DateTime  @map("end_time") @db.Time(6)
+  salonWide  Boolean   @default(false) @map("salon_wide")
+  reason     String?
+  createdAt  DateTime  @default(now()) @map("created_at")
+
+  salon    Salon     @relation(fields: [salonId], references: [id], onDelete: Cascade)
+  employee Employee? @relation(fields: [employeeId], references: [id], onDelete: Cascade)
+
+  @@index([salonId, blockDate])
+  @@map("salon_booking_blocks")
+}

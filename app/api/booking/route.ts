@@ -4,8 +4,8 @@ import { isBookingWindowBlocked } from '@/lib/bookingBlocks';
 import {
   isS3CmsConfigured,
   readCmsSiteFromS3,
-  writeCmsSiteToS3,
 } from '@/lib/s3CmsSite';
+import { persistCmsSite } from '@/lib/cms/persistCmsSite';
 import type { CmsSmsJob } from '@/lib/cmsSiteTypes';
 import { normalizePhoneE164 } from '@/lib/phone';
 import { isSlotStartAllowedForBooking } from '@/lib/bookingLeadTime';
@@ -139,7 +139,7 @@ export async function POST(req: Request) {
           const toAdd = reminderJobs.filter((j) => !existingIds.has(j.id));
           if (toAdd.length > 0) site.smsJobs = [...(site.smsJobs || []), ...toAdd];
         }
-        await writeCmsSiteToS3(site);
+        await persistCmsSite(site);
       }
     } catch (e) {
       console.error('Append booking to S3 failed:', e);
