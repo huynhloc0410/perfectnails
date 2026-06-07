@@ -69,9 +69,75 @@ async function mappedOrNew(
   return uuid;
 }
 
+/** Reuse first salon when a rolled-back txn cleared legacy_id_mappings. */
+async function resolveSalonId(client: PoolClient): Promise<string> {
+  const mapped = await getMappedUuid(client, 'salon', SALON_LEGACY_ID);
+  if (mapped) return mapped;
+
+  const existing = await client.query<{ id: string }>(
+    `SELECT id FROM salons WHERE deleted_at IS NULL ORDER BY created_at ASC LIMIT 1`
+  );
+  if (existing.rows[0]?.id) {
+    const id = existing.rows[0].id;
+    await rememberMapping(client, 'salon', SALON_LEGACY_ID, id);
+    return id;
+  }
+
+  return mappedOrNew(client, 'salon', SALON_LEGACY_ID);
+}
+
+async function resolveCategoryId(
+  client: PoolClient,
+  salonId: string,
+  legacyId: string,
+  categoryName: string
+): Promise<string> {
+  const mapped = await getMappedUuid(client, 'category', legacyId);
+  if (mapped) return mapped;
+
+  const byName = await client.query<{ id: string }>(
+    `SELECT id FROM categories
+     WHERE salon_id = $1 AND lower(trim(name)) = lower(trim($2)) AND deleted_at IS NULL
+     LIMIT 1`,
+    [salonId, categoryName]
+  );
+  if (byName.rows[0]?.id) {
+    const id = byName.rows[0].id;
+    await rememberMapping(client, 'category', legacyId, id);
+    return id;
+  }
+
+  return mappedOrNew(client, 'category', legacyId);
+}
+
+/** cmsSite may have duplicate service names with different ids — one PG row per name. */
+async function resolveServiceId(
+  client: PoolClient,
+  salonId: string,
+  legacyId: string,
+  serviceName: string
+): Promise<string> {
+  const mapped = await getMappedUuid(client, 'service', legacyId);
+  if (mapped) return mapped;
+
+  const byName = await client.query<{ id: string }>(
+    `SELECT id FROM services
+     WHERE salon_id = $1 AND lower(trim(name)) = lower(trim($2)) AND deleted_at IS NULL
+     LIMIT 1`,
+    [salonId, serviceName]
+  );
+  if (byName.rows[0]?.id) {
+    const id = byName.rows[0].id;
+    await rememberMapping(client, 'service', legacyId, id);
+    return id;
+  }
+
+  return mappedOrNew(client, 'service', legacyId);
+}
+
 async function syncSalon(client: PoolClient, site: CmsSitePayload): Promise<string> {
   const title = site.about?.title?.trim() || 'Perfect Nails & Spa';
-  const salonId = await mappedOrNew(client, 'salon', SALON_LEGACY_ID);
+  const salonId = await resolveSalonId(client);
 
   await client.query(
     `INSERT INTO salons (id, name, phone, email, address, timezone)
@@ -124,7 +190,7 @@ async function syncCategories(
   const idByName = new Map<string, string>();
   for (const [name, order] of Array.from(names.entries())) {
     const legacyId = categoryLegacyId(name);
-    const id = await mappedOrNew(client, 'category', legacyId);
+    const id = await resolveCategoryId(client, salonId, legacyId, name);
     await client.query(
       `INSERT INTO categories (id, salon_id, name, display_order, is_active)
        VALUES ($1, $2, $3, $4, TRUE)
@@ -156,7 +222,7 @@ async function syncServices(
     if (!categoryId) continue;
 
     const legacyId = s.id || `service-name:${s.name}`;
-    const id = await mappedOrNew(client, 'service', legacyId);
+    const id = await resolveServiceId(client, salonId, legacyId, s.name);
     const online = !isNonBookableAddonService(s);
 
     await client.query(
