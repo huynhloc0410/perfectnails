@@ -5,7 +5,7 @@ import Link from 'next/link';
 import InnerPageHero from '../components/InnerPageHero';
 import { ServiceMenuCard } from '../components/ServiceMenuCard';
 import type { CmsService } from '@/lib/cmsSiteTypes';
-import { fetchCmsSite } from '@/lib/cms/site-client';
+import { fetchPublicSiteData } from '@/lib/cms/site-client';
 import { SITE_BRAND_NAME, siteAbsoluteUrl } from '@/lib/site/branding';
 
 export default function Services() {
@@ -17,7 +17,7 @@ export default function Services() {
     let cancelled = false;
     (async () => {
       try {
-        const data = await fetchCmsSite();
+        const data = await fetchPublicSiteData();
         if (cancelled) return;
         if (data.configured && data.site && Array.isArray(data.site.services) && !data.error) {
           const servicesList = data.site.services as CmsService[];

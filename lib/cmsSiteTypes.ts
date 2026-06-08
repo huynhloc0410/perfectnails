@@ -1,5 +1,4 @@
 import { normalizeContactSocialMedia } from '@/lib/site/contact';
-import { pruneOrphanSmsJobs } from '@/lib/bookingReminderJobs';
 
 export interface CmsService {
   id: string;
@@ -262,29 +261,7 @@ export function normalizeCmsSite(raw: unknown): CmsSitePayload {
   const bookingBlocks = bookingBlocksRaw
     .map((x) => normalizeCmsBookingBlock(x))
     .filter((b): b is CmsBookingBlock => b !== null);
-  const smsJobsRaw = Array.isArray(o.smsJobs) ? o.smsJobs : [];
-  const smsJobs = smsJobsRaw
-    .filter((x): x is Record<string, unknown> => !!x && typeof x === 'object')
-    .map((j) => ({
-      id: String(j.id ?? ''),
-      kind:
-        j.kind === 'booking_confirmation' || j.kind === 'booking_reminder'
-          ? (j.kind as CmsSmsJobKind)
-          : 'booking_reminder',
-      status: j.status === 'pending' || j.status === 'sent' || j.status === 'error' ? (j.status as CmsSmsJobStatus) : 'pending',
-      to: String(j.to ?? ''),
-      bookingId: j.bookingId != null ? String(j.bookingId) : undefined,
-      sendAt: String(j.sendAt ?? ''),
-      sentAt: j.sentAt != null ? String(j.sentAt) : undefined,
-      messageSid: j.messageSid != null ? String(j.messageSid) : undefined,
-      lastError: j.lastError != null ? String(j.lastError) : undefined,
-      updatedAt: String(j.updatedAt ?? ''),
-      createdAt: String(j.createdAt ?? ''),
-    }))
-    .filter((j) => j.id && j.to && j.sendAt);
-
   const bookings = Array.isArray(o.bookings) ? (o.bookings as CmsBooking[]) : [];
-  const prunedSmsJobs = pruneOrphanSmsJobs(smsJobs, bookings);
 
   return {
     version: typeof o.version === 'number' ? o.version : CMS_SITE_VERSION,
@@ -294,7 +271,7 @@ export function normalizeCmsSite(raw: unknown): CmsSitePayload {
     employees: Array.isArray(o.employees) ? (o.employees as CmsEmployee[]) : [],
     bookings,
     bookingBlocks,
-    smsJobs: prunedSmsJobs,
+    smsJobs: [],
     about:
       o.about && typeof o.about === 'object'
         ? { ...base.about, ...(o.about as CmsAbout) }

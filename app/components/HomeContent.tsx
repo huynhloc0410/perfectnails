@@ -12,7 +12,7 @@ import {
   toTelHref,
 } from '@/lib/site/contact';
 import { summarizeHoursLabel } from '@/lib/site/hours';
-import { fetchCmsSite } from '@/lib/cms/site-client';
+import { fetchCmsSite, fetchPublicSiteData } from '@/lib/cms/site-client';
 import { normalizeCmsGalleryList } from '@/lib/cmsSiteTypes';
 import { galleryThumbSrc } from '@/lib/galleryDisplay';
 import { formatUsd } from '@/lib/format/currency';
@@ -69,7 +69,7 @@ export default function HomeContent() {
     let cancelled = false;
     (async () => {
       try {
-        const data = await fetchCmsSite();
+        const data = await fetchPublicSiteData();
         if (cancelled) return;
         if (data.configured && data.site && !data.error) {
           const c = data.site.contact;
@@ -85,14 +85,21 @@ export default function HomeContent() {
             const list = data.site.services as PreviewService[];
             setServicePreview(list.slice(0, 6));
           }
-          if (Array.isArray(data.site.gallery) && data.site.gallery.length > 0) {
-            const thumbs = normalizeCmsGalleryList(data.site.gallery)
-              .slice(0, 4)
-              .map(galleryThumbSrc);
-            setGalleryPreview(thumbs);
-          }
-          return;
         }
+        const galleryData = await fetchCmsSite();
+        if (cancelled) return;
+        if (
+          galleryData.configured &&
+          galleryData.site &&
+          Array.isArray(galleryData.site.gallery) &&
+          galleryData.site.gallery.length > 0
+        ) {
+          const thumbs = normalizeCmsGalleryList(galleryData.site.gallery)
+            .slice(0, 4)
+            .map(galleryThumbSrc);
+          setGalleryPreview(thumbs);
+        }
+        if (data.configured && data.site) return;
       } catch {
         /* local fallback */
       }

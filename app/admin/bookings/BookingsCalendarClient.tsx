@@ -13,8 +13,6 @@ import {
 } from '@/lib/admin/week-calendar';
 import { adminBookingLegendSwatchClasses } from '@/lib/booking/booking-service-kind';
 import { groupBookingsByStartTime } from '@/lib/booking/time-display';
-import type { CmsSmsJob } from '@/lib/cmsSiteTypes';
-import { removeSmsJobsForBooking } from '@/lib/bookingReminderJobs';
 import { BookingDetailCard } from './components/BookingDetailCard';
 import { WeeklyHeader } from './components/WeeklyHeader';
 import { WeekGrid } from './components/WeekGrid';
@@ -247,8 +245,6 @@ export function BookingsCalendarClient() {
         return;
       }
       const s = data.site as Record<string, unknown>;
-      const existingSmsJobs = Array.isArray(s.smsJobs) ? (s.smsJobs as CmsSmsJob[]) : [];
-      const nextSmsJobs = removeSmsJobsForBooking(existingSmsJobs, id);
       const put = await fetch('/api/cms/site', {
         method: 'PUT',
         credentials: 'same-origin',
@@ -258,7 +254,7 @@ export function BookingsCalendarClient() {
           services: Array.isArray(s.services) ? s.services : [],
           employees: Array.isArray(s.employees) ? s.employees : [],
           bookings: nextBookings,
-          smsJobs: nextSmsJobs,
+          smsJobs: [],
           about:
             s.about && typeof s.about === 'object'
               ? s.about

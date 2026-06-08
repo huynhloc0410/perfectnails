@@ -9,12 +9,10 @@ import {
 import { isPublicBookingWriteToPostgres } from '@/lib/db/config';
 import { isS3CmsConfigured, readCmsSiteFromS3 } from '@/lib/s3CmsSite';
 import { persistCmsSite } from '@/lib/cms/persistCmsSite';
-import type { CmsSmsJob } from '@/lib/cmsSiteTypes';
 import { normalizePhoneE164 } from '@/lib/phone';
 import { isSlotStartAllowedForBooking } from '@/lib/bookingLeadTime';
 import { isNonBookableAddonService } from '@/lib/booking/serviceEmployeeMatch';
 import { hasBookingCapacity } from '@/lib/booking/slotAvailability';
-import { buildBookingReminderJobs, parseReminderHoursBefore } from '@/lib/bookingReminderJobs';
 import { bookingConfirmationSms } from '@/lib/smsTemplates';
 import { isTwilioConfigured, sendSms } from '@/lib/twilioServer';
 
@@ -66,7 +64,6 @@ export async function POST(req: Request) {
     ...(notes ? { notes } : {}),
   };
 
-  const now = nowForLead;
   const phoneE164 = normalizePhoneE164(phone);
   const twilioReady = isTwilioConfigured();
   const confirmationBody = bookingConfirmationSms({
@@ -74,15 +71,6 @@ export async function POST(req: Request) {
     isoDate: booking.date,
     service: booking.service,
   });
-
-  const reminderJobs: CmsSmsJob[] = phoneE164
-    ? buildBookingReminderJobs({
-        bookingId: booking.id,
-        phoneE164,
-        appointmentAt: bookingDate,
-        now,
-      })
-    : [];
 
   const snapshot = await loadBookingSiteSnapshot();
 
@@ -138,7 +126,6 @@ export async function POST(req: Request) {
         booking,
         phoneE164,
         serviceLegacyId: svcRow.id,
-        reminderJobs,
       });
     } catch (e) {
       const detail = e instanceof Error ? e.message : String(e);
@@ -150,11 +137,7 @@ export async function POST(req: Request) {
       const site = await readCmsSiteFromS3();
       if (site) {
         site.bookings = [...site.bookings, booking];
-        if (reminderJobs.length > 0) {
-          const existingIds = new Set((site.smsJobs ?? []).map((j) => j.id));
-          const toAdd = reminderJobs.filter((j) => !existingIds.has(j.id));
-          if (toAdd.length > 0) site.smsJobs = [...(site.smsJobs || []), ...toAdd];
-        }
+        site.smsJobs = [];
         await persistCmsSite(site);
       }
     } catch (e) {
@@ -201,23 +184,10 @@ export async function POST(req: Request) {
     sms: {
       confirmation,
       reminders: {
-        scheduledCount: reminderJobs.length,
-        jobs: reminderJobs.map((j) => ({
-          id: j.id,
-          sendAt: j.sendAt,
-          hoursBefore: parseReminderHoursBefore(j.id) ?? undefined,
-        })),
-        persisted: Boolean(
-          reminderJobs.length > 0 && (writeToPostgres || isS3CmsConfigured())
-        ),
-        reason:
-          reminderJobs.length === 0
-            ? !phoneE164
-              ? 'invalid_phone'
-              : 'all_reminder_times_in_past'
-            : !writeToPostgres && !isS3CmsConfigured()
-              ? 'no_persistent_storage'
-              : undefined,
+        scheduledCount: 0,
+        jobs: [],
+        persisted: false,
+        reason: 'manual_reminders',
       },
     },
   });

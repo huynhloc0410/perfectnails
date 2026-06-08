@@ -3,7 +3,7 @@
 import { useState, useEffect } from 'react';
 import InnerPageHero from '../components/InnerPageHero';
 import Link from 'next/link';
-import { fetchCmsSite } from '@/lib/cms/site-client';
+import { fetchPublicSiteData } from '@/lib/cms/site-client';
 import { SITE_BRAND_NAME } from '@/lib/site/branding';
 
 export default function About() {
@@ -13,7 +13,7 @@ export default function About() {
     let cancelled = false;
     (async () => {
       try {
-        const data = await fetchCmsSite();
+        const data = await fetchPublicSiteData();
         if (cancelled) return;
         if (data.configured && data.site?.about && !data.error) {
           const a = data.site.about;

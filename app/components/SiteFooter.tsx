@@ -2,7 +2,7 @@
 
 import Link from 'next/link';
 import { useCallback, useEffect, useRef, useState } from 'react';
-import { fetchCmsSite, SITE_DATA_UPDATED_EVENT } from '@/lib/cms/site-client';
+import { fetchPublicSiteData, SITE_DATA_UPDATED_EVENT } from '@/lib/cms/site-client';
 import {
   SITE_DEFAULT_ADDRESS,
   SITE_PHONE_DISPLAY,
@@ -37,7 +37,7 @@ export default function SiteFooter() {
   const refreshContact = useCallback(async () => {
     migrateLegacyStoredContactAddress();
     try {
-      const data = await fetchCmsSite();
+      const data = await fetchPublicSiteData();
       if (!mountedRef.current) return;
       if (data.configured && data.site?.contact && !data.error) {
         const c = data.site.contact;

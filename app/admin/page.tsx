@@ -15,10 +15,8 @@ import {
   normalizeCmsGalleryList,
   type CmsBookingBlock,
   type CmsGalleryImage,
-  type CmsSmsJob,
 } from '@/lib/cmsSiteTypes';
 import { galleryHasDedicatedThumb, galleryThumbSrc } from '@/lib/galleryDisplay';
-import { pruneOrphanSmsJobs } from '@/lib/bookingReminderJobs';
 
 interface Service {
   id: string;
@@ -90,6 +88,9 @@ export default function AdminPage() {
   const [schedulingConfigSource, setSchedulingConfigSource] = useState<
     'postgres' | 'cms' | 'local'
   >('cms');
+  const [contentConfigSource, setContentConfigSource] = useState<'postgres' | 'cms' | 'local'>(
+    'cms'
+  );
 
   // Authentication is handled by admin layout
 
@@ -110,14 +111,14 @@ export default function AdminPage() {
     const nextGallery = partial.gallery ?? galleryImages;
     const nextBookingBlocks = partial.bookingBlocks ?? bookingBlocks;
     const schedulingFromPg = schedulingConfigSource === 'postgres';
+    const contentFromPg = contentConfigSource === 'postgres';
     const schedulingTouched =
       partial.services !== undefined ||
       partial.employees !== undefined ||
       partial.bookingBlocks !== undefined;
-    const contentTouched =
-      partial.about !== undefined ||
-      partial.contact !== undefined ||
-      partial.gallery !== undefined;
+    const aboutContactTouched =
+      partial.about !== undefined || partial.contact !== undefined;
+    const galleryTouched = partial.gallery !== undefined;
 
     if (!useCms) {
       if (partial.services !== undefined) {
@@ -171,13 +172,42 @@ export default function AdminPage() {
       if (partial.bookingBlocks !== undefined) {
         window.dispatchEvent(new Event(SITE_DATA_UPDATED_EVENT));
       }
-      if (!contentTouched && !(schedulingTouched && !schedulingFromPg)) {
+      if (!aboutContactTouched && !galleryTouched && !(schedulingTouched && !schedulingFromPg)) {
+        return true;
+      }
+    }
+
+    if (contentFromPg && aboutContactTouched) {
+      const contentRes = await fetch('/api/admin/site-content', {
+        method: 'PUT',
+        credentials: 'same-origin',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({
+          about: nextAbout,
+          contact: nextContact,
+        }),
+      });
+      if (!contentRes.ok) {
+        const msg = await contentRes.text().catch(() => '');
+        alert(`Could not save about/contact (${contentRes.status}). ${msg || 'Check DATABASE_URL.'}`);
+        return false;
+      }
+      if (partial.contact !== undefined) {
+        try {
+          localStorage.setItem('admin-contact', JSON.stringify(nextContact));
+        } catch {
+          /* ignore */
+        }
+        window.dispatchEvent(new Event(SITE_DATA_UPDATED_EVENT));
+      }
+      if (!galleryTouched && !(schedulingTouched && !schedulingFromPg)) {
         return true;
       }
     }
 
     const needsS3 =
-      contentTouched ||
+      galleryTouched ||
+      (aboutContactTouched && !contentFromPg) ||
       (schedulingTouched && !schedulingFromPg) ||
       (!schedulingFromPg && partial.bookings !== undefined);
 
@@ -185,11 +215,12 @@ export default function AdminPage() {
       return true;
     }
 
-    let smsJobsPayload: CmsSmsJob[] = [];
     let s3Services = nextServices;
     let s3Employees = nextEmployees;
     let s3Bookings = nextBookings;
     let s3Blocks = nextBookingBlocks;
+    let s3About = nextAbout;
+    let s3Contact = nextContact;
 
     try {
       const cr = await fetch('/api/cms/site', { credentials: 'same-origin' });
@@ -199,23 +230,22 @@ export default function AdminPage() {
         alert('Could not load site data before saving. Try again in a moment.');
         return false;
       }
-      const rawJobs = Array.isArray((s as { smsJobs?: unknown[] }).smsJobs)
-        ? ((s as { smsJobs: unknown[] }).smsJobs as CmsSmsJob[])
-        : [];
-      smsJobsPayload = pruneOrphanSmsJobs(
-        rawJobs,
-        schedulingFromPg ? (Array.isArray(s.bookings) ? s.bookings : []) : nextBookings
-      );
       if (schedulingFromPg) {
         s3Services = Array.isArray(s.services) ? (s.services as Service[]) : nextServices;
         s3Employees = Array.isArray(s.employees) ? (s.employees as Employee[]) : nextEmployees;
         s3Bookings = Array.isArray(s.bookings) ? (s.bookings as Booking[]) : [];
         s3Blocks = coerceBookingBlocksList((s as { bookingBlocks?: unknown[] }).bookingBlocks);
       }
+      if (contentFromPg) {
+        if (s.about && typeof s.about === 'object') {
+          s3About = s.about as typeof aboutContent;
+        }
+        if (s.contact && typeof s.contact === 'object') {
+          s3Contact = s.contact as typeof contactContent;
+        }
+      }
     } catch {
-      alert(
-        'Could not load the latest site snapshot before saving. SMS job queue must not be wiped — save aborted.',
-      );
+      alert('Could not load the latest site snapshot before saving. Try again in a moment.');
       return false;
     }
 
@@ -228,10 +258,10 @@ export default function AdminPage() {
         services: s3Services,
         employees: s3Employees,
         bookings: s3Bookings,
-        smsJobs: smsJobsPayload,
+        smsJobs: [],
         bookingBlocks: s3Blocks,
-        about: nextAbout,
-        contact: nextContact,
+        about: s3About,
+        contact: s3Contact,
         gallery: nextGallery,
       }),
     });
@@ -281,9 +311,11 @@ export default function AdminPage() {
       try {
         let loadedSchedulingFromPg = false;
         let loadedBookingsFromPg = false;
+        let loadedContentFromPg = false;
 
-        const [configRes, bookingsRes, cmsRes] = await Promise.all([
+        const [configRes, contentRes, bookingsRes, cmsRes] = await Promise.all([
           fetch('/api/admin/site-config', { credentials: 'same-origin', cache: 'no-store' }),
+          fetch('/api/admin/site-content', { credentials: 'same-origin', cache: 'no-store' }),
           fetch('/api/admin/bookings', { credentials: 'same-origin', cache: 'no-store' }),
           fetch('/api/cms/site', { credentials: 'same-origin', cache: 'no-store' }),
         ]);
@@ -301,6 +333,28 @@ export default function AdminPage() {
             }
             if (Array.isArray(configData.bookingBlocks)) {
               setBookingBlocks(coerceBookingBlocksList(configData.bookingBlocks));
+            }
+          }
+        }
+
+        if (!cancelled && contentRes.ok) {
+          const contentData = await contentRes.json();
+          if (contentData.source === 'postgres') {
+            setContentConfigSource('postgres');
+            loadedContentFromPg = true;
+            if (contentData.about && typeof contentData.about === 'object') {
+              setAboutContent((prev) => ({ ...prev, ...contentData.about }));
+            }
+            if (contentData.contact && typeof contentData.contact === 'object') {
+              const c = contentData.contact as typeof contactContent;
+              setContactContent((prev) => ({
+                ...prev,
+                ...c,
+                socialMedia: normalizeContactSocialMedia({
+                  ...prev.socialMedia,
+                  ...(c.socialMedia || {}),
+                }),
+              }));
             }
           }
         }
@@ -329,25 +383,29 @@ export default function AdminPage() {
           if (!loadedBookingsFromPg && Array.isArray(s.bookings)) {
             setBookings(s.bookings as Booking[]);
           }
-          if (s.about && typeof s.about === 'object') {
-            setAboutContent((prev) => ({ ...prev, ...s.about }));
-          }
-          if (s.contact && typeof s.contact === 'object') {
-            const c = s.contact as typeof contactContent;
-            setContactContent((prev) => ({
-              ...prev,
-              ...c,
-              socialMedia: normalizeContactSocialMedia({
-                ...prev.socialMedia,
-                ...(c.socialMedia || {}),
-              }),
-            }));
+          if (!loadedContentFromPg) {
+            setContentConfigSource('cms');
+            if (s.about && typeof s.about === 'object') {
+              setAboutContent((prev) => ({ ...prev, ...s.about }));
+            }
+            if (s.contact && typeof s.contact === 'object') {
+              const c = s.contact as typeof contactContent;
+              setContactContent((prev) => ({
+                ...prev,
+                ...c,
+                socialMedia: normalizeContactSocialMedia({
+                  ...prev.socialMedia,
+                  ...(c.socialMedia || {}),
+                }),
+              }));
+            }
           }
           if (Array.isArray(s.gallery) && s.gallery.length > 0) {
             setGalleryImages(normalizeCmsGalleryList(s.gallery));
           }
         } else {
           setSchedulingConfigSource('local');
+          setContentConfigSource('local');
           const savedServices = localStorage.getItem('admin-services');
           const savedBookings = localStorage.getItem('admin-bookings');
           const savedEmployees = localStorage.getItem('admin-employees');
@@ -450,7 +508,7 @@ export default function AdminPage() {
             services: Array.isArray(s.services) ? s.services : [],
             employees: Array.isArray(s.employees) ? s.employees : [],
             bookings: Array.isArray(s.bookings) ? s.bookings : [],
-            smsJobs: Array.isArray(s.smsJobs) ? s.smsJobs : [],
+            smsJobs: [],
             bookingBlocks: Array.isArray(s.bookingBlocks) ? s.bookingBlocks : [],
             about: s.about && typeof s.about === 'object' ? s.about : { title: '', content: '' },
             contact:

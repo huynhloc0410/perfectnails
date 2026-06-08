@@ -6,7 +6,7 @@ import InnerPageHero from './InnerPageHero';
 import JsonLd from './JsonLd';
 import { ServiceMenuCard } from './ServiceMenuCard';
 import type { CmsService } from '@/lib/cmsSiteTypes';
-import { fetchCmsSite } from '@/lib/cms/site-client';
+import { fetchPublicSiteData } from '@/lib/cms/site-client';
 import { filterServicesForLandingSlug } from '@/lib/site/service-landing-filter';
 import { readLocalStorageJson } from '@/lib/storage/local-json';
 import { SITE_BRAND_NAME, SITE_PUBLIC_URL, SITE_SCHEMA_POSTAL_ADDRESS, siteAbsoluteUrl } from '@/lib/site/branding';
@@ -73,7 +73,7 @@ export default function ServiceLandingBody({ slug }: { slug: ServiceSlug }) {
     let cancelled = false;
     (async () => {
       try {
-        const data = await fetchCmsSite();
+        const data = await fetchPublicSiteData();
         if (cancelled) return;
         if (data.configured && data.site && Array.isArray(data.site.services) && !data.error) {
           setServices(data.site.services as CmsService[]);

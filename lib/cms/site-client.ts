@@ -37,6 +37,36 @@ export async function fetchCmsSite(): Promise<CmsSiteApiResponse> {
   return r.json() as Promise<CmsSiteApiResponse>;
 }
 
+/** Public services, about, contact: Postgres when configured, else cms/S3. */
+export async function fetchPublicSiteData(): Promise<CmsSiteApiResponse> {
+  try {
+    const pg = await fetch('/api/public/site-data', {
+      credentials: 'same-origin',
+      cache: 'no-store',
+    });
+    if (pg.ok) {
+      const data = (await pg.json()) as CmsSiteApiResponse;
+      if (data.configured && data.site) {
+        return data;
+      }
+    }
+  } catch {
+    /* fall through */
+  }
+  const cms = await fetchCmsSite();
+  if (cms.site) {
+    return {
+      ...cms,
+      site: {
+        services: cms.site.services,
+        about: cms.site.about,
+        contact: cms.site.contact,
+      },
+    };
+  }
+  return cms;
+}
+
 /** Public booking page: Postgres scheduling data when configured, else cms/S3. */
 export async function fetchBookingSiteData(): Promise<CmsSiteApiResponse> {
   try {

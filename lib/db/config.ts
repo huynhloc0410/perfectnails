@@ -48,6 +48,28 @@ export function isAdminSiteConfigFromPostgres(): boolean {
 }
 
 /**
+ * Public services, about, and contact read from Postgres when DATABASE_URL is set.
+ * Set CMS_PUBLIC_CONTENT_SOURCE=s3 to keep reading from cmsSite JSON.
+ */
+export function isPublicContentFromPostgres(): boolean {
+  if (!isDatabaseConfigured()) return false;
+  const flag = runtimeEnv('CMS_PUBLIC_CONTENT_SOURCE')?.trim().toLowerCase();
+  if (flag === 's3' || flag === 'cms') return false;
+  return true;
+}
+
+/**
+ * Admin about and contact read/write from Postgres when DATABASE_URL is set.
+ * Set CMS_ADMIN_CONTENT_SOURCE=s3 to keep using cmsSite JSON.
+ */
+export function isAdminContentFromPostgres(): boolean {
+  if (!isDatabaseConfigured()) return false;
+  const flag = runtimeEnv('CMS_ADMIN_CONTENT_SOURCE')?.trim().toLowerCase();
+  if (flag === 's3' || flag === 'cms') return false;
+  return true;
+}
+
+/**
  * New online bookings write to Postgres first when DATABASE_URL is set.
  * Set CMS_PUBLIC_BOOKING_WRITE=s3 to keep appending bookings to cmsSite JSON.
  */

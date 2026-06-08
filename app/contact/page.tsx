@@ -7,7 +7,7 @@ import {
   migrateLegacyStoredContactAddress,
   normalizeContactSocialMedia,
 } from '@/lib/site/contact';
-import { fetchCmsSite } from '@/lib/cms/site-client';
+import { fetchPublicSiteData } from '@/lib/cms/site-client';
 import { SITE_BRAND_NAME } from '@/lib/site/branding';
 
 interface ContactContent {
@@ -36,7 +36,7 @@ export default function Contact() {
     let cancelled = false;
     (async () => {
       try {
-        const data = await fetchCmsSite();
+        const data = await fetchPublicSiteData();
         if (cancelled) return;
         if (data.configured && data.site?.contact && !data.error) {
           const c = data.site.contact;

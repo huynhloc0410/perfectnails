@@ -1,6 +1,6 @@
 import { randomUUID } from 'crypto';
 import type { PoolClient } from 'pg';
-import type { CmsBooking, CmsSmsJob } from '@/lib/cmsSiteTypes';
+import type { CmsBooking } from '@/lib/cmsSiteTypes';
 import {
   customerLegacyId,
   customerPhoneDigits10,
@@ -10,8 +10,6 @@ import { getMappedUuid, mappedOrNew, rememberMapping } from '@/lib/db/legacyMapp
 import { getDefaultSalonId } from '@/lib/db/salon';
 import { salonAppointmentDate } from '@/lib/db/timezone';
 import { withPgClient } from '@/lib/db/pool';
-import { bookingReminderSms } from '@/lib/smsTemplates';
-import { parseReminderHoursBefore } from '@/lib/bookingReminderJobs';
 
 function customerDisplayName(name: string): string {
   const n = name.trim();
@@ -117,14 +115,13 @@ export type CreateOnlineBookingParams = {
   booking: CmsBooking;
   phoneE164: string | null;
   serviceLegacyId?: string;
-  reminderJobs: CmsSmsJob[];
 };
 
-/** Insert online booking + reminders into PostgreSQL (Phase 3 write path). */
+/** Insert online booking into PostgreSQL (Phase 3 write path). */
 export async function createOnlineBookingInPostgres(
   params: CreateOnlineBookingParams
 ): Promise<void> {
-  const { booking, phoneE164, serviceLegacyId, reminderJobs } = params;
+  const { booking, serviceLegacyId } = params;
 
   const legacyId = booking.id.trim();
   const start = new Date(booking.date);
@@ -198,34 +195,6 @@ export async function createOnlineBookingInPostgres(
             [randomUUID(), bsId, empPgId]
           );
         }
-      }
-
-      for (const job of reminderJobs) {
-        const hoursBefore = parseReminderHoursBefore(job.id);
-        const body = bookingReminderSms({
-          name: booking.name,
-          isoDate: booking.date,
-          service: booking.service,
-          hoursBefore: hoursBefore === 24 || hoursBefore === 2 ? hoursBefore : undefined,
-        });
-        const sendAt = new Date(job.sendAt);
-        await client.query(
-          `INSERT INTO sms_logs (
-             id, salon_id, booking_id, customer_id, phone_number,
-             message_type, message_body, status, scheduled_send_at, legacy_job_id, created_at
-           ) VALUES ($1, $2, $3, $4, $5, 'reminder', $6, 'queued', $7, $8, NOW())
-           ON CONFLICT (legacy_job_id) WHERE legacy_job_id IS NOT NULL DO NOTHING`,
-          [
-            randomUUID(),
-            salonId,
-            bookingId,
-            customerId,
-            job.to,
-            body,
-            Number.isFinite(sendAt.getTime()) ? sendAt : null,
-            job.id,
-          ]
-        );
       }
 
       await client.query('COMMIT');

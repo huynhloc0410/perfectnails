@@ -3,7 +3,7 @@
 import Link from 'next/link';
 import { usePathname } from 'next/navigation';
 import { useCallback, useEffect, useState } from 'react';
-import { fetchCmsSite } from '@/lib/cms/site-client';
+import { fetchPublicSiteData } from '@/lib/cms/site-client';
 import {
   SITE_PHONE_DISPLAY,
   SITE_PHONE_HREF,
@@ -21,7 +21,7 @@ export default function MobileStickyCta() {
   const refresh = useCallback(async () => {
     migrateLegacyStoredContactAddress();
     try {
-      const data = await fetchCmsSite();
+      const data = await fetchPublicSiteData();
       if (data.configured && data.site?.contact && !data.error) {
         const c = data.site.contact;
         if (c.phone) {
