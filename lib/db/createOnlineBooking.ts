@@ -117,8 +117,6 @@ export type CreateOnlineBookingParams = {
   booking: CmsBooking;
   phoneE164: string | null;
   serviceLegacyId?: string;
-  confirmationBody?: string;
-  confirmationSid?: string;
   reminderJobs: CmsSmsJob[];
 };
 
@@ -126,8 +124,7 @@ export type CreateOnlineBookingParams = {
 export async function createOnlineBookingInPostgres(
   params: CreateOnlineBookingParams
 ): Promise<void> {
-  const { booking, phoneE164, serviceLegacyId, confirmationBody, confirmationSid, reminderJobs } =
-    params;
+  const { booking, phoneE164, serviceLegacyId, reminderJobs } = params;
 
   const legacyId = booking.id.trim();
   const start = new Date(booking.date);
@@ -156,7 +153,16 @@ export async function createOnlineBookingInPostgres(
            id, salon_id, customer_id, booking_number, status,
            appointment_date, start_datetime, end_datetime, notes,
            subtotal, total
-         ) VALUES ($1, $2, $3, $4, 'confirmed', $5, $6, $7, $8, $9, $9)`,
+         ) VALUES ($1, $2, $3, $4, 'confirmed', $5, $6, $7, $8, $9, $9)
+         ON CONFLICT (id) DO UPDATE SET
+           customer_id = EXCLUDED.customer_id,
+           appointment_date = EXCLUDED.appointment_date,
+           start_datetime = EXCLUDED.start_datetime,
+           end_datetime = EXCLUDED.end_datetime,
+           notes = EXCLUDED.notes,
+           subtotal = EXCLUDED.subtotal,
+           total = EXCLUDED.total,
+           updated_at = NOW()`,
         [
           bookingId,
           salonId,
@@ -174,7 +180,12 @@ export async function createOnlineBookingInPostgres(
         `INSERT INTO booking_services (
            id, booking_id, service_id, service_name,
            price_at_booking, duration_at_booking
-         ) VALUES ($1, $2, $3, $4, $5, $6)`,
+         ) VALUES ($1, $2, $3, $4, $5, $6)
+         ON CONFLICT (id) DO UPDATE SET
+           service_id = EXCLUDED.service_id,
+           service_name = EXCLUDED.service_name,
+           price_at_booking = EXCLUDED.price_at_booking,
+           duration_at_booking = EXCLUDED.duration_at_booking`,
         [bsId, bookingId, svc.id, booking.service.trim(), price, duration]
       );
 
@@ -187,24 +198,6 @@ export async function createOnlineBookingInPostgres(
             [randomUUID(), bsId, empPgId]
           );
         }
-      }
-
-      if (confirmationBody && phoneE164) {
-        await client.query(
-          `INSERT INTO sms_logs (
-             id, salon_id, booking_id, customer_id, phone_number,
-             message_type, message_body, twilio_sid, status, sent_at
-           ) VALUES ($1, $2, $3, $4, $5, 'confirmation', $6, $7, 'sent', NOW())`,
-          [
-            randomUUID(),
-            salonId,
-            bookingId,
-            customerId,
-            phoneE164,
-            confirmationBody,
-            confirmationSid ?? null,
-          ]
-        );
       }
 
       for (const job of reminderJobs) {
@@ -221,7 +214,7 @@ export async function createOnlineBookingInPostgres(
              id, salon_id, booking_id, customer_id, phone_number,
              message_type, message_body, status, scheduled_send_at, legacy_job_id, created_at
            ) VALUES ($1, $2, $3, $4, $5, 'reminder', $6, 'queued', $7, $8, NOW())
-           ON CONFLICT (legacy_job_id) DO NOTHING`,
+           ON CONFLICT (legacy_job_id) WHERE legacy_job_id IS NOT NULL DO NOTHING`,
           [
             randomUUID(),
             salonId,
@@ -240,5 +233,43 @@ export async function createOnlineBookingInPostgres(
       await client.query('ROLLBACK');
       throw e;
     }
+  });
+}
+
+/** Log confirmation SMS after Twilio send (booking must already exist in Postgres). */
+export async function recordBookingConfirmationSms(params: {
+  bookingLegacyId: string;
+  phoneE164: string;
+  confirmationBody: string;
+  confirmationSid?: string;
+}): Promise<void> {
+  const legacyId = params.bookingLegacyId.trim();
+  await withPgClient(async (client) => {
+    const salonId = await getDefaultSalonId(client);
+    const bookingId = await getMappedUuid(client, 'booking', legacyId);
+    if (!bookingId) return;
+
+    const row = await client.query<{ customer_id: string }>(
+      `SELECT customer_id FROM bookings WHERE id = $1`,
+      [bookingId]
+    );
+    const customerId = row.rows[0]?.customer_id;
+    if (!customerId) return;
+
+    await client.query(
+      `INSERT INTO sms_logs (
+         id, salon_id, booking_id, customer_id, phone_number,
+         message_type, message_body, twilio_sid, status, sent_at
+       ) VALUES ($1, $2, $3, $4, $5, 'confirmation', $6, $7, 'sent', NOW())`,
+      [
+        randomUUID(),
+        salonId,
+        bookingId,
+        customerId,
+        params.phoneE164,
+        params.confirmationBody,
+        params.confirmationSid ?? null,
+      ]
+    );
   });
 }

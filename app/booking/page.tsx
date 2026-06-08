@@ -498,6 +498,13 @@ export default function Booking() {
         return;
       }
 
+      if (response.status === 502 || result?.error === 'save_failed') {
+        alert(
+          'We could not save your appointment. Please try again or call the salon to book.',
+        );
+        return;
+      }
+
       if (result.success) {
         const savedBookings = localStorage.getItem('admin-bookings') || '[]';
         const bookingsList = JSON.parse(savedBookings);

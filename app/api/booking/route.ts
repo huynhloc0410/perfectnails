@@ -2,7 +2,10 @@ import { NextResponse } from 'next/server';
 import type { CmsBooking } from '@/lib/cmsSiteTypes';
 import { loadBookingSiteSnapshot } from '@/lib/booking/bookingSiteLoader';
 import { isBookingWindowBlocked } from '@/lib/bookingBlocks';
-import { createOnlineBookingInPostgres } from '@/lib/db/createOnlineBooking';
+import {
+  createOnlineBookingInPostgres,
+  recordBookingConfirmationSms,
+} from '@/lib/db/createOnlineBooking';
 import { isPublicBookingWriteToPostgres } from '@/lib/db/config';
 import { isS3CmsConfigured, readCmsSiteFromS3 } from '@/lib/s3CmsSite';
 import { persistCmsSite } from '@/lib/cms/persistCmsSite';
@@ -126,26 +129,8 @@ export async function POST(req: Request) {
     return NextResponse.json({ success: false, error: 'no_capacity' }, { status: 409 });
   }
 
-  let confirmation: { attempted: boolean; sent: boolean; messageSid?: string; error?: string } = {
-    attempted: false,
-    sent: false,
-  };
-
-  if (twilioReady && phoneE164) {
-    confirmation.attempted = true;
-    try {
-      const out = await sendSms({ to: phoneE164, body: confirmationBody });
-      confirmation.sent = true;
-      confirmation.messageSid = out.sid;
-    } catch (e) {
-      confirmation.sent = false;
-      confirmation.error = e instanceof Error ? e.message : 'Failed to send confirmation SMS';
-      console.error('Confirmation SMS failed:', e);
-    }
-  }
-
   const writeToPostgres = isPublicBookingWriteToPostgres();
-  let writeSource: 'postgres' | 's3' = writeToPostgres ? 'postgres' : 's3';
+  const writeSource: 'postgres' | 's3' = writeToPostgres ? 'postgres' : 's3';
 
   if (writeToPostgres) {
     try {
@@ -153,12 +138,11 @@ export async function POST(req: Request) {
         booking,
         phoneE164,
         serviceLegacyId: svcRow.id,
-        confirmationBody: confirmation.sent ? confirmationBody : undefined,
-        confirmationSid: confirmation.messageSid,
         reminderJobs,
       });
     } catch (e) {
-      console.error('createOnlineBookingInPostgres failed:', e);
+      const detail = e instanceof Error ? e.message : String(e);
+      console.error('createOnlineBookingInPostgres failed:', detail, e);
       return NextResponse.json({ success: false, error: 'save_failed' }, { status: 502 });
     }
   } else if (isS3CmsConfigured()) {
@@ -175,6 +159,37 @@ export async function POST(req: Request) {
       }
     } catch (e) {
       console.error('Append booking to S3 failed:', e);
+      return NextResponse.json({ success: false, error: 'save_failed' }, { status: 502 });
+    }
+  }
+
+  let confirmation: { attempted: boolean; sent: boolean; messageSid?: string; error?: string } = {
+    attempted: false,
+    sent: false,
+  };
+
+  if (twilioReady && phoneE164) {
+    confirmation.attempted = true;
+    try {
+      const out = await sendSms({ to: phoneE164, body: confirmationBody });
+      confirmation.sent = true;
+      confirmation.messageSid = out.sid;
+      if (writeToPostgres) {
+        try {
+          await recordBookingConfirmationSms({
+            bookingLegacyId: booking.id,
+            phoneE164,
+            confirmationBody,
+            confirmationSid: out.sid,
+          });
+        } catch (e) {
+          console.error('recordBookingConfirmationSms failed:', e);
+        }
+      }
+    } catch (e) {
+      confirmation.sent = false;
+      confirmation.error = e instanceof Error ? e.message : 'Failed to send confirmation SMS';
+      console.error('Confirmation SMS failed:', e);
     }
   }
 
