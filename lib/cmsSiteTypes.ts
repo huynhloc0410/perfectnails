@@ -1,4 +1,5 @@
 import { normalizeContactSocialMedia } from '@/lib/site/contact';
+import { pruneOrphanSmsJobs } from '@/lib/bookingReminderJobs';
 
 export interface CmsService {
   id: string;
@@ -282,15 +283,18 @@ export function normalizeCmsSite(raw: unknown): CmsSitePayload {
     }))
     .filter((j) => j.id && j.to && j.sendAt);
 
+  const bookings = Array.isArray(o.bookings) ? (o.bookings as CmsBooking[]) : [];
+  const prunedSmsJobs = pruneOrphanSmsJobs(smsJobs, bookings);
+
   return {
     version: typeof o.version === 'number' ? o.version : CMS_SITE_VERSION,
     services: Array.isArray(o.services)
       ? o.services.map((x) => normalizeCmsService(x))
       : [],
     employees: Array.isArray(o.employees) ? (o.employees as CmsEmployee[]) : [],
-    bookings: Array.isArray(o.bookings) ? (o.bookings as CmsBooking[]) : [],
+    bookings,
     bookingBlocks,
-    smsJobs,
+    smsJobs: prunedSmsJobs,
     about:
       o.about && typeof o.about === 'object'
         ? { ...base.about, ...(o.about as CmsAbout) }

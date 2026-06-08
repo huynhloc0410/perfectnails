@@ -1,4 +1,4 @@
-import type { CmsSmsJob } from '@/lib/cmsSiteTypes';
+import type { CmsBooking, CmsSmsJob } from '@/lib/cmsSiteTypes';
 
 const MS_PER_HOUR = 60 * 60 * 1000;
 
@@ -53,4 +53,28 @@ export function buildBookingReminderJobs(params: {
   }
 
   return jobs;
+}
+
+/** Drop reminder/confirmation jobs tied to a deleted booking. */
+export function removeSmsJobsForBooking(smsJobs: CmsSmsJob[], bookingId: string): CmsSmsJob[] {
+  const id = bookingId.trim();
+  if (!id) return smsJobs;
+  return smsJobs.filter((j) => {
+    if (j.bookingId === id) return false;
+    if (j.id.startsWith(`${id}:`)) return false;
+    return true;
+  });
+}
+
+/** Remove smsJobs whose bookingId (or reminder id prefix) no longer exists in bookings. */
+export function pruneOrphanSmsJobs(smsJobs: CmsSmsJob[], bookings: CmsBooking[]): CmsSmsJob[] {
+  const bookingIds = new Set(bookings.map((b) => b.id));
+  return smsJobs.filter((j) => {
+    if (j.bookingId && !bookingIds.has(j.bookingId)) return false;
+    if (j.kind === 'booking_reminder') {
+      const bid = j.bookingId ?? j.id.split(':reminder:')[0];
+      if (bid && !bookingIds.has(bid)) return false;
+    }
+    return true;
+  });
 }

@@ -2,7 +2,7 @@ import { NextRequest, NextResponse } from 'next/server';
 import { isS3CmsConfigured, readCmsSiteFromS3 } from '@/lib/s3CmsSite';
 import { persistCmsSite } from '@/lib/cms/persistCmsSite';
 import type { CmsSmsJob } from '@/lib/cmsSiteTypes';
-import { parseReminderHoursBefore } from '@/lib/bookingReminderJobs';
+import { parseReminderHoursBefore, pruneOrphanSmsJobs } from '@/lib/bookingReminderJobs';
 import { bookingReminderSms } from '@/lib/smsTemplates';
 import { isTwilioConfigured, sendSms } from '@/lib/twilioServer';
 
@@ -30,7 +30,11 @@ export async function POST(req: NextRequest) {
   if (!site) return NextResponse.json({ error: 'Site not found' }, { status: 404 });
 
   const now = new Date();
-  const jobs = Array.isArray(site.smsJobs) ? site.smsJobs : [];
+  const jobs = pruneOrphanSmsJobs(
+    Array.isArray(site.smsJobs) ? site.smsJobs : [],
+    site.bookings
+  );
+  site.smsJobs = jobs;
   const due: CmsSmsJob[] = jobs
     .filter((j) => j && j.kind === 'booking_reminder' && j.status === 'pending')
     .filter((j) => {

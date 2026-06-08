@@ -629,9 +629,12 @@ async function syncBookingBlocks(
 }
 
 async function syncSmsLogs(client: PoolClient, salonId: string, site: CmsSitePayload): Promise<void> {
+  const keepIds: string[] = [];
+
   for (const job of site.smsJobs) {
     const legacyId = job.id;
     const id = await mappedOrNew(client, 'sms_job', legacyId);
+    keepIds.push(id);
     const messageType =
       job.kind === 'booking_confirmation' ? 'confirmation' : 'reminder';
     const status =
@@ -664,6 +667,26 @@ async function syncSmsLogs(client: PoolClient, salonId: string, site: CmsSitePay
         job.lastError ?? null,
         job.createdAt ? new Date(job.createdAt) : new Date(),
       ]
+    );
+  }
+
+  if (keepIds.length === 0) {
+    await client.query(`DELETE FROM sms_logs WHERE salon_id = $1`, [salonId]);
+  } else {
+    await client.query(
+      `DELETE FROM sms_logs WHERE salon_id = $1 AND id <> ALL($2::uuid[])`,
+      [salonId, keepIds]
+    );
+  }
+
+  const smsKeys = site.smsJobs.map((j) => compactLegacyId(j.id));
+  if (smsKeys.length === 0) {
+    await client.query(`DELETE FROM legacy_id_mappings WHERE entity_type = 'sms_job'`);
+  } else {
+    await client.query(
+      `DELETE FROM legacy_id_mappings
+       WHERE entity_type = 'sms_job' AND legacy_id <> ALL($1::varchar[])`,
+      [smsKeys]
     );
   }
 }
