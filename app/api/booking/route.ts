@@ -2,6 +2,8 @@ import { NextResponse } from 'next/server';
 import type { CmsBooking } from '@/lib/cmsSiteTypes';
 import { loadBookingSiteSnapshot } from '@/lib/booking/bookingSiteLoader';
 import { isBookingWindowBlocked } from '@/lib/bookingBlocks';
+import { createOnlineBookingInPostgres } from '@/lib/db/createOnlineBooking';
+import { isPublicBookingWriteToPostgres } from '@/lib/db/config';
 import { isS3CmsConfigured, readCmsSiteFromS3 } from '@/lib/s3CmsSite';
 import { persistCmsSite } from '@/lib/cms/persistCmsSite';
 import type { CmsSmsJob } from '@/lib/cmsSiteTypes';
@@ -24,7 +26,6 @@ export async function POST(req: Request) {
   const duration = data.get("duration") as string;
   const notesRaw = (data.get('notes') as string | null)?.trim() ?? '';
   const notes = notesRaw.length > 500 ? notesRaw.slice(0, 500) : notesRaw;
-  /** Client-built instant (browser local wall clock → ISO). Required on UTC servers: `new Date(y,m,d,h,m)` here uses *server* local, not the guest’s. */
   const slotStartIso = (data.get('slotStartIso') as string | null)?.trim() ?? '';
   const smsConsent = data.get('smsConsent') === 'true';
 
@@ -86,62 +87,43 @@ export async function POST(req: Request) {
     return NextResponse.json({ success: false, error: 'booking_unavailable' }, { status: 503 });
   }
 
-  {
-    const svcRow = snapshot.services.find(
-      (s) => String(s.name ?? '').trim() === String(service ?? '').trim()
-    );
-    if (!svcRow || isNonBookableAddonService(svcRow)) {
-      return NextResponse.json({ success: false, error: 'invalid_service' }, { status: 400 });
-    }
-
-    const dateYmd = `${year}-${String(month).padStart(2, '0')}-${String(day).padStart(2, '0')}`;
-    const empId = (employee || '').trim();
-    const slotEndExclusive = new Date(bookingDate.getTime());
-    slotEndExclusive.setMinutes(slotEndExclusive.getMinutes() + bookingDuration);
-
-    const blocked = isBookingWindowBlocked({
-      dateYmd,
-      employeeId: empId,
-      slotStartLocal: bookingDate,
-      slotEndExclusiveLocal: slotEndExclusive,
-      blocks: snapshot.bookingBlocks,
-    });
-    if (blocked) {
-      return NextResponse.json({ success: false, error: 'time_blocked' }, { status: 409 });
-    }
-
-    if (
-      !hasBookingCapacity({
-        dateYmd,
-        slotStartLocal: bookingDate,
-        slotEndExclusiveLocal: slotEndExclusive,
-        service: svcRow,
-        employees: snapshot.employees,
-        bookings: snapshot.bookings,
-        services: snapshot.services,
-        blocks: snapshot.bookingBlocks,
-        stylistId: empId || undefined,
-      })
-    ) {
-      return NextResponse.json({ success: false, error: 'no_capacity' }, { status: 409 });
-    }
+  const svcRow = snapshot.services.find(
+    (s) => String(s.name ?? '').trim() === String(service ?? '').trim()
+  );
+  if (!svcRow || isNonBookableAddonService(svcRow)) {
+    return NextResponse.json({ success: false, error: 'invalid_service' }, { status: 400 });
   }
 
-  if (isS3CmsConfigured()) {
-    try {
-      const site = await readCmsSiteFromS3();
-      if (site) {
-        site.bookings = [...site.bookings, booking];
-        if (reminderJobs.length > 0) {
-          const existingIds = new Set((site.smsJobs ?? []).map((j) => j.id));
-          const toAdd = reminderJobs.filter((j) => !existingIds.has(j.id));
-          if (toAdd.length > 0) site.smsJobs = [...(site.smsJobs || []), ...toAdd];
-        }
-        await persistCmsSite(site);
-      }
-    } catch (e) {
-      console.error('Append booking to S3 failed:', e);
-    }
+  const dateYmd = `${year}-${String(month).padStart(2, '0')}-${String(day).padStart(2, '0')}`;
+  const empId = (employee || '').trim();
+  const slotEndExclusive = new Date(bookingDate.getTime());
+  slotEndExclusive.setMinutes(slotEndExclusive.getMinutes() + bookingDuration);
+
+  const blocked = isBookingWindowBlocked({
+    dateYmd,
+    employeeId: empId,
+    slotStartLocal: bookingDate,
+    slotEndExclusiveLocal: slotEndExclusive,
+    blocks: snapshot.bookingBlocks,
+  });
+  if (blocked) {
+    return NextResponse.json({ success: false, error: 'time_blocked' }, { status: 409 });
+  }
+
+  if (
+    !hasBookingCapacity({
+      dateYmd,
+      slotStartLocal: bookingDate,
+      slotEndExclusiveLocal: slotEndExclusive,
+      service: svcRow,
+      employees: snapshot.employees,
+      bookings: snapshot.bookings,
+      services: snapshot.services,
+      blocks: snapshot.bookingBlocks,
+      stylistId: empId || undefined,
+    })
+  ) {
+    return NextResponse.json({ success: false, error: 'no_capacity' }, { status: 409 });
   }
 
   let confirmation: { attempted: boolean; sent: boolean; messageSid?: string; error?: string } = {
@@ -162,10 +144,45 @@ export async function POST(req: Request) {
     }
   }
 
+  const writeToPostgres = isPublicBookingWriteToPostgres();
+  let writeSource: 'postgres' | 's3' = writeToPostgres ? 'postgres' : 's3';
+
+  if (writeToPostgres) {
+    try {
+      await createOnlineBookingInPostgres({
+        booking,
+        phoneE164,
+        serviceLegacyId: svcRow.id,
+        confirmationBody: confirmation.sent ? confirmationBody : undefined,
+        confirmationSid: confirmation.messageSid,
+        reminderJobs,
+      });
+    } catch (e) {
+      console.error('createOnlineBookingInPostgres failed:', e);
+      return NextResponse.json({ success: false, error: 'save_failed' }, { status: 502 });
+    }
+  } else if (isS3CmsConfigured()) {
+    try {
+      const site = await readCmsSiteFromS3();
+      if (site) {
+        site.bookings = [...site.bookings, booking];
+        if (reminderJobs.length > 0) {
+          const existingIds = new Set((site.smsJobs ?? []).map((j) => j.id));
+          const toAdd = reminderJobs.filter((j) => !existingIds.has(j.id));
+          if (toAdd.length > 0) site.smsJobs = [...(site.smsJobs || []), ...toAdd];
+        }
+        await persistCmsSite(site);
+      }
+    } catch (e) {
+      console.error('Append booking to S3 failed:', e);
+    }
+  }
+
   return NextResponse.json({
     success: true,
     booking,
-    validationSource: snapshot?.source,
+    validationSource: snapshot.source,
+    writeSource,
     sms: {
       confirmation,
       reminders: {
@@ -175,13 +192,15 @@ export async function POST(req: Request) {
           sendAt: j.sendAt,
           hoursBefore: parseReminderHoursBefore(j.id) ?? undefined,
         })),
-        persisted: Boolean(reminderJobs.length > 0 && isS3CmsConfigured()),
+        persisted: Boolean(
+          reminderJobs.length > 0 && (writeToPostgres || isS3CmsConfigured())
+        ),
         reason:
           reminderJobs.length === 0
             ? !phoneE164
               ? 'invalid_phone'
               : 'all_reminder_times_in_past'
-            : !isS3CmsConfigured()
+            : !writeToPostgres && !isS3CmsConfigured()
               ? 'no_persistent_storage'
               : undefined,
       },

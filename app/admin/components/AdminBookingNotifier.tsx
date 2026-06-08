@@ -44,9 +44,24 @@ function timeLabelForNotify(b: BookingRow): string {
   return formatMinutesAsTimeLabel(mins);
 }
 
-/** Merge S3/CMS snapshot with local `admin-bookings` so dev + hybrid setups see every booking. */
+/** Merge Postgres admin bookings + S3/local snapshot for dev + hybrid setups. */
 async function fetchBookingsList(): Promise<BookingRow[]> {
   const byId = new Map<string, BookingRow>();
+
+  try {
+    const r = await fetch('/api/admin/bookings', { credentials: 'same-origin', cache: 'no-store' });
+    if (r.ok) {
+      const data = await r.json();
+      if (data.source === 'postgres' && Array.isArray(data.bookings)) {
+        for (const b of data.bookings as BookingRow[]) {
+          if (b?.id) byId.set(b.id, b);
+        }
+        return Array.from(byId.values());
+      }
+    }
+  } catch {
+    /* fall through */
+  }
 
   try {
     const r = await fetch('/api/cms/site', { credentials: 'same-origin', cache: 'no-store' });

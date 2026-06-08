@@ -23,3 +23,13 @@ export function salonTimeSlotLabel(dt: Date): string {
   const { hours, minutes } = salonWallClock(dt);
   return `${String(hours).padStart(2, '0')}:${String(minutes).padStart(2, '0')}`;
 }
+
+/** YYYY-MM-DD in salon timezone for bookings.appointment_date. */
+export function salonAppointmentDate(dt: Date): string {
+  return new Intl.DateTimeFormat('en-CA', {
+    timeZone: SALON_TIMEZONE,
+    year: 'numeric',
+    month: '2-digit',
+    day: '2-digit',
+  }).format(dt);
+}

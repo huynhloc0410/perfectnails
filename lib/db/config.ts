@@ -36,6 +36,17 @@ export function isPublicBookingFromPostgres(): boolean {
   return true;
 }
 
+/**
+ * New online bookings write to Postgres first when DATABASE_URL is set.
+ * Set CMS_PUBLIC_BOOKING_WRITE=s3 to keep appending bookings to cmsSite JSON.
+ */
+export function isPublicBookingWriteToPostgres(): boolean {
+  if (!isDatabaseConfigured()) return false;
+  const flag = runtimeEnv('CMS_PUBLIC_BOOKING_WRITE')?.trim().toLowerCase();
+  if (flag === 's3' || flag === 'cms') return false;
+  return true;
+}
+
 export function databaseUrlFromEnv(): string | undefined {
   return runtimeEnv('DATABASE_URL')?.trim() || undefined;
 }
