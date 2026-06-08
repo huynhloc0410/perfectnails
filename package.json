@@ -19,7 +19,8 @@
     "db:generate": "prisma generate",
     "db:migrate-from-s3": "tsx scripts/migrate-cms-s3-to-postgres.ts",
     "db:migrate-from-s3:dry": "tsx scripts/migrate-cms-s3-to-postgres.ts --dry-run",
-    "db:patch-customers": "psql \"$DATABASE_URL\" -v ON_ERROR_STOP=1 -f db/nailsbyni/003_customers_single_name.sql"
+    "db:patch-customers": "psql \"$DATABASE_URL\" -v ON_ERROR_STOP=1 -f db/nailsbyni/003_customers_single_name.sql",
+    "db:merge-customers": "psql \"$DATABASE_URL\" -v ON_ERROR_STOP=1 -f db/nailsbyni/005_merge_duplicate_customers.sql"
   },
   "dependencies": {
     "@aws-sdk/client-s3": "^3.1024.0",

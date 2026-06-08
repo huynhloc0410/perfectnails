@@ -16,16 +16,12 @@ import {
   isNonBookableAddonService,
 } from '../lib/booking/serviceEmployeeMatch';
 import { isS3CmsConfigured, readCmsSiteFromS3 } from '../lib/s3CmsSite';
-import { compactLegacyId, galleryLegacyId } from '../lib/db/legacyId';
+import { compactLegacyId, customerLegacyId, customerPhoneDigits10, customerPhoneStored, galleryLegacyId } from '../lib/db/legacyId';
 import { disconnectPgPool, withPgClient } from '../lib/db/pool';
 import { isDatabaseConfigured } from '../lib/db/config';
 
 const DRY_RUN = process.argv.includes('--dry-run');
 const SALON_LEGACY_ID = 'default';
-
-function normalizePhoneKey(phone: string): string {
-  return phone.replace(/\D/g, '').slice(-10) || phone.trim();
-}
 
 function customerDisplayName(name: string): string {
   const n = name.trim();
@@ -77,6 +73,38 @@ async function resolveUuid(
     await create(uuid);
     await rememberMapping(client, entityType, legacyId, uuid);
   }
+  return uuid;
+}
+
+/** Same phone (any format) → same customer row within a salon. */
+async function resolveCustomerId(
+  client: PoolClient,
+  salonId: string,
+  phoneRaw: string
+): Promise<string> {
+  const legacyId = customerLegacyId(phoneRaw);
+  const mapped = await getMappedUuid(client, 'customer', legacyId);
+  if (mapped) return mapped;
+
+  const digits10 = customerPhoneDigits10(phoneRaw);
+  if (digits10.length >= 10) {
+    const existing = await client.query<{ id: string }>(
+      `SELECT id FROM customers
+       WHERE salon_id = $1 AND deleted_at IS NULL
+         AND RIGHT(regexp_replace(phone, '\\D', '', 'g'), 10) = $2
+       ORDER BY created_at ASC
+       LIMIT 1`,
+      [salonId, digits10]
+    );
+    if (existing.rows[0]?.id) {
+      const id = existing.rows[0].id;
+      if (!DRY_RUN) await rememberMapping(client, 'customer', legacyId, id);
+      return id;
+    }
+  }
+
+  const uuid = randomUUID();
+  if (!DRY_RUN) await rememberMapping(client, 'customer', legacyId, uuid);
   return uuid;
 }
 
@@ -228,18 +256,28 @@ async function upsertCustomersFromBookings(
   bookings: CmsBooking[]
 ): Promise<Map<string, string>> {
   const map = new Map<string, string>();
+  const seen = new Set<string>();
+
   for (const b of bookings) {
-    const key = normalizePhoneKey(b.phone);
-    const legacyId = `phone:${key}`;
-    if (map.has(legacyId)) continue;
-    const uuid = await resolveUuid(client, 'customer', legacyId, async (id) => {
+    const legacyId = customerLegacyId(b.phone);
+    if (seen.has(legacyId)) continue;
+    seen.add(legacyId);
+
+    const id = await resolveCustomerId(client, salonId, b.phone);
+    const phoneStored = customerPhoneStored(b.phone);
+
+    if (!DRY_RUN) {
       await client.query(
         `INSERT INTO customers (id, salon_id, name, phone, sms_opt_in)
-         VALUES ($1, $2, $3, $4, TRUE)`,
-        [id, salonId, customerDisplayName(b.name), b.phone.trim()]
+         VALUES ($1, $2, $3, $4, TRUE)
+         ON CONFLICT (id) DO UPDATE SET
+           name = EXCLUDED.name,
+           phone = EXCLUDED.phone,
+           updated_at = NOW()`,
+        [id, salonId, customerDisplayName(b.name), phoneStored]
       );
-    });
-    map.set(legacyId, uuid);
+    }
+    map.set(legacyId, id);
   }
   return map;
 }
@@ -269,7 +307,7 @@ async function upsertBookings(
 ): Promise<void> {
   for (const b of site.bookings) {
     const legacyId = b.id;
-    const phoneKey = `phone:${normalizePhoneKey(b.phone)}`;
+    const phoneKey = customerLegacyId(b.phone);
     const customerId = customerIds.get(phoneKey);
     if (!customerId) continue;
 

@@ -10,14 +10,10 @@ import {
   isNonBookableAddonService,
 } from '@/lib/booking/serviceEmployeeMatch';
 import { isDualWriteToDbEnabled } from '@/lib/db/config';
-import { compactLegacyId, galleryLegacyId } from '@/lib/db/legacyId';
+import { compactLegacyId, customerLegacyId, customerPhoneDigits10, customerPhoneStored, galleryLegacyId } from '@/lib/db/legacyId';
 import { withPgClient } from '@/lib/db/pool';
 
 const SALON_LEGACY_ID = 'default';
-
-function normalizePhoneKey(phone: string): string {
-  return phone.replace(/\D/g, '').slice(-10) || phone.trim();
-}
 
 function customerDisplayName(name: string): string {
   const n = name.trim();
@@ -132,6 +128,36 @@ async function resolveServiceId(
   }
 
   return mappedOrNew(client, 'service', legacyId);
+}
+
+/** Same phone (any format) → same customer row within a salon. */
+async function resolveCustomerId(
+  client: PoolClient,
+  salonId: string,
+  phoneRaw: string
+): Promise<string> {
+  const legacyId = customerLegacyId(phoneRaw);
+  const mapped = await getMappedUuid(client, 'customer', legacyId);
+  if (mapped) return mapped;
+
+  const digits10 = customerPhoneDigits10(phoneRaw);
+  if (digits10.length >= 10) {
+    const existing = await client.query<{ id: string }>(
+      `SELECT id FROM customers
+       WHERE salon_id = $1 AND deleted_at IS NULL
+         AND RIGHT(regexp_replace(phone, '\\D', '', 'g'), 10) = $2
+       ORDER BY created_at ASC
+       LIMIT 1`,
+      [salonId, digits10]
+    );
+    if (existing.rows[0]?.id) {
+      const id = existing.rows[0].id;
+      await rememberMapping(client, 'customer', legacyId, id);
+      return id;
+    }
+  }
+
+  return mappedOrNew(client, 'customer', legacyId);
 }
 
 async function syncSalon(client: PoolClient, site: CmsSitePayload): Promise<string> {
@@ -336,11 +362,13 @@ async function syncCustomers(
   const seen = new Set<string>();
 
   for (const b of bookings) {
-    const legacyId = `phone:${normalizePhoneKey(b.phone)}`;
+    const legacyId = customerLegacyId(b.phone);
     if (seen.has(legacyId)) continue;
     seen.add(legacyId);
 
-    const id = await mappedOrNew(client, 'customer', legacyId);
+    const id = await resolveCustomerId(client, salonId, b.phone);
+    const phoneStored = customerPhoneStored(b.phone);
+
     await client.query(
       `INSERT INTO customers (id, salon_id, name, phone, sms_opt_in)
        VALUES ($1, $2, $3, $4, TRUE)
@@ -348,7 +376,7 @@ async function syncCustomers(
          name = EXCLUDED.name,
          phone = EXCLUDED.phone,
          updated_at = NOW()`,
-      [id, salonId, customerDisplayName(b.name), b.phone.trim()]
+      [id, salonId, customerDisplayName(b.name), phoneStored]
     );
     map.set(legacyId, id);
   }
@@ -380,7 +408,7 @@ async function syncBookings(
 ): Promise<void> {
   for (const b of site.bookings) {
     const legacyId = b.id;
-    const phoneKey = `phone:${normalizePhoneKey(b.phone)}`;
+    const phoneKey = customerLegacyId(b.phone);
     const customerId = customerIds.get(phoneKey);
     if (!customerId) continue;
 
