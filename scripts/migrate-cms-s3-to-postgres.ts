@@ -16,6 +16,7 @@ import {
   isNonBookableAddonService,
 } from '../lib/booking/serviceEmployeeMatch';
 import { isS3CmsConfigured, readCmsSiteFromS3 } from '../lib/s3CmsSite';
+import { compactLegacyId, galleryLegacyId } from '../lib/db/legacyId';
 import { disconnectPgPool, withPgClient } from '../lib/db/pool';
 import { isDatabaseConfigured } from '../lib/db/config';
 
@@ -32,11 +33,7 @@ function customerDisplayName(name: string): string {
 }
 
 function categoryLegacyId(name: string): string {
-  return `cat:${name.trim().toLowerCase()}`;
-}
-
-function galleryLegacyId(fullUrl: string, index: number): string {
-  return `gallery:${index}:${fullUrl.slice(-80)}`;
+  return compactLegacyId(`cat:${name.trim().toLowerCase()}`);
 }
 
 async function getMappedUuid(
@@ -44,9 +41,10 @@ async function getMappedUuid(
   entityType: string,
   legacyId: string
 ): Promise<string | null> {
+  const key = compactLegacyId(legacyId);
   const r = await client.query<{ uuid: string }>(
     `SELECT uuid FROM legacy_id_mappings WHERE entity_type = $1 AND legacy_id = $2`,
-    [entityType, legacyId]
+    [entityType, key]
   );
   return r.rows[0]?.uuid ?? null;
 }
@@ -57,11 +55,12 @@ async function rememberMapping(
   legacyId: string,
   uuid: string
 ): Promise<void> {
+  const key = compactLegacyId(legacyId);
   await client.query(
     `INSERT INTO legacy_id_mappings (entity_type, legacy_id, uuid)
      VALUES ($1, $2, $3)
      ON CONFLICT (entity_type, legacy_id) DO UPDATE SET uuid = EXCLUDED.uuid`,
-    [entityType, legacyId, uuid]
+    [entityType, key, uuid]
   );
 }
 
@@ -328,7 +327,7 @@ async function upsertGallery(
   site: CmsSitePayload
 ): Promise<void> {
   for (const [i, g] of site.gallery.entries()) {
-    const legacyId = galleryLegacyId(g.full, i);
+    const legacyId = galleryLegacyId(g.full);
     await resolveUuid(client, 'gallery', legacyId, async (id) => {
       await client.query(
         `INSERT INTO gallery_photos (id, salon_id, image_url, thumbnail_url, display_order)

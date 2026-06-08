@@ -1,0 +1,3 @@
+-- Optional: widen legacy_id if you prefer storing longer keys without hashing.
+-- The app now hashes keys >128 chars, so this patch is optional.
+-- ALTER TABLE legacy_id_mappings ALTER COLUMN legacy_id TYPE VARCHAR(512);
