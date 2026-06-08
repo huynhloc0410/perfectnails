@@ -9,7 +9,23 @@ import {
   getBookingServiceKind,
   type BookingServiceKind,
 } from '@/lib/booking/booking-service-kind';
+import { bookingStatusLabel, normalizeBookingStatus, type BookingStatus } from '@/lib/db/bookingStatus';
 import { BookingSmsButtons } from './BookingSmsButtons';
+
+function statusBadgeClasses(status: BookingStatus): string {
+  switch (status) {
+    case 'cancelled':
+      return 'bg-red-100 text-red-800 ring-1 ring-red-200';
+    case 'completed':
+      return 'bg-neutral-200 text-neutral-700 ring-1 ring-neutral-300';
+    case 'no_show':
+      return 'bg-amber-100 text-amber-900 ring-1 ring-amber-200';
+    case 'pending':
+      return 'bg-sky-100 text-sky-900 ring-1 ring-sky-200';
+    default:
+      return 'bg-emerald-100 text-emerald-900 ring-1 ring-emerald-200';
+  }
+}
 
 type Employee = {
   id: string;
@@ -32,6 +48,7 @@ type BookingDetailCardProps = {
     date: string;
     duration: number;
     notes?: string;
+    status?: BookingStatus;
   };
   bookingEmployee: Employee | null;
   serviceCatalog: ServiceCatalogRow[] | null;
@@ -45,19 +62,28 @@ export function BookingDetailCard({
   onDelete,
 }: BookingDetailCardProps) {
   const kind: BookingServiceKind = getBookingServiceKind(booking.service, serviceCatalog);
+  const status = normalizeBookingStatus(booking.status);
+  const isCancelled = status === 'cancelled';
 
   const detailText = adminBookingDetailTextClasses();
 
   return (
     <li
-      className={`w-full min-w-[14rem] max-w-md flex-1 basis-56 rounded-lg p-4 transition ${adminBookingCardClasses(kind)}`}
+      className={`w-full min-w-[14rem] max-w-md flex-1 basis-56 rounded-lg p-4 transition ${adminBookingCardClasses(kind)} ${isCancelled ? 'opacity-75' : ''}`}
     >
-      <div className="flex items-start justify-between gap-2">
-        <span
-          className={`inline-flex rounded-md px-2 py-0.5 text-[10px] font-bold uppercase tracking-wider ${adminBookingKindBadgeClasses(kind)}`}
-        >
-          {adminBookingKindLabel(kind)}
-        </span>
+      <div className="flex flex-wrap items-start justify-between gap-2">
+        <div className="flex flex-wrap items-center gap-1.5">
+          <span
+            className={`inline-flex rounded-md px-2 py-0.5 text-[10px] font-bold uppercase tracking-wider ${adminBookingKindBadgeClasses(kind)}`}
+          >
+            {adminBookingKindLabel(kind)}
+          </span>
+          <span
+            className={`inline-flex rounded-md px-2 py-0.5 text-[10px] font-bold uppercase tracking-wider ${statusBadgeClasses(status)}`}
+          >
+            {bookingStatusLabel(status)}
+          </span>
+        </div>
         <button
           type="button"
           onClick={() => onDelete(booking.id)}
@@ -82,13 +108,17 @@ export function BookingDetailCard({
         </p>
       ) : null}
       <div className="mt-3 rounded-md bg-white/75 p-2 backdrop-blur-sm">
-      <BookingSmsButtons
-        bookingId={booking.id}
-        customerName={booking.name}
-        phone={booking.phone}
-        service={booking.service}
-        appointmentIso={booking.date}
-      />
+      {!isCancelled ? (
+        <BookingSmsButtons
+          bookingId={booking.id}
+          customerName={booking.name}
+          phone={booking.phone}
+          service={booking.service}
+          appointmentIso={booking.date}
+        />
+      ) : (
+        <p className="text-xs text-neutral-600">Cancelled — slot is open for new bookings.</p>
+      )}
       </div>
     </li>
   );

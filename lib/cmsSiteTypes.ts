@@ -27,6 +27,8 @@ export interface CmsBooking {
   duration: number;
   /** Optional message from the client (online booking form). */
   notes?: string;
+  /** Postgres booking status; defaults to confirmed when omitted. */
+  status?: 'pending' | 'confirmed' | 'completed' | 'cancelled' | 'no_show';
 }
 
 /**

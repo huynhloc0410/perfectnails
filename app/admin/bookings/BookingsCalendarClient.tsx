@@ -34,6 +34,7 @@ interface Booking {
   timeSlot: string;
   duration: number;
   notes?: string;
+  status?: 'pending' | 'confirmed' | 'completed' | 'cancelled' | 'no_show';
 }
 
 interface ServiceCatalogRow {

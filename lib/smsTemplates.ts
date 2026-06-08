@@ -45,7 +45,7 @@ function buildBookingApptSms(params: {
     lead = `reminder: your appointment is ${when}`;
   }
 
-  return `${SITE_BRAND_NAME}: Hi ${params.name}, ${lead} for ${service}. Call us at ${phone} if you want any change. Address: ${maps}`;
+  return `${SITE_BRAND_NAME}: Hi ${params.name}, ${lead} for ${service}. Reply CANCEL to cancel. Call us at ${phone} if you need any other change. Address: ${maps}`;
 }
 
 export function bookingConfirmationSms(params: {
