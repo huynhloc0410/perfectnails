@@ -5,7 +5,6 @@ import {
   overlapsStylistScopedBookingWindow,
 } from '@/lib/bookingBlocks';
 import type { CmsBookingBlock } from '@/lib/cmsSiteTypes';
-import { isSchedulingActiveStatus } from '@/lib/db/bookingStatus';
 import {
   bookingServiceStaffFamily,
   employeeCanPerformService,
@@ -18,12 +17,7 @@ export type SlotBooking = {
   date: string;
   timeSlot: string;
   duration?: number;
-  status?: string;
 };
-
-function schedulingActiveBookings(bookings: SlotBooking[]): SlotBooking[] {
-  return bookings.filter((b) => isSchedulingActiveStatus(b.status));
-}
 
 export type SlotEmployee = {
   id: string;
@@ -222,7 +216,7 @@ export function canAssignOverlappingBookings(opts: {
   const assigned: Array<{ booking: SlotBooking; interval: BookingInterval }> = [];
   const unassigned: Array<{ booking: SlotBooking; interval: BookingInterval }> = [];
 
-  for (const booking of schedulingActiveBookings(bookings)) {
+  for (const booking of bookings) {
     const interval = parseBookingInterval(booking, bufferMinutes);
     if (!interval) continue;
     if (localDayKey(interval.start) !== dateYmd) continue;
@@ -362,7 +356,7 @@ export function evaluateSlotState(opts: {
   }
 
   const overlapping = bookingsOverlappingWindow(
-    schedulingActiveBookings(bookings).filter((b) => b.id !== excludeBookingId),
+    bookings.filter((b) => b.id !== excludeBookingId),
     slotStartLocal,
     slotEndExclusiveLocal,
     dateYmd,

@@ -1,7 +1,6 @@
 import type { PoolClient } from 'pg';
 import type { CmsBooking } from '@/lib/cmsSiteTypes';
 import { compactLegacyId } from '@/lib/db/legacyId';
-import { bookingStatusLabel, isSchedulingActiveStatus, normalizeBookingStatus } from '@/lib/db/bookingStatus';
 import { salonTimeSlotLabel } from '@/lib/db/timezone';
 import { withPgClient } from '@/lib/db/pool';
 
@@ -14,7 +13,6 @@ type BookingRow = {
   service_name: string | null;
   duration_at_booking: number | null;
   employee_legacy_id: string | null;
-  status: string;
 };
 
 const LIST_SQL = `
@@ -26,8 +24,7 @@ const LIST_SQL = `
     c.phone,
     bs.service_name,
     bs.duration_at_booking,
-    em.legacy_id AS employee_legacy_id,
-    b.status::text AS status
+    em.legacy_id AS employee_legacy_id
   FROM bookings b
   JOIN customers c ON c.id = b.customer_id
   LEFT JOIN booking_services bs ON bs.booking_id = b.id
@@ -48,7 +45,6 @@ function rowToCmsBooking(row: BookingRow): CmsBooking | null {
   if (!Number.isFinite(start.getTime())) return null;
 
   const duration = row.duration_at_booking && row.duration_at_booking > 0 ? row.duration_at_booking : 45;
-  const status = normalizeBookingStatus(row.status);
 
   return {
     id: legacyId,
@@ -59,7 +55,6 @@ function rowToCmsBooking(row: BookingRow): CmsBooking | null {
     date: start.toISOString(),
     timeSlot: salonTimeSlotLabel(start),
     duration,
-    status,
     ...(row.notes?.trim() ? { notes: row.notes.trim() } : {}),
   };
 }
@@ -73,14 +68,6 @@ export async function listAdminBookingsFromPostgres(): Promise<CmsBooking[]> {
   }
   return out;
 }
-
-/** Active bookings only — used for public slot availability. */
-export async function listSchedulingBookingsFromPostgres(): Promise<CmsBooking[]> {
-  const all = await listAdminBookingsFromPostgres();
-  return all.filter((b) => isSchedulingActiveStatus(b.status));
-}
-
-export { bookingStatusLabel, isSchedulingActiveStatus };
 
 async function resolveBookingPgId(client: PoolClient, legacyId: string): Promise<string | null> {
   const key = compactLegacyId(legacyId);
