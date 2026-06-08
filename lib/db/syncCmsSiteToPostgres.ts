@@ -405,7 +405,10 @@ async function syncBookings(
   customerIds: Map<string, string>,
   employeeIds: Map<string, string>,
   serviceByKey: Map<string, CmsService & { pgId: string }>
-): Promise<void> {
+): Promise<{ keepBookingIds: string[]; cmsLegacyIds: string[] }> {
+  const keepBookingIds: string[] = [];
+  const cmsLegacyIds: string[] = [];
+
   for (const b of site.bookings) {
     const legacyId = b.id;
     const phoneKey = customerLegacyId(b.phone);
@@ -423,6 +426,8 @@ async function syncBookings(
     const price = svc?.price ?? 0;
 
     const bookingId = await mappedOrNew(client, 'booking', legacyId);
+    keepBookingIds.push(bookingId);
+    cmsLegacyIds.push(legacyId);
 
     await client.query(
       `INSERT INTO bookings (
@@ -486,6 +491,51 @@ async function syncBookings(
       }
     }
   }
+
+  return { keepBookingIds, cmsLegacyIds };
+}
+
+/** Remove PG bookings (and stale mappings) that no longer exist in S3 cmsSite. */
+async function pruneRemovedBookings(
+  client: PoolClient,
+  salonId: string,
+  keepBookingIds: string[],
+  cmsLegacyIds: string[]
+): Promise<number> {
+  let deleted = 0;
+
+  if (keepBookingIds.length === 0) {
+    const r = await client.query(`DELETE FROM bookings WHERE salon_id = $1`, [salonId]);
+    deleted = r.rowCount ?? 0;
+  } else {
+    const r = await client.query(
+      `DELETE FROM bookings WHERE salon_id = $1 AND id <> ALL($2::uuid[])`,
+      [salonId, keepBookingIds]
+    );
+    deleted = r.rowCount ?? 0;
+  }
+
+  const bookingKeys = cmsLegacyIds.map((id) => compactLegacyId(id));
+  const bsKeys = cmsLegacyIds.map((id) => compactLegacyId(`bs:${id}`));
+
+  if (bookingKeys.length === 0) {
+    await client.query(
+      `DELETE FROM legacy_id_mappings WHERE entity_type IN ('booking', 'booking_service')`
+    );
+  } else {
+    await client.query(
+      `DELETE FROM legacy_id_mappings
+       WHERE entity_type = 'booking' AND legacy_id <> ALL($1::varchar[])`,
+      [bookingKeys]
+    );
+    await client.query(
+      `DELETE FROM legacy_id_mappings
+       WHERE entity_type = 'booking_service' AND legacy_id <> ALL($1::varchar[])`,
+      [bsKeys]
+    );
+  }
+
+  return deleted;
 }
 
 async function syncGallery(
@@ -637,7 +687,23 @@ async function syncCmsSiteToPostgresInternal(
   );
 
   const customerIds = await syncCustomers(client, salonId, site.bookings);
-  await syncBookings(client, salonId, site, customerIds, employeeIds, serviceByKey);
+  const { keepBookingIds, cmsLegacyIds } = await syncBookings(
+    client,
+    salonId,
+    site,
+    customerIds,
+    employeeIds,
+    serviceByKey
+  );
+  const removedBookings = await pruneRemovedBookings(
+    client,
+    salonId,
+    keepBookingIds,
+    cmsLegacyIds
+  );
+  if (removedBookings > 0) {
+    console.info(`PostgreSQL sync: removed ${removedBookings} booking(s) no longer in cmsSite`);
+  }
   await syncGallery(client, salonId, site);
   await syncBookingBlocks(client, salonId, site, employeeIds);
   await syncSmsLogs(client, salonId, site);
