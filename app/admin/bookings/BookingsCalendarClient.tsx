@@ -62,7 +62,7 @@ export function BookingsCalendarClient() {
   const [bookings, setBookings] = useState<Booking[]>([]);
   const [employees, setEmployees] = useState<Employee[]>([]);
   const [serviceCatalog, setServiceCatalog] = useState<ServiceCatalogRow[]>([]);
-  const [useCms, setUseCms] = useState(false);
+  const [bookingsSource, setBookingsSource] = useState<'postgres' | 'cms' | 'local'>('cms');
 
   const rawDate = searchParams.get('date');
 
@@ -86,31 +86,56 @@ export function BookingsCalendarClient() {
 
   useEffect(() => {
     let cancelled = false;
+    let loadedFromPostgres = false;
+
     (async () => {
       try {
-        const r = await fetch('/api/cms/site');
+        const pgRes = await fetch('/api/admin/bookings', {
+          credentials: 'same-origin',
+          cache: 'no-store',
+        });
+
+        if (!cancelled && pgRes.ok) {
+          const pgData = await pgRes.json();
+          if (pgData.source === 'postgres' && Array.isArray(pgData.bookings)) {
+            setBookings(pgData.bookings as Booking[]);
+            setBookingsSource('postgres');
+            loadedFromPostgres = true;
+          }
+        }
+
+        const r = await fetch('/api/cms/site', { cache: 'no-store' });
         const data = await r.json();
         if (cancelled) return;
+
         if (data.configured === true && data.site && !data.error) {
           const s = data.site;
-          setUseCms(true);
-          if (Array.isArray(s.bookings)) setBookings(s.bookings as Booking[]);
+          if (!loadedFromPostgres && Array.isArray(s.bookings)) {
+            setBookings(s.bookings as Booking[]);
+            setBookingsSource('cms');
+          }
           if (Array.isArray(s.employees)) setEmployees(s.employees as Employee[]);
           if (Array.isArray(s.services)) setServiceCatalog(s.services as ServiceCatalogRow[]);
-        } else {
+        } else if (!loadedFromPostgres) {
           const savedBookings = localStorage.getItem('admin-bookings');
           const savedEmployees = localStorage.getItem('admin-employees');
           const savedServices = localStorage.getItem('admin-services');
-          if (savedBookings) setBookings(JSON.parse(savedBookings));
+          if (savedBookings) {
+            setBookings(JSON.parse(savedBookings));
+            setBookingsSource('local');
+          }
           if (savedEmployees) setEmployees(JSON.parse(savedEmployees));
           if (savedServices) setServiceCatalog(JSON.parse(savedServices));
         }
       } catch {
-        if (!cancelled) {
+        if (!cancelled && !loadedFromPostgres) {
           const savedBookings = localStorage.getItem('admin-bookings');
           const savedEmployees = localStorage.getItem('admin-employees');
           const savedServices = localStorage.getItem('admin-services');
-          if (savedBookings) setBookings(JSON.parse(savedBookings));
+          if (savedBookings) {
+            setBookings(JSON.parse(savedBookings));
+            setBookingsSource('local');
+          }
           if (savedEmployees) setEmployees(JSON.parse(savedEmployees));
           if (savedServices) setServiceCatalog(JSON.parse(savedServices));
         }
@@ -166,11 +191,29 @@ export function BookingsCalendarClient() {
       /* ignore */
     }
 
-    if (!useCms) {
+    if (bookingsSource === 'local') {
       try {
         localStorage.setItem('admin-bookings', JSON.stringify(nextBookings));
       } catch {
         /* ignore */
+      }
+      return;
+    }
+
+    if (bookingsSource === 'postgres') {
+      try {
+        const del = await fetch(`/api/admin/bookings/${encodeURIComponent(id)}`, {
+          method: 'DELETE',
+          credentials: 'same-origin',
+        });
+        if (!del.ok) {
+          const msg = await del.text().catch(() => '');
+          alert(`Could not delete booking (${del.status}). ${msg || 'Try again.'}`);
+          setBookings(previous);
+        }
+      } catch {
+        alert('Could not delete booking.');
+        setBookings(previous);
       }
       return;
     }
@@ -252,8 +295,11 @@ export function BookingsCalendarClient() {
             <div>
               <h1 className="text-2xl font-bold text-white sm:text-3xl">Bookings by day</h1>
               <p className="mt-1 text-champagne-200">Pick a day to review appointments</p>
-              {useCms && (
-                <p className="mt-1 text-sm text-champagne-300/90">Bookings sync from site data (S3 when configured).</p>
+              {bookingsSource === 'postgres' && (
+                <p className="mt-1 text-sm text-champagne-300/90">Bookings load from PostgreSQL.</p>
+              )}
+              {bookingsSource === 'cms' && (
+                <p className="mt-1 text-sm text-champagne-300/90">Bookings load from site data (S3).</p>
               )}
             </div>
             <div className="flex flex-wrap gap-2">

@@ -14,6 +14,17 @@ export function isDualWriteToDbEnabled(): boolean {
   return true;
 }
 
+/**
+ * Admin bookings calendar reads from Postgres when DATABASE_URL is set.
+ * Set CMS_ADMIN_BOOKINGS_SOURCE=s3 to keep reading cmsSite from S3.
+ */
+export function isAdminBookingsFromPostgres(): boolean {
+  if (!isDatabaseConfigured()) return false;
+  const flag = runtimeEnv('CMS_ADMIN_BOOKINGS_SOURCE')?.trim().toLowerCase();
+  if (flag === 's3' || flag === 'cms') return false;
+  return true;
+}
+
 export function databaseUrlFromEnv(): string | undefined {
   return runtimeEnv('DATABASE_URL')?.trim() || undefined;
 }
