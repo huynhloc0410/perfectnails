@@ -112,6 +112,8 @@ export default function Booking() {
   const [currentMonth, setCurrentMonth] = useState(new Date());
   /** 1 = service, 2 = stylist, 3 = date, 4 = time + contact + submit */
   const [bookingStep, setBookingStep] = useState(1);
+  /** Prevents duplicate POST /api/booking when the connection is slow. */
+  const [isSubmitting, setIsSubmitting] = useState(false);
 
   const [bookingDataSource, setBookingDataSource] = useState<'postgres' | 'cms' | 'local'>('cms');
 
@@ -359,7 +361,8 @@ export default function Booking() {
 
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
-    
+    if (isSubmitting) return;
+
     if (!formData.timeSlot || !formData.date) {
       alert('Please select a date and time slot');
       return;
@@ -459,6 +462,7 @@ export default function Booking() {
     formDataObj.append('slotStartIso', slotStart.toISOString());
     formDataObj.append('smsConsent', 'true');
 
+    setIsSubmitting(true);
     try {
       const response = await fetch('/api/booking', {
         method: 'POST',
@@ -538,6 +542,8 @@ export default function Booking() {
     } catch (error) {
       console.error('Booking error:', error);
       alert('Failed to submit booking. Please try again.');
+    } finally {
+      setIsSubmitting(false);
     }
   };
 
@@ -1164,6 +1170,7 @@ export default function Booking() {
                   type="submit"
                   className="w-full rounded-xl bg-champagne-600 px-5 py-3 text-sm font-semibold text-white shadow-sm hover:bg-champagne-700 disabled:cursor-not-allowed disabled:bg-champagne-200/80 disabled:text-lux-espresso/50 sm:ml-auto sm:w-auto sm:min-w-[12rem] sm:order-2"
                   disabled={
+                    isSubmitting ||
                     !formData.employee ||
                     !formData.service ||
                     !formData.date ||
@@ -1171,8 +1178,19 @@ export default function Booking() {
                     !formData.name.trim() ||
                     !formData.phone.trim()
                   }
+                  aria-busy={isSubmitting}
                 >
-                  Book Now
+                  {isSubmitting ? (
+                    <span className="inline-flex items-center justify-center gap-2">
+                      <span
+                        className="inline-block h-4 w-4 animate-spin rounded-full border-2 border-white/40 border-t-white"
+                        aria-hidden
+                      />
+                      Booking…
+                    </span>
+                  ) : (
+                    'Book Now'
+                  )}
                 </button>
               </div>
             </div>

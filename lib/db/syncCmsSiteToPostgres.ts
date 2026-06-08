@@ -9,7 +9,7 @@ import {
   employeeCanPerformService,
   isNonBookableAddonService,
 } from '@/lib/booking/serviceEmployeeMatch';
-import { isDualWriteToDbEnabled } from '@/lib/db/config';
+import { isDatabaseConfigured, isDualWriteToDbEnabled } from '@/lib/db/config';
 import { compactLegacyId, customerLegacyId, customerPhoneDigits10, customerPhoneStored, galleryLegacyId } from '@/lib/db/legacyId';
 import { withPgClient } from '@/lib/db/pool';
 
@@ -741,6 +741,108 @@ export async function syncCmsSiteToPostgres(site: CmsSitePayload): Promise<void>
     await client.query('BEGIN');
     try {
       await syncCmsSiteToPostgresInternal(client, site);
+      await client.query('COMMIT');
+    } catch (e) {
+      await client.query('ROLLBACK');
+      throw e;
+    }
+  });
+}
+
+async function updateCmsEmployeesSnapshot(
+  client: PoolClient,
+  salonId: string,
+  employees: CmsEmployee[]
+): Promise<void> {
+  const snapshot = employees.map((e) => ({
+    id: e.id,
+    name: e.name,
+    role: e.role,
+    phone: e.phone,
+  }));
+  await client.query(
+    `INSERT INTO business_settings (salon_id, settings_json)
+     VALUES ($1, jsonb_build_object('cmsEmployees', $2::jsonb))
+     ON CONFLICT (salon_id) DO UPDATE SET
+       settings_json = COALESCE(business_settings.settings_json, '{}'::jsonb)
+         || jsonb_build_object('cmsEmployees', $2::jsonb),
+       updated_at = NOW()`,
+    [salonId, JSON.stringify(snapshot)]
+  );
+}
+
+/** Phase 4: sync services, employees, blocks only — does not touch bookings or smsJobs. */
+async function syncSchedulingConfigInternal(
+  client: PoolClient,
+  site: Pick<CmsSitePayload, 'services' | 'employees' | 'bookingBlocks'>
+): Promise<void> {
+  const salonId = await resolveSalonId(client);
+  const categoryIds = await syncCategories(client, salonId, site.services);
+  const serviceByKey = await syncServices(client, salonId, categoryIds, site.services);
+  const employeeIds = await syncEmployees(client, salonId, site.employees);
+
+  await syncEmployeeServices(
+    client,
+    salonId,
+    site.employees,
+    employeeIds,
+    site.services,
+    serviceByKey
+  );
+
+  const keepServiceIds = Array.from(
+    new Set(Array.from(serviceByKey.values()).map((s) => s.pgId))
+  );
+  if (keepServiceIds.length === 0) {
+    await client.query(
+      `UPDATE services SET deleted_at = NOW(), is_active = FALSE
+       WHERE salon_id = $1 AND deleted_at IS NULL`,
+      [salonId]
+    );
+  } else {
+    await client.query(
+      `UPDATE services SET deleted_at = NOW(), is_active = FALSE
+       WHERE salon_id = $1 AND deleted_at IS NULL AND id <> ALL($2::uuid[])`,
+      [salonId, keepServiceIds]
+    );
+  }
+
+  const keepEmployeeIds = Array.from(new Set(Array.from(employeeIds.values())));
+  if (keepEmployeeIds.length === 0) {
+    await client.query(
+      `UPDATE employees SET deleted_at = NOW(), employment_status = 'terminated'
+       WHERE salon_id = $1 AND deleted_at IS NULL`,
+      [salonId]
+    );
+  } else {
+    await client.query(
+      `UPDATE employees SET deleted_at = NOW(), employment_status = 'terminated'
+       WHERE salon_id = $1 AND deleted_at IS NULL AND id <> ALL($2::uuid[])`,
+      [salonId, keepEmployeeIds]
+    );
+  }
+
+  await updateCmsEmployeesSnapshot(client, salonId, site.employees);
+  await syncBookingBlocks(
+    client,
+    salonId,
+    { bookingBlocks: site.bookingBlocks } as CmsSitePayload,
+    employeeIds
+  );
+}
+
+/** Admin Phase 4 write path for scheduling config (services, employees, booking blocks). */
+export async function syncSchedulingConfigToPostgres(
+  site: Pick<CmsSitePayload, 'services' | 'employees' | 'bookingBlocks'>
+): Promise<void> {
+  if (!isDatabaseConfigured()) {
+    throw new Error('DATABASE_URL is not configured');
+  }
+
+  await withPgClient(async (client) => {
+    await client.query('BEGIN');
+    try {
+      await syncSchedulingConfigInternal(client, site);
       await client.query('COMMIT');
     } catch (e) {
       await client.query('ROLLBACK');

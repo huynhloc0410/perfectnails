@@ -87,6 +87,9 @@ export default function AdminPage() {
   /** Weekly booking navigator (Bookings tab): anchor day for strip + selection highlight. */
   const [bookingsNavDate, setBookingsNavDate] = useState(() => startOfLocalDay(new Date()));
   const [siteSyncStatus, setSiteSyncStatus] = useState('');
+  const [schedulingConfigSource, setSchedulingConfigSource] = useState<
+    'postgres' | 'cms' | 'local'
+  >('cms');
 
   // Authentication is handled by admin layout
 
@@ -106,6 +109,15 @@ export default function AdminPage() {
     const nextContact = partial.contact ?? contactContent;
     const nextGallery = partial.gallery ?? galleryImages;
     const nextBookingBlocks = partial.bookingBlocks ?? bookingBlocks;
+    const schedulingFromPg = schedulingConfigSource === 'postgres';
+    const schedulingTouched =
+      partial.services !== undefined ||
+      partial.employees !== undefined ||
+      partial.bookingBlocks !== undefined;
+    const contentTouched =
+      partial.about !== undefined ||
+      partial.contact !== undefined ||
+      partial.gallery !== undefined;
 
     if (!useCms) {
       if (partial.services !== undefined) {
@@ -136,7 +148,49 @@ export default function AdminPage() {
       return;
     }
 
+    if (schedulingFromPg && partial.bookings !== undefined) {
+      return true;
+    }
+
+    if (schedulingFromPg && schedulingTouched) {
+      const pgRes = await fetch('/api/admin/site-config', {
+        method: 'PUT',
+        credentials: 'same-origin',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({
+          services: nextServices,
+          employees: nextEmployees,
+          bookingBlocks: nextBookingBlocks,
+        }),
+      });
+      if (!pgRes.ok) {
+        const msg = await pgRes.text().catch(() => '');
+        alert(`Could not save scheduling data (${pgRes.status}). ${msg || 'Check DATABASE_URL.'}`);
+        return false;
+      }
+      if (partial.bookingBlocks !== undefined) {
+        window.dispatchEvent(new Event(SITE_DATA_UPDATED_EVENT));
+      }
+      if (!contentTouched && !(schedulingTouched && !schedulingFromPg)) {
+        return true;
+      }
+    }
+
+    const needsS3 =
+      contentTouched ||
+      (schedulingTouched && !schedulingFromPg) ||
+      (!schedulingFromPg && partial.bookings !== undefined);
+
+    if (!needsS3) {
+      return true;
+    }
+
     let smsJobsPayload: CmsSmsJob[] = [];
+    let s3Services = nextServices;
+    let s3Employees = nextEmployees;
+    let s3Bookings = nextBookings;
+    let s3Blocks = nextBookingBlocks;
+
     try {
       const cr = await fetch('/api/cms/site', { credentials: 'same-origin' });
       const d = await cr.json();
@@ -148,7 +202,16 @@ export default function AdminPage() {
       const rawJobs = Array.isArray((s as { smsJobs?: unknown[] }).smsJobs)
         ? ((s as { smsJobs: unknown[] }).smsJobs as CmsSmsJob[])
         : [];
-      smsJobsPayload = pruneOrphanSmsJobs(rawJobs, nextBookings);
+      smsJobsPayload = pruneOrphanSmsJobs(
+        rawJobs,
+        schedulingFromPg ? (Array.isArray(s.bookings) ? s.bookings : []) : nextBookings
+      );
+      if (schedulingFromPg) {
+        s3Services = Array.isArray(s.services) ? (s.services as Service[]) : nextServices;
+        s3Employees = Array.isArray(s.employees) ? (s.employees as Employee[]) : nextEmployees;
+        s3Bookings = Array.isArray(s.bookings) ? (s.bookings as Booking[]) : [];
+        s3Blocks = coerceBookingBlocksList((s as { bookingBlocks?: unknown[] }).bookingBlocks);
+      }
     } catch {
       alert(
         'Could not load the latest site snapshot before saving. SMS job queue must not be wiped — save aborted.',
@@ -162,11 +225,11 @@ export default function AdminPage() {
       headers: { 'Content-Type': 'application/json' },
       body: JSON.stringify({
         version: 1,
-        services: nextServices,
-        employees: nextEmployees,
-        bookings: nextBookings,
+        services: s3Services,
+        employees: s3Employees,
+        bookings: s3Bookings,
         smsJobs: smsJobsPayload,
-        bookingBlocks: nextBookingBlocks,
+        bookingBlocks: s3Blocks,
         about: nextAbout,
         contact: nextContact,
         gallery: nextGallery,
@@ -177,7 +240,7 @@ export default function AdminPage() {
       alert(`Could not save to cloud (${res.status}). ${msg || 'Check S3 env vars on the server.'}`);
       return false;
     }
-    if (partial.bookingBlocks !== undefined) {
+    if (partial.bookingBlocks !== undefined && !schedulingFromPg) {
       window.dispatchEvent(new Event(SITE_DATA_UPDATED_EVENT));
     }
     if (partial.contact !== undefined) {
@@ -216,18 +279,56 @@ export default function AdminPage() {
 
     (async () => {
       try {
-        const r = await fetch('/api/cms/site');
-        const data = await r.json();
+        let loadedSchedulingFromPg = false;
+        let loadedBookingsFromPg = false;
+
+        const [configRes, bookingsRes, cmsRes] = await Promise.all([
+          fetch('/api/admin/site-config', { credentials: 'same-origin', cache: 'no-store' }),
+          fetch('/api/admin/bookings', { credentials: 'same-origin', cache: 'no-store' }),
+          fetch('/api/cms/site', { credentials: 'same-origin', cache: 'no-store' }),
+        ]);
+
+        if (!cancelled && configRes.ok) {
+          const configData = await configRes.json();
+          if (configData.source === 'postgres') {
+            setSchedulingConfigSource('postgres');
+            loadedSchedulingFromPg = true;
+            if (Array.isArray(configData.services)) {
+              setServices(configData.services as Service[]);
+            }
+            if (Array.isArray(configData.employees)) {
+              setEmployees(configData.employees as Employee[]);
+            }
+            if (Array.isArray(configData.bookingBlocks)) {
+              setBookingBlocks(coerceBookingBlocksList(configData.bookingBlocks));
+            }
+          }
+        }
+
+        if (!cancelled && bookingsRes.ok) {
+          const bookingsData = await bookingsRes.json();
+          if (bookingsData.source === 'postgres' && Array.isArray(bookingsData.bookings)) {
+            setBookings(bookingsData.bookings as Booking[]);
+            loadedBookingsFromPg = true;
+          }
+        }
+
+        const data = await cmsRes.json();
         if (cancelled) return;
 
         if (data.configured === true && data.site && !data.error) {
           const s = data.site;
           setUseCms(true);
-          if (Array.isArray(s.services)) setServices(s.services as Service[]);
-          if (Array.isArray(s.employees)) setEmployees(s.employees as Employee[]);
-          if (Array.isArray(s.bookings)) setBookings(s.bookings as Booking[]);
-          const blkUnknown = (s as { bookingBlocks?: unknown[] }).bookingBlocks;
-          setBookingBlocks(coerceBookingBlocksList(blkUnknown));
+          if (!loadedSchedulingFromPg) {
+            setSchedulingConfigSource('cms');
+            if (Array.isArray(s.services)) setServices(s.services as Service[]);
+            if (Array.isArray(s.employees)) setEmployees(s.employees as Employee[]);
+            const blkUnknown = (s as { bookingBlocks?: unknown[] }).bookingBlocks;
+            setBookingBlocks(coerceBookingBlocksList(blkUnknown));
+          }
+          if (!loadedBookingsFromPg && Array.isArray(s.bookings)) {
+            setBookings(s.bookings as Booking[]);
+          }
           if (s.about && typeof s.about === 'object') {
             setAboutContent((prev) => ({ ...prev, ...s.about }));
           }
@@ -246,6 +347,7 @@ export default function AdminPage() {
             setGalleryImages(normalizeCmsGalleryList(s.gallery));
           }
         } else {
+          setSchedulingConfigSource('local');
           const savedServices = localStorage.getItem('admin-services');
           const savedBookings = localStorage.getItem('admin-bookings');
           const savedEmployees = localStorage.getItem('admin-employees');

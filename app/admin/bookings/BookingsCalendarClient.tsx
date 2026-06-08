@@ -104,6 +104,24 @@ export function BookingsCalendarClient() {
           }
         }
 
+        let loadedConfigFromPostgres = false;
+        const configRes = await fetch('/api/admin/site-config', {
+          credentials: 'same-origin',
+          cache: 'no-store',
+        });
+        if (!cancelled && configRes.ok) {
+          const configData = await configRes.json();
+          if (configData.source === 'postgres') {
+            loadedConfigFromPostgres = true;
+            if (Array.isArray(configData.employees)) {
+              setEmployees(configData.employees as Employee[]);
+            }
+            if (Array.isArray(configData.services)) {
+              setServiceCatalog(configData.services as ServiceCatalogRow[]);
+            }
+          }
+        }
+
         const r = await fetch('/api/cms/site', { cache: 'no-store' });
         const data = await r.json();
         if (cancelled) return;
@@ -114,8 +132,10 @@ export function BookingsCalendarClient() {
             setBookings(s.bookings as Booking[]);
             setBookingsSource('cms');
           }
-          if (Array.isArray(s.employees)) setEmployees(s.employees as Employee[]);
-          if (Array.isArray(s.services)) setServiceCatalog(s.services as ServiceCatalogRow[]);
+          if (!loadedConfigFromPostgres) {
+            if (Array.isArray(s.employees)) setEmployees(s.employees as Employee[]);
+            if (Array.isArray(s.services)) setServiceCatalog(s.services as ServiceCatalogRow[]);
+          }
         } else if (!loadedFromPostgres) {
           const savedBookings = localStorage.getItem('admin-bookings');
           const savedEmployees = localStorage.getItem('admin-employees');

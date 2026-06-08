@@ -37,6 +37,17 @@ export function isPublicBookingFromPostgres(): boolean {
 }
 
 /**
+ * Admin services, employees, and booking blocks read/write from Postgres when DATABASE_URL is set.
+ * Set CMS_ADMIN_SITE_CONFIG_SOURCE=s3 to keep using cmsSite JSON for scheduling config.
+ */
+export function isAdminSiteConfigFromPostgres(): boolean {
+  if (!isDatabaseConfigured()) return false;
+  const flag = runtimeEnv('CMS_ADMIN_SITE_CONFIG_SOURCE')?.trim().toLowerCase();
+  if (flag === 's3' || flag === 'cms') return false;
+  return true;
+}
+
+/**
  * New online bookings write to Postgres first when DATABASE_URL is set.
  * Set CMS_PUBLIC_BOOKING_WRITE=s3 to keep appending bookings to cmsSite JSON.
  */
