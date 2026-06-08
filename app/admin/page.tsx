@@ -15,8 +15,10 @@ import {
   normalizeCmsGalleryList,
   type CmsBookingBlock,
   type CmsGalleryImage,
+  type CmsSmsJob,
 } from '@/lib/cmsSiteTypes';
 import { galleryHasDedicatedThumb, galleryThumbSrc } from '@/lib/galleryDisplay';
+import { pruneOrphanSmsJobs } from '@/lib/bookingReminderJobs';
 
 interface Service {
   id: string;
@@ -84,6 +86,7 @@ export default function AdminPage() {
   const [useCms, setUseCms] = useState(false);
   /** Weekly booking navigator (Bookings tab): anchor day for strip + selection highlight. */
   const [bookingsNavDate, setBookingsNavDate] = useState(() => startOfLocalDay(new Date()));
+  const [siteSyncStatus, setSiteSyncStatus] = useState('');
 
   // Authentication is handled by admin layout
 
@@ -133,23 +136,24 @@ export default function AdminPage() {
       return;
     }
 
-    let smsJobsPayload: unknown[] = [];
+    let smsJobsPayload: CmsSmsJob[] = [];
     try {
       const cr = await fetch('/api/cms/site', { credentials: 'same-origin' });
       const d = await cr.json();
       const s = d.site;
       if (!s || typeof s !== 'object') {
         alert('Could not load site data before saving. Try again in a moment.');
-        return;
+        return false;
       }
-      smsJobsPayload = Array.isArray((s as { smsJobs?: unknown[] }).smsJobs)
-        ? (s as { smsJobs: unknown[] }).smsJobs
+      const rawJobs = Array.isArray((s as { smsJobs?: unknown[] }).smsJobs)
+        ? ((s as { smsJobs: unknown[] }).smsJobs as CmsSmsJob[])
         : [];
+      smsJobsPayload = pruneOrphanSmsJobs(rawJobs, nextBookings);
     } catch {
       alert(
         'Could not load the latest site snapshot before saving. SMS job queue must not be wiped — save aborted.',
       );
-      return;
+      return false;
     }
 
     const res = await fetch('/api/cms/site', {
@@ -171,7 +175,7 @@ export default function AdminPage() {
     if (!res.ok) {
       const msg = await res.text().catch(() => '');
       alert(`Could not save to cloud (${res.status}). ${msg || 'Check S3 env vars on the server.'}`);
-      return;
+      return false;
     }
     if (partial.bookingBlocks !== undefined) {
       window.dispatchEvent(new Event(SITE_DATA_UPDATED_EVENT));
@@ -184,6 +188,25 @@ export default function AdminPage() {
       }
       window.dispatchEvent(new Event(SITE_DATA_UPDATED_EVENT));
     }
+    return true;
+  };
+
+  const syncSiteToCloud = async () => {
+    if (!useCms) {
+      alert('Cloud storage is not configured on this server.');
+      return;
+    }
+    setSiteSyncStatus('Syncing…');
+    const ok = await persistSiteSnapshot({
+      services,
+      employees,
+      bookings,
+      about: aboutContent,
+      contact: contactContent,
+      gallery: galleryImages,
+      bookingBlocks,
+    });
+    setSiteSyncStatus(ok ? 'Synced — old SMS reminders cleaned up.' : '');
   };
 
   // Load: S3 CMS when configured, else localStorage (gallery stays local until step 5)
@@ -1140,10 +1163,28 @@ Saturday - Sunday: 10:00 AM - 6:00 PM`}
             {/* Bookings Tab */}
             {activeTab === 'bookings' && (
               <div>
-                <h2 className="text-2xl font-semibold text-gray-800 mb-1">Bookings</h2>
-                <p className="text-gray-600 text-sm mb-6">
-                  Closed Sundays. Choose a day for the full schedule, or open the dedicated bookings page.
-                </p>
+                <div className="flex flex-wrap items-start justify-between gap-3 mb-4">
+                  <div>
+                    <h2 className="text-2xl font-semibold text-gray-800 mb-1">Bookings</h2>
+                    <p className="text-gray-600 text-sm">
+                      Closed Sundays. Choose a day for the full schedule, or open the dedicated bookings page.
+                    </p>
+                  </div>
+                  {useCms && (
+                    <div className="flex flex-col items-end gap-1">
+                      <button
+                        type="button"
+                        onClick={() => void syncSiteToCloud()}
+                        className="px-4 py-2 bg-champagne-500 text-white rounded-md hover:bg-champagne-600 transition text-sm font-semibold"
+                      >
+                        Sync to cloud
+                      </button>
+                      {siteSyncStatus ? (
+                        <p className="text-xs text-gray-600">{siteSyncStatus}</p>
+                      ) : null}
+                    </div>
+                  )}
+                </div>
                 <div className="rounded-xl border border-gray-200 bg-gradient-to-b from-gray-50/80 to-white p-6 space-y-6">
                   <WeeklyHeader
                     weekRangeLabel={bookingsWeekRangeLabel}
