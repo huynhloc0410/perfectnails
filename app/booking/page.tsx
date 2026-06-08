@@ -7,7 +7,7 @@ import { isValidUsCustomerPhone } from '@/lib/phone';
 import Link from 'next/link';
 import { SITE_BRAND_NAME } from '@/lib/site/branding';
 import InnerPageHero from '../components/InnerPageHero';
-import { fetchCmsSite, SITE_DATA_UPDATED_EVENT } from '@/lib/cms/site-client';
+import { fetchBookingSiteData, SITE_DATA_UPDATED_EVENT } from '@/lib/cms/site-client';
 import { coerceBookingBlocksList, type CmsBookingBlock } from '@/lib/cmsSiteTypes';
 import {
   isBookingWindowBlocked,
@@ -113,9 +113,11 @@ export default function Booking() {
   /** 1 = service, 2 = stylist, 3 = date, 4 = time + contact + submit */
   const [bookingStep, setBookingStep] = useState(1);
 
+  const [bookingDataSource, setBookingDataSource] = useState<'postgres' | 'cms' | 'local'>('cms');
+
   const loadSiteDataForBooking = useCallback(async () => {
     try {
-      const data = await fetchCmsSite();
+      const data = await fetchBookingSiteData();
       if (data.configured && data.site && !data.error) {
         const site = data.site;
         if (Array.isArray(site.services)) {
@@ -128,6 +130,7 @@ export default function Booking() {
           setBookings(site.bookings as Booking[]);
         }
         setBookingBlocks(coerceBookingBlocksList(site.bookingBlocks as unknown[]));
+        setBookingDataSource(data.source === 'postgres' ? 'postgres' : 'cms');
         return;
       }
     } catch {
@@ -140,6 +143,7 @@ export default function Booking() {
     if (savedServices) setServices(JSON.parse(savedServices));
     if (savedEmployees) setEmployees(JSON.parse(savedEmployees));
     if (savedBookings) setBookings(JSON.parse(savedBookings));
+    setBookingDataSource('local');
     if (savedBlocks) {
       try {
         const parsed = JSON.parse(savedBlocks) as unknown[];

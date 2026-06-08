@@ -1,10 +1,8 @@
 import { NextResponse } from 'next/server';
 import type { CmsBooking } from '@/lib/cmsSiteTypes';
+import { loadBookingSiteSnapshot } from '@/lib/booking/bookingSiteLoader';
 import { isBookingWindowBlocked } from '@/lib/bookingBlocks';
-import {
-  isS3CmsConfigured,
-  readCmsSiteFromS3,
-} from '@/lib/s3CmsSite';
+import { isS3CmsConfigured, readCmsSiteFromS3 } from '@/lib/s3CmsSite';
 import { persistCmsSite } from '@/lib/cms/persistCmsSite';
 import type { CmsSmsJob } from '@/lib/cmsSiteTypes';
 import { normalizePhoneE164 } from '@/lib/phone';
@@ -51,8 +49,6 @@ export async function POST(req: Request) {
     return NextResponse.json({ success: false, error: 'min_notice' }, { status: 400 });
   }
 
-  // In a real app, you'd save to a database
-  // For now, we'll return the booking data and the client will save it
   const bookingDuration = parseInt(duration, 10) || 45;
   const booking: CmsBooking = {
     id: Date.now().toString(),
@@ -84,55 +80,57 @@ export async function POST(req: Request) {
       })
     : [];
 
+  const snapshot = await loadBookingSiteSnapshot();
+
+  if (!snapshot) {
+    return NextResponse.json({ success: false, error: 'booking_unavailable' }, { status: 503 });
+  }
+
+  {
+    const svcRow = snapshot.services.find(
+      (s) => String(s.name ?? '').trim() === String(service ?? '').trim()
+    );
+    if (!svcRow || isNonBookableAddonService(svcRow)) {
+      return NextResponse.json({ success: false, error: 'invalid_service' }, { status: 400 });
+    }
+
+    const dateYmd = `${year}-${String(month).padStart(2, '0')}-${String(day).padStart(2, '0')}`;
+    const empId = (employee || '').trim();
+    const slotEndExclusive = new Date(bookingDate.getTime());
+    slotEndExclusive.setMinutes(slotEndExclusive.getMinutes() + bookingDuration);
+
+    const blocked = isBookingWindowBlocked({
+      dateYmd,
+      employeeId: empId,
+      slotStartLocal: bookingDate,
+      slotEndExclusiveLocal: slotEndExclusive,
+      blocks: snapshot.bookingBlocks,
+    });
+    if (blocked) {
+      return NextResponse.json({ success: false, error: 'time_blocked' }, { status: 409 });
+    }
+
+    if (
+      !hasBookingCapacity({
+        dateYmd,
+        slotStartLocal: bookingDate,
+        slotEndExclusiveLocal: slotEndExclusive,
+        service: svcRow,
+        employees: snapshot.employees,
+        bookings: snapshot.bookings,
+        services: snapshot.services,
+        blocks: snapshot.bookingBlocks,
+        stylistId: empId || undefined,
+      })
+    ) {
+      return NextResponse.json({ success: false, error: 'no_capacity' }, { status: 409 });
+    }
+  }
+
   if (isS3CmsConfigured()) {
     try {
       const site = await readCmsSiteFromS3();
       if (site) {
-        const svcRow = Array.isArray(site.services)
-          ? site.services.find((s) => String((s as { name?: string }).name ?? '').trim() === String(service ?? '').trim())
-          : undefined;
-        if (!svcRow || isNonBookableAddonService(svcRow as { name: string; category?: string | null })) {
-          return NextResponse.json({ success: false, error: 'invalid_service' }, { status: 400 });
-        }
-
-        const dateYmd = `${year}-${String(month).padStart(2, '0')}-${String(day).padStart(2, '0')}`;
-        const empId = (employee || '').trim();
-        const slotEndExclusive = new Date(bookingDate.getTime());
-        slotEndExclusive.setMinutes(slotEndExclusive.getMinutes() + bookingDuration);
-        const blocked = isBookingWindowBlocked({
-          dateYmd,
-          employeeId: empId,
-          slotStartLocal: bookingDate,
-          slotEndExclusiveLocal: slotEndExclusive,
-          blocks: site.bookingBlocks,
-        });
-        if (blocked) {
-          return NextResponse.json({ success: false, error: 'time_blocked' }, { status: 409 });
-        }
-
-        const siteEmployees = Array.isArray(site.employees)
-          ? (site.employees as { id: string; role: string }[])
-          : [];
-        const siteServices = Array.isArray(site.services)
-          ? (site.services as { name: string; category?: string | null; duration?: number }[])
-          : [];
-
-        if (
-          !hasBookingCapacity({
-            dateYmd,
-            slotStartLocal: bookingDate,
-            slotEndExclusiveLocal: slotEndExclusive,
-            service: svcRow as { name: string; category?: string | null; duration?: number },
-            employees: siteEmployees,
-            bookings: site.bookings,
-            services: siteServices,
-            blocks: site.bookingBlocks ?? [],
-            stylistId: empId || undefined,
-          })
-        ) {
-          return NextResponse.json({ success: false, error: 'no_capacity' }, { status: 409 });
-        }
-
         site.bookings = [...site.bookings, booking];
         if (reminderJobs.length > 0) {
           const existingIds = new Set((site.smsJobs ?? []).map((j) => j.id));
@@ -167,6 +165,7 @@ export async function POST(req: Request) {
   return NextResponse.json({
     success: true,
     booking,
+    validationSource: snapshot?.source,
     sms: {
       confirmation,
       reminders: {

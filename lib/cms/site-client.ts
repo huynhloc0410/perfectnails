@@ -9,6 +9,7 @@ export const SITE_DATA_UPDATED_EVENT = 'perfectnails-site-updated';
 /** Shape returned by `/api/cms/site` — intentionally loose on nested fields for forward compatibility. */
 export interface CmsSiteApiResponse {
   configured?: boolean;
+  source?: 'postgres' | 's3' | 'cms';
   site?: {
     services?: unknown[];
     employees?: unknown[];
@@ -25,6 +26,7 @@ export interface CmsSiteApiResponse {
     bookingBlocks?: unknown[];
   };
   error?: string;
+  reason?: string;
 }
 
 export async function fetchCmsSite(): Promise<CmsSiteApiResponse> {
@@ -33,4 +35,23 @@ export async function fetchCmsSite(): Promise<CmsSiteApiResponse> {
     cache: 'no-store',
   });
   return r.json() as Promise<CmsSiteApiResponse>;
+}
+
+/** Public booking page: Postgres scheduling data when configured, else cms/S3. */
+export async function fetchBookingSiteData(): Promise<CmsSiteApiResponse> {
+  try {
+    const pg = await fetch('/api/booking/site-data', {
+      credentials: 'same-origin',
+      cache: 'no-store',
+    });
+    if (pg.ok) {
+      const data = (await pg.json()) as CmsSiteApiResponse;
+      if (data.configured && data.source === 'postgres' && data.site) {
+        return data;
+      }
+    }
+  } catch {
+    /* fall through to cms */
+  }
+  return fetchCmsSite();
 }

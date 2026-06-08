@@ -194,6 +194,7 @@ async function syncSalon(client: PoolClient, site: CmsSitePayload): Promise<stri
         about: site.about,
         contact: site.contact,
         cms_version: site.version,
+        cmsEmployees: site.employees,
       }),
     ]
   );

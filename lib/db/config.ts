@@ -25,6 +25,17 @@ export function isAdminBookingsFromPostgres(): boolean {
   return true;
 }
 
+/**
+ * Public /booking page reads scheduling data from Postgres when DATABASE_URL is set.
+ * Set CMS_PUBLIC_BOOKING_SOURCE=s3 to keep reading cmsSite from S3.
+ */
+export function isPublicBookingFromPostgres(): boolean {
+  if (!isDatabaseConfigured()) return false;
+  const flag = runtimeEnv('CMS_PUBLIC_BOOKING_SOURCE')?.trim().toLowerCase();
+  if (flag === 's3' || flag === 'cms') return false;
+  return true;
+}
+
 export function databaseUrlFromEnv(): string | undefined {
   return runtimeEnv('DATABASE_URL')?.trim() || undefined;
 }
