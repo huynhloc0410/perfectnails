@@ -5,10 +5,11 @@
  *   export DATABASE_URL=... AWS_*=...
  *   npm run cms:cleanup-sms-jobs
  */
-import { persistCmsSite } from '../lib/cms/persistCmsSite';
 import { normalizeCmsSite } from '../lib/cmsSiteTypes';
 import { pruneOrphanSmsJobs } from '../lib/bookingReminderJobs';
-import { isS3CmsConfigured, readCmsSiteFromS3, s3EnvMissingParts } from '../lib/s3CmsSite';
+import { syncCmsSiteToPostgres } from '../lib/db/syncCmsSiteToPostgres';
+import { disconnectPgPool } from '../lib/db/pool';
+import { isS3CmsConfigured, readCmsSiteFromS3, s3EnvMissingParts, writeCmsSiteToS3 } from '../lib/s3CmsSite';
 
 async function main(): Promise<void> {
   if (!isS3CmsConfigured()) {
@@ -36,11 +37,18 @@ async function main(): Promise<void> {
     `Removing ${removed} orphan smsJob(s) (${before} → ${site.smsJobs.length}), ${raw.bookings.length} bookings remain.`
   );
 
-  await persistCmsSite(site);
+  await writeCmsSiteToS3(site);
+  try {
+    await syncCmsSiteToPostgres(site);
+  } catch (e) {
+    console.error('PostgreSQL sync failed (S3 saved):', e);
+  }
   console.info('Saved to S3 and synced PostgreSQL.');
 }
 
-main().catch((e) => {
-  console.error('Cleanup failed:', e);
-  process.exit(1);
-});
+main()
+  .catch((e) => {
+    console.error('Cleanup failed:', e);
+    process.exit(1);
+  })
+  .finally(() => disconnectPgPool());

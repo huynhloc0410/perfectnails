@@ -5,7 +5,6 @@ import {
   defaultCmsSite,
   normalizeCmsSite,
 } from '@/lib/cmsSiteTypes';
-import { buildGalleryThumbWebp } from '@/lib/galleryImageProcessing';
 
 /** First non-empty trimmed value among env keys (copy/paste from other projects often uses different names). */
 function s3Env(...keys: string[]): string | undefined {
@@ -187,6 +186,7 @@ export async function uploadGalleryImagePair(params: {
   const fullKey = `${prefix}/${stamp}-${safe}`;
   const thumbKey = `${prefix}/thumb/${stamp}-${base}.webp`;
 
+  const { buildGalleryThumbWebp } = await import('@/lib/galleryImageProcessing');
   const thumbBuffer = await buildGalleryThumbWebp(params.buffer);
 
   await putGalleryObject(
