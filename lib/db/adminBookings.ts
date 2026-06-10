@@ -1,5 +1,6 @@
 import type { PoolClient } from 'pg';
 import type { CmsBooking } from '@/lib/cmsSiteTypes';
+import { attachCustomerVisitStats } from '@/lib/booking/customerVisitStats';
 import { compactLegacyId } from '@/lib/db/legacyId';
 import { salonTimeSlotLabel } from '@/lib/db/timezone';
 import { withPgClient } from '@/lib/db/pool';
@@ -66,7 +67,7 @@ export async function listAdminBookingsFromPostgres(): Promise<CmsBooking[]> {
     const b = rowToCmsBooking(row);
     if (b) out.push(b);
   }
-  return out;
+  return attachCustomerVisitStats(out);
 }
 
 async function resolveBookingPgId(client: PoolClient, legacyId: string): Promise<string | null> {

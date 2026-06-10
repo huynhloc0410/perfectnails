@@ -16,6 +16,14 @@ export interface CmsEmployee {
   phone: string;
 }
 
+/** Repeat-visit summary for admin booking cards (by normalized phone). */
+export type CustomerVisitInfo = {
+  visitCount: number;
+  /** First appointment date at the salon, MM-DD-YYYY (Phoenix). */
+  firstVisitDate: string;
+  isReturning: boolean;
+};
+
 export interface CmsBooking {
   id: string;
   name: string;
@@ -27,6 +35,8 @@ export interface CmsBooking {
   duration: number;
   /** Optional message from the client (online booking form). */
   notes?: string;
+  /** Admin: New vs returning guest (from booking history by phone). */
+  customerVisit?: CustomerVisitInfo;
 }
 
 /**

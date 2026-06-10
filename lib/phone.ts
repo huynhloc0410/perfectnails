@@ -17,6 +17,12 @@ export function isValidUsCustomerPhone(raw: string): boolean {
   return true;
 }
 
+/** Last 10 NANP digits for matching customers across phone formats. */
+export function phoneDigits10(raw: string): string {
+  const digits = (normalizePhoneE164(raw) ?? String(raw ?? '')).replace(/\D/g, '');
+  return digits.length >= 10 ? digits.slice(-10) : digits;
+}
+
 export function normalizePhoneE164(raw: string): string | null {
   const s = String(raw ?? '').trim();
   if (!s) return null;

@@ -12,7 +12,9 @@ import {
   toISODateString,
 } from '@/lib/admin/week-calendar';
 import { adminBookingLegendSwatchClasses } from '@/lib/booking/booking-service-kind';
+import { attachCustomerVisitStats } from '@/lib/booking/customerVisitStats';
 import { groupBookingsByStartTime } from '@/lib/booking/time-display';
+import type { CustomerVisitInfo } from '@/lib/cmsSiteTypes';
 import { BookingDetailCard } from './components/BookingDetailCard';
 import { WeeklyHeader } from './components/WeeklyHeader';
 import { WeekGrid } from './components/WeekGrid';
@@ -34,6 +36,7 @@ interface Booking {
   timeSlot: string;
   duration: number;
   notes?: string;
+  customerVisit?: CustomerVisitInfo;
 }
 
 interface ServiceCatalogRow {
@@ -96,7 +99,7 @@ export function BookingsCalendarClient() {
         if (!cancelled && pgRes.ok) {
           const pgData = await pgRes.json();
           if (pgData.source === 'postgres' && Array.isArray(pgData.bookings)) {
-            setBookings(pgData.bookings as Booking[]);
+            setBookings(attachCustomerVisitStats(pgData.bookings as Booking[]));
             setBookingsSource('postgres');
             loadedFromPostgres = true;
           }
@@ -127,7 +130,7 @@ export function BookingsCalendarClient() {
         if (data.configured === true && data.site && !data.error) {
           const s = data.site;
           if (!loadedFromPostgres && Array.isArray(s.bookings)) {
-            setBookings(s.bookings as Booking[]);
+            setBookings(attachCustomerVisitStats(s.bookings as Booking[]));
             setBookingsSource('cms');
           }
           if (!loadedConfigFromPostgres) {
@@ -139,7 +142,7 @@ export function BookingsCalendarClient() {
           const savedEmployees = localStorage.getItem('admin-employees');
           const savedServices = localStorage.getItem('admin-services');
           if (savedBookings) {
-            setBookings(JSON.parse(savedBookings));
+            setBookings(attachCustomerVisitStats(JSON.parse(savedBookings) as Booking[]));
             setBookingsSource('local');
           }
           if (savedEmployees) setEmployees(JSON.parse(savedEmployees));
@@ -151,7 +154,7 @@ export function BookingsCalendarClient() {
           const savedEmployees = localStorage.getItem('admin-employees');
           const savedServices = localStorage.getItem('admin-services');
           if (savedBookings) {
-            setBookings(JSON.parse(savedBookings));
+            setBookings(attachCustomerVisitStats(JSON.parse(savedBookings) as Booking[]));
             setBookingsSource('local');
           }
           if (savedEmployees) setEmployees(JSON.parse(savedEmployees));
@@ -200,7 +203,7 @@ export function BookingsCalendarClient() {
     if (!confirm('Are you sure you want to delete this booking?')) return;
 
     const previous = bookings;
-    const nextBookings = previous.filter((b) => b.id !== id);
+    const nextBookings = attachCustomerVisitStats(previous.filter((b) => b.id !== id));
     setBookings(nextBookings);
 
     try {

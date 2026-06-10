@@ -10,6 +10,8 @@ import {
   type BookingServiceKind,
 } from '@/lib/booking/booking-service-kind';
 import { BookingSmsButtons } from './BookingSmsButtons';
+import { CustomerVisitBadge } from './CustomerVisitBadge';
+import type { CustomerVisitInfo } from '@/lib/cmsSiteTypes';
 
 type Employee = {
   id: string;
@@ -32,6 +34,7 @@ type BookingDetailCardProps = {
     date: string;
     duration: number;
     notes?: string;
+    customerVisit?: CustomerVisitInfo;
   };
   bookingEmployee: Employee | null;
   serviceCatalog: ServiceCatalogRow[] | null;
@@ -66,7 +69,10 @@ export function BookingDetailCard({
           Delete
         </button>
       </div>
-      <p className="mt-3 text-base font-bold leading-snug text-neutral-950">{booking.name}</p>
+      <p className="mt-3 text-base font-bold leading-snug text-neutral-950">
+        {booking.name}
+        <CustomerVisitBadge visit={booking.customerVisit} />
+      </p>
       <p className={`mt-2 ${detailText}`}>Phone: {booking.phone}</p>
       <p className={`mt-1 ${adminBookingServiceTextClasses(kind)}`}>{booking.service}</p>
       {bookingEmployee && (
