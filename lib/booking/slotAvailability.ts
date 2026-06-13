@@ -84,57 +84,6 @@ export function parseBookingInterval(booking: SlotBooking, bufferMinutes = 0): B
   return { start, end };
 }
 
-/**
- * Unassigned bookings only compete when they share a staff family with the candidate
- * (Water vs Powder). Unassigned Pedicure does not reduce Acrylic capacity — Water staff
- * absorb those; Everything stays available for Acrylic unless already assigned/blocked.
- */
-export function unassignedBookingCompetesForService(
-  booking: SlotBooking,
-  candidateService: SlotService,
-  employees: SlotEmployee[],
-  services: SlotService[],
-): boolean {
-  const bookingService = resolveService(booking.service, services);
-  const bookingFamily = bookingServiceStaffFamily(bookingService);
-  const candidateFamily = bookingServiceStaffFamily(candidateService);
-
-  if (
-    bookingFamily !== null &&
-    candidateFamily !== null &&
-    bookingFamily !== candidateFamily
-  ) {
-    return false;
-  }
-
-  const eligibleForCandidate = employees.filter((e) => employeeCanPerformService(e, candidateService));
-  const eligibleForBooking = employees.filter((e) => employeeCanPerformService(e, bookingService));
-  return eligibleForCandidate.some((c) => eligibleForBooking.some((b) => b.id === c.id));
-}
-
-/**
- * Overlapping bookings that reduce capacity for `candidateService`.
- * - Assigned: only if that stylist could perform the service being booked (Water pedicure
- *   does not block Acrylic on Powder staff).
- * - Unassigned: only if it competes for the same staff pool (e.g. another Acrylic on Powder).
- */
-export function bookingsForServiceCapacity(
-  overlapping: SlotBooking[],
-  candidateService: SlotService,
-  employees: SlotEmployee[],
-  services: SlotService[],
-): SlotBooking[] {
-  return overlapping.filter((booking) => {
-    const empId = String(booking.employee ?? '').trim();
-    if (empId) {
-      const employee = employees.find((e) => e.id === empId);
-      if (!employee) return false;
-      return employeeCanPerformService(employee, candidateService);
-    }
-    return unassignedBookingCompetesForService(booking, candidateService, employees, services);
-  });
-}
-
 function intervalsOverlap(a: BookingInterval, b: BookingInterval): boolean {
   return intervalsOverlapExclusiveEnd(
     a.start.getTime(),
@@ -197,6 +146,14 @@ function specialistFirstRank(employee: SlotEmployee, service: SlotService): numb
   return 0;
 }
 
+/** When start times tie, assign powder-family work before water so Everything is not consumed by pedis before Gel X. */
+function unassignedProcessingRank(booking: SlotBooking, services: SlotService[]): number {
+  const family = bookingServiceStaffFamily(resolveService(booking.service, services));
+  if (family === 'powder') return 0;
+  if (family === 'water') return 1;
+  return 2;
+}
+
 /**
  * Greedy assignment: assigned bookings lock their stylist; each unassigned booking
  * must map to a distinct qualified, unblocked employee for its window.
@@ -250,7 +207,14 @@ export function canAssignOverlappingBookings(opts: {
     addBusyInterval(empId, interval, intervalsByEmployee);
   }
 
-  unassigned.sort((a, b) => a.interval.start.getTime() - b.interval.start.getTime());
+  unassigned.sort((a, b) => {
+    const byStart = a.interval.start.getTime() - b.interval.start.getTime();
+    if (byStart !== 0) return byStart;
+    return (
+      unassignedProcessingRank(a.booking, services) -
+      unassignedProcessingRank(b.booking, services)
+    );
+  });
 
   for (const { booking, interval } of unassigned) {
     const svc = resolveService(booking.service, services);
@@ -363,13 +327,7 @@ export function evaluateSlotState(opts: {
     bufferMinutes,
   );
 
-  const capacityBookings = bookingsForServiceCapacity(
-    overlapping,
-    service,
-    employees,
-    services,
-  );
-
+  // Simulate assigning every overlapping appointment (all families share the same staff pool).
   const candidate: SlotBooking = {
     id: '__candidate__',
     service: service.name,
@@ -380,7 +338,7 @@ export function evaluateSlotState(opts: {
   };
 
   const ok = canAssignOverlappingBookings({
-    bookings: [...capacityBookings, candidate],
+    bookings: [...overlapping, candidate],
     employees,
     services,
     blocks,

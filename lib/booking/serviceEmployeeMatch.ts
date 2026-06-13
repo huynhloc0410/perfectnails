@@ -31,7 +31,7 @@ function normalizeRole(role: string): string {
   return r;
 }
 
-/** Manicure/pedicure vs acrylic/gel — used for capacity (Water vs Powder pools). */
+/** Manicure/pedicure vs acrylic/gel — used for greedy assignment priority, not separate capacity pools. */
 export type ServiceStaffFamily = 'water' | 'powder';
 
 export function bookingServiceStaffFamily(service: ServiceLike): ServiceStaffFamily | null {
