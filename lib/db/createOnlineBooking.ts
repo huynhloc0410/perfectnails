@@ -26,9 +26,9 @@ async function resolveCustomerId(
   const mapped = await getMappedUuid(client, 'customer', legacyId);
   if (mapped) {
     await client.query(
-      `UPDATE customers SET name = $2, phone = $3, sms_opt_in = TRUE, updated_at = NOW()
+      `UPDATE customers SET phone = $2, sms_opt_in = TRUE, updated_at = NOW()
        WHERE id = $1`,
-      [mapped, customerDisplayName(name), customerPhoneStored(phoneRaw)]
+      [mapped, customerPhoneStored(phoneRaw)]
     );
     return mapped;
   }
@@ -47,9 +47,9 @@ async function resolveCustomerId(
       const id = existing.rows[0].id;
       await rememberMapping(client, 'customer', legacyId, id);
       await client.query(
-        `UPDATE customers SET name = $2, phone = $3, sms_opt_in = TRUE, updated_at = NOW()
+        `UPDATE customers SET phone = $2, sms_opt_in = TRUE, updated_at = NOW()
          WHERE id = $1`,
-        [id, customerDisplayName(name), customerPhoneStored(phoneRaw)]
+        [id, customerPhoneStored(phoneRaw)]
       );
       return id;
     }
@@ -60,7 +60,6 @@ async function resolveCustomerId(
     `INSERT INTO customers (id, salon_id, name, phone, sms_opt_in)
      VALUES ($1, $2, $3, $4, TRUE)
      ON CONFLICT (id) DO UPDATE SET
-       name = EXCLUDED.name,
        phone = EXCLUDED.phone,
        sms_opt_in = TRUE,
        updated_at = NOW()`,
@@ -148,15 +147,16 @@ export async function createOnlineBookingInPostgres(
       await client.query(
         `INSERT INTO bookings (
            id, salon_id, customer_id, booking_number, status,
-           appointment_date, start_datetime, end_datetime, notes,
+           appointment_date, start_datetime, end_datetime, notes, guest_name,
            subtotal, total
-         ) VALUES ($1, $2, $3, $4, 'confirmed', $5, $6, $7, $8, $9, $9)
+         ) VALUES ($1, $2, $3, $4, 'confirmed', $5, $6, $7, $8, $9, $10, $10)
          ON CONFLICT (id) DO UPDATE SET
            customer_id = EXCLUDED.customer_id,
            appointment_date = EXCLUDED.appointment_date,
            start_datetime = EXCLUDED.start_datetime,
            end_datetime = EXCLUDED.end_datetime,
            notes = EXCLUDED.notes,
+           guest_name = COALESCE(NULLIF(TRIM(bookings.guest_name), ''), EXCLUDED.guest_name),
            subtotal = EXCLUDED.subtotal,
            total = EXCLUDED.total,
            updated_at = NOW()`,
@@ -169,6 +169,7 @@ export async function createOnlineBookingInPostgres(
           start,
           end,
           booking.notes?.trim() || null,
+          customerDisplayName(booking.name),
           price,
         ]
       );

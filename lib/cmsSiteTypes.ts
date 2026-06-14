@@ -21,6 +21,7 @@ export type CustomerVisitInfo = {
   visitCount: number;
   /** First appointment date at the salon, MM-DD-YYYY (Phoenix). */
   firstVisitDate: string;
+  /** True when this appointment is after the guest's first visit (same phone). */
   isReturning: boolean;
 };
 

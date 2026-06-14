@@ -30,11 +30,11 @@ function aggregateByPhone<T extends { phone: string; date: string }>(
   return byPhone;
 }
 
-export function customerVisitInfoFromAgg(agg: PhoneAgg): CustomerVisitInfo {
+export function customerVisitInfoForBooking(agg: PhoneAgg, bookingMs: number): CustomerVisitInfo {
   return {
     visitCount: agg.count,
     firstVisitDate: formatSalonDateUs(new Date(agg.firstMs)),
-    isReturning: agg.count > 1,
+    isReturning: Number.isFinite(bookingMs) && bookingMs > agg.firstMs,
   };
 }
 
@@ -47,7 +47,15 @@ export function attachCustomerVisitStats<T extends { phone: string; date: string
     const key = phoneDigits10(b.phone);
     const agg = key.length >= 10 ? byPhone.get(key) : undefined;
     if (!agg) return b;
-    return { ...b, customerVisit: customerVisitInfoFromAgg(agg) };
+    const bookingMs = new Date(b.date).getTime();
+    const visit = Number.isFinite(bookingMs)
+      ? customerVisitInfoForBooking(agg, bookingMs)
+      : {
+          visitCount: agg.count,
+          firstVisitDate: formatSalonDateUs(new Date(agg.firstMs)),
+          isReturning: false,
+        };
+    return { ...b, customerVisit: visit };
   });
 }
 

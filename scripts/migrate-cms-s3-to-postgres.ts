@@ -324,10 +324,21 @@ async function upsertBookings(
       await client.query(
         `INSERT INTO bookings (
            id, salon_id, customer_id, booking_number, status,
-           appointment_date, start_datetime, end_datetime, notes,
+           appointment_date, start_datetime, end_datetime, notes, guest_name,
            subtotal, total
-         ) VALUES ($1, $2, $3, $4, 'confirmed', $5, $6, $7, $8, $9, $9)`,
-        [id, salonId, customerId, bookingNumber, apptDate, start, end, b.notes?.trim() || null, price]
+         ) VALUES ($1, $2, $3, $4, 'confirmed', $5, $6, $7, $8, $9, $10, $10)`,
+        [
+          id,
+          salonId,
+          customerId,
+          bookingNumber,
+          apptDate,
+          start,
+          end,
+          b.notes?.trim() || null,
+          customerDisplayName(b.name),
+          price,
+        ]
       );
 
       const bsId = randomUUID();

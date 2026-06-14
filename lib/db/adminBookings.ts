@@ -9,6 +9,7 @@ type BookingRow = {
   legacy_id: string | null;
   start_datetime: Date;
   notes: string | null;
+  guest_name: string | null;
   customer_name: string;
   phone: string;
   service_name: string | null;
@@ -21,6 +22,7 @@ const LIST_SQL = `
     COALESCE(bm.legacy_id, NULLIF(REPLACE(b.booking_number, 'CMS-', ''), b.booking_number)) AS legacy_id,
     b.start_datetime,
     b.notes,
+    NULLIF(TRIM(b.guest_name), '') AS guest_name,
     c.name AS customer_name,
     c.phone,
     bs.service_name,
@@ -49,7 +51,7 @@ function rowToCmsBooking(row: BookingRow): CmsBooking | null {
 
   return {
     id: legacyId,
-    name: row.customer_name?.trim() || 'Guest',
+    name: row.guest_name?.trim() || row.customer_name?.trim() || 'Guest',
     phone: row.phone?.trim() || '',
     service: row.service_name?.trim() || 'Appointment',
     employee: row.employee_legacy_id?.trim() || undefined,

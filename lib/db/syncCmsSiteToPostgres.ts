@@ -433,15 +433,16 @@ async function syncBookings(
     await client.query(
       `INSERT INTO bookings (
          id, salon_id, customer_id, booking_number, status,
-         appointment_date, start_datetime, end_datetime, notes,
+         appointment_date, start_datetime, end_datetime, notes, guest_name,
          subtotal, total
-       ) VALUES ($1, $2, $3, $4, 'confirmed', $5, $6, $7, $8, $9, $9)
+       ) VALUES ($1, $2, $3, $4, 'confirmed', $5, $6, $7, $8, $9, $10, $10)
        ON CONFLICT (id) DO UPDATE SET
          customer_id = EXCLUDED.customer_id,
          appointment_date = EXCLUDED.appointment_date,
          start_datetime = EXCLUDED.start_datetime,
          end_datetime = EXCLUDED.end_datetime,
          notes = EXCLUDED.notes,
+         guest_name = EXCLUDED.guest_name,
          subtotal = EXCLUDED.subtotal,
          total = EXCLUDED.total,
          updated_at = NOW()`,
@@ -454,6 +455,7 @@ async function syncBookings(
         start,
         end,
         b.notes?.trim() || null,
+        customerDisplayName(b.name),
         price,
       ]
     );

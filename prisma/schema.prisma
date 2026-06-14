@@ -305,6 +305,7 @@ model Booking {
   startDatetime   DateTime      @map("start_datetime")
   endDatetime     DateTime      @map("end_datetime")
   notes           String?
+  guestName       String?       @map("guest_name") @db.VarChar(200)
   internalNotes   String?       @map("internal_notes")
   subtotal        Decimal       @default(0) @db.Decimal(10, 2)
   tax             Decimal       @default(0) @db.Decimal(10, 2)
