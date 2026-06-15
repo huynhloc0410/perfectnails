@@ -14,6 +14,7 @@ import { readFileSync } from 'fs';
 import { resolve } from 'path';
 import type { CmsBooking } from '../lib/cmsSiteTypes';
 import { salonAppointmentDate } from '../lib/db/timezone';
+import { customerPhoneDigits10 } from '../lib/db/legacyId';
 import { isDatabaseConfigured } from '../lib/db/config';
 import { listAdminBookingsFromPostgres } from '../lib/db/adminBookings';
 import { createOnlineBookingInPostgres } from '../lib/db/createOnlineBooking';
@@ -82,6 +83,14 @@ function normalizeRow(raw: unknown, index: number): CmsBooking | null {
   };
 }
 
+function bookingSlotKey(b: CmsBooking): string {
+  const d = new Date(b.date);
+  const day = Number.isFinite(d.getTime()) ? salonAppointmentDate(d) : '';
+  const phone = customerPhoneDigits10(b.phone);
+  const time = (b.timeSlot || '').trim() || '00:00';
+  return `${phone}|${day}|${time}`;
+}
+
 async function main() {
   if (!isDatabaseConfigured()) {
     console.error('DATABASE_URL is not set.');
@@ -112,8 +121,16 @@ async function main() {
 
   const existing = await listAdminBookingsFromPostgres();
   const existingIds = new Set(existing.map((b) => b.id));
+  const existingSlots = new Set(existing.map((b) => bookingSlotKey(b)));
 
-  const toImport = candidates.filter((b) => !existingIds.has(b.id));
+  const toImport = candidates.filter((b) => {
+    if (existingIds.has(b.id)) return false;
+    if (existingSlots.has(bookingSlotKey(b))) {
+      console.warn(`Skip ${b.id}: slot already in DB (${b.name} ${bookingSlotKey(b)})`);
+      return false;
+    }
+    return true;
+  });
   const alreadyInDb = candidates.length - toImport.length;
 
   console.log(`File: ${file}`);

@@ -126,9 +126,6 @@ export default function AdminPage() {
       if (partial.employees !== undefined) {
         localStorage.setItem('admin-employees', JSON.stringify(nextEmployees));
       }
-      if (partial.bookings !== undefined) {
-        localStorage.setItem('admin-bookings', JSON.stringify(nextBookings));
-      }
       if (partial.about !== undefined) {
         localStorage.setItem('admin-about', JSON.stringify(nextAbout));
       }
@@ -274,7 +271,6 @@ export default function AdminPage() {
       };
     if (!schedulingFromPg) {
       s3Body.bookings = s3Bookings;
-      s3Body.smsJobs = [];
     }
 
     const res = await fetch('/api/cms/site', {
@@ -360,15 +356,12 @@ export default function AdminPage() {
         }
 
         let pgBookings: Booking[] = [];
-        let bookingsUseLegacyS3 = false;
         if (!cancelled && bookingsRes.ok) {
           const bookingsData = await bookingsRes.json();
           if (bookingsData.source === 'postgres' && Array.isArray(bookingsData.bookings)) {
             pgBookings = bookingsData.bookings as Booking[];
             loadedBookingsFromPg = true;
             setBookings(pgBookings);
-          } else if (bookingsData.configured === false) {
-            bookingsUseLegacyS3 = true;
           }
         }
 
@@ -384,9 +377,6 @@ export default function AdminPage() {
             if (Array.isArray(s.employees)) setEmployees(s.employees as Employee[]);
             const blkUnknown = (s as { bookingBlocks?: unknown[] }).bookingBlocks;
             setBookingBlocks(coerceBookingBlocksList(blkUnknown));
-          }
-          if (!loadedBookingsFromPg && bookingsUseLegacyS3 && Array.isArray(s.bookings)) {
-            setBookings(s.bookings as Booking[]);
           }
           if (!loadedContentFromPg) {
             setContentConfigSource('cms');

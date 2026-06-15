@@ -588,69 +588,6 @@ async function syncBookingBlocks(
   }
 }
 
-async function syncSmsLogs(client: PoolClient, salonId: string, site: CmsSitePayload): Promise<void> {
-  const keepIds: string[] = [];
-
-  for (const job of site.smsJobs) {
-    const legacyId = job.id;
-    const id = await mappedOrNew(client, 'sms_job', legacyId);
-    keepIds.push(id);
-    const messageType =
-      job.kind === 'booking_confirmation' ? 'confirmation' : 'reminder';
-    const status =
-      job.status === 'sent' ? 'sent' : job.status === 'error' ? 'failed' : 'queued';
-
-    let bookingId: string | null = null;
-    if (job.bookingId) {
-      bookingId = await getMappedUuid(client, 'booking', job.bookingId);
-    }
-
-    await client.query(
-      `INSERT INTO sms_logs (
-         id, salon_id, booking_id, phone_number, message_type,
-         twilio_sid, status, sent_at, error_message, created_at
-       ) VALUES ($1, $2, $3, $4, $5, $6, $7, $8, $9, $10)
-       ON CONFLICT (id) DO UPDATE SET
-         status = EXCLUDED.status,
-         twilio_sid = EXCLUDED.twilio_sid,
-         sent_at = EXCLUDED.sent_at,
-         error_message = EXCLUDED.error_message`,
-      [
-        id,
-        salonId,
-        bookingId,
-        job.to,
-        messageType,
-        job.messageSid ?? null,
-        status,
-        job.sentAt ? new Date(job.sentAt) : null,
-        job.lastError ?? null,
-        job.createdAt ? new Date(job.createdAt) : new Date(),
-      ]
-    );
-  }
-
-  if (keepIds.length === 0) {
-    await client.query(`DELETE FROM sms_logs WHERE salon_id = $1`, [salonId]);
-  } else {
-    await client.query(
-      `DELETE FROM sms_logs WHERE salon_id = $1 AND id <> ALL($2::uuid[])`,
-      [salonId, keepIds]
-    );
-  }
-
-  const smsKeys = site.smsJobs.map((j) => compactLegacyId(j.id));
-  if (smsKeys.length === 0) {
-    await client.query(`DELETE FROM legacy_id_mappings WHERE entity_type = 'sms_job'`);
-  } else {
-    await client.query(
-      `DELETE FROM legacy_id_mappings
-       WHERE entity_type = 'sms_job' AND legacy_id <> ALL($1::varchar[])`,
-      [smsKeys]
-    );
-  }
-}
-
 async function syncCmsSiteToPostgresInternal(
   client: PoolClient,
   site: CmsSitePayload
@@ -693,10 +630,6 @@ async function syncCmsSiteToPostgresInternal(
   }
 
   await syncGallery(client, salonId, site);
-
-  if (!bookingsInPostgres && site.smsJobs.length > 0) {
-    await syncSmsLogs(client, salonId, site);
-  }
 }
 
 /** Sync full cmsSite snapshot to Postgres. No-op when DATABASE_URL unset or CMS_WRITE_DB=false. */

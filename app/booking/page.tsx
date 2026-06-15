@@ -140,11 +140,9 @@ export default function Booking() {
     }
     const savedServices = localStorage.getItem('admin-services');
     const savedEmployees = localStorage.getItem('admin-employees');
-    const savedBookings = localStorage.getItem('admin-bookings');
     const savedBlocks = localStorage.getItem('admin-booking-blocks');
     if (savedServices) setServices(JSON.parse(savedServices));
     if (savedEmployees) setEmployees(JSON.parse(savedEmployees));
-    if (savedBookings) setBookings(JSON.parse(savedBookings));
     setBookingDataSource('local');
     if (savedBlocks) {
       try {
@@ -510,15 +508,7 @@ export default function Booking() {
       }
 
       if (result.success) {
-        if (result.writeSource !== 'postgres') {
-          const savedBookings = localStorage.getItem('admin-bookings') || '[]';
-          const bookingsList = JSON.parse(savedBookings);
-          bookingsList.push(result.booking);
-          localStorage.setItem('admin-bookings', JSON.stringify(bookingsList));
-          setBookings(bookingsList);
-        } else {
-          setBookings((prev) => [...prev, result.booking]);
-        }
+        setBookings((prev) => [...prev, result.booking]);
 
         try {
           const bc = new BroadcastChannel(ADMIN_BOOKINGS_BROADCAST);

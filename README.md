@@ -1,6 +1,12 @@
 # Perfect Nails
 
-Next.js site for **Perfect Nails** — Phoenix, AZ: booking, services, gallery, contact, and admin tools (localStorage-backed).
+Next.js site for **Perfect Nails** — Phoenix, AZ: online booking, services, gallery, contact, and admin tools.
+
+## Stack
+
+- Next.js 14 (App Router), React 18, Tailwind CSS, TypeScript
+- **PostgreSQL** (Render) — bookings, services, staff, site copy
+- **Amazon S3** — gallery images + minimal `cms/site.json` (`version` + `gallery`)
 
 ## Scripts
 
@@ -11,42 +17,31 @@ npm run build
 npm start
 ```
 
-## Stack
+## Database
 
-- Next.js 14 (App Router)
-- React 18, Tailwind CSS, TypeScript
+```bash
+export DATABASE_URL='postgresql://...'
+npm run db:schema    # create tables
+npm run db:verify    # row counts
+```
+
+Import bookings from JSON (no SMS): `npm run db:import-bookings -- ./file.json`
 
 ## Environment
 
-Copy secrets as needed; default setup runs without a `.env` for local demo.
+Copy `.env.example` for Render variables: `DATABASE_URL`, S3 gallery keys, Twilio, `ADMIN_PASSWORD`.
 
-## SMS confirmations + reminders (Twilio)
+## SMS
 
-This project supports:
+- **Confirmation SMS** — sent when a customer books online (`POST /api/booking`)
+- **Reminder SMS** — manual from admin booking cards (`/api/admin/booking-sms`)
+- Automated reminder cron is **disabled**
 
-- **Confirmation SMS**: sent immediately when a booking is created (`POST /api/booking`)
-- **Reminder SMS**: queued for **24 hours** and **2 hours before** the appointment (each skipped if that time is already past when booking), then delivered by a cron call (`POST /api/cron/sms-reminders`)
-
-### Required environment variables
-
-Set these in your hosting provider (or `.env.local` for local dev):
+### Twilio variables
 
 - `TWILIO_ACCOUNT_SID`
 - `TWILIO_AUTH_TOKEN`
-- `TWILIO_FROM_NUMBER` (E.164, e.g. `+16233022156`)
-
-For production, also set:
-
-- `CRON_SECRET` (any long random string)
-
-### Running reminders (cron)
-
-Reminders are stored in the S3 CMS payload (`site.json`) as `smsJobs`. To deliver them, call:
-
-- `POST /api/cron/sms-reminders`
-- Include header `x-cron-secret: <CRON_SECRET>` (recommended)
-
-You can trigger this endpoint every 1–5 minutes using your hosting platform’s cron feature (or an external cron monitor).
+- `TWILIO_FROM_NUMBER` (E.164)
 
 ---
 

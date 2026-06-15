@@ -6,9 +6,7 @@ import {
   createOnlineBookingInPostgres,
   recordBookingConfirmationSms,
 } from '@/lib/db/createOnlineBooking';
-import { isPublicBookingWriteToPostgres } from '@/lib/db/config';
-import { isS3CmsConfigured, readCmsSiteFromS3 } from '@/lib/s3CmsSite';
-import { persistCmsSite } from '@/lib/cms/persistCmsSite';
+import { isDatabaseConfigured, isPublicBookingWriteToPostgres } from '@/lib/db/config';
 import { normalizePhoneE164 } from '@/lib/phone';
 import { isSlotStartAllowedForBooking } from '@/lib/bookingLeadTime';
 import { isNonBookableAddonService } from '@/lib/booking/serviceEmployeeMatch';
@@ -118,32 +116,20 @@ export async function POST(req: Request) {
   }
 
   const writeToPostgres = isPublicBookingWriteToPostgres();
-  const writeSource: 'postgres' | 's3' = writeToPostgres ? 'postgres' : 's3';
+  if (!writeToPostgres || !isDatabaseConfigured()) {
+    return NextResponse.json({ success: false, error: 'booking_unavailable' }, { status: 503 });
+  }
 
-  if (writeToPostgres) {
-    try {
-      await createOnlineBookingInPostgres({
-        booking,
-        phoneE164,
-        serviceLegacyId: svcRow.id,
-      });
-    } catch (e) {
-      const detail = e instanceof Error ? e.message : String(e);
-      console.error('createOnlineBookingInPostgres failed:', detail, e);
-      return NextResponse.json({ success: false, error: 'save_failed' }, { status: 502 });
-    }
-  } else if (isS3CmsConfigured()) {
-    try {
-      const site = await readCmsSiteFromS3();
-      if (site) {
-        site.bookings = [...site.bookings, booking];
-        site.smsJobs = [];
-        await persistCmsSite(site);
-      }
-    } catch (e) {
-      console.error('Append booking to S3 failed:', e);
-      return NextResponse.json({ success: false, error: 'save_failed' }, { status: 502 });
-    }
+  try {
+    await createOnlineBookingInPostgres({
+      booking,
+      phoneE164,
+      serviceLegacyId: svcRow.id,
+    });
+  } catch (e) {
+    const detail = e instanceof Error ? e.message : String(e);
+    console.error('createOnlineBookingInPostgres failed:', detail, e);
+    return NextResponse.json({ success: false, error: 'save_failed' }, { status: 502 });
   }
 
   let confirmation: { attempted: boolean; sent: boolean; messageSid?: string; error?: string } = {
@@ -157,17 +143,15 @@ export async function POST(req: Request) {
       const out = await sendSms({ to: phoneE164, body: confirmationBody });
       confirmation.sent = true;
       confirmation.messageSid = out.sid;
-      if (writeToPostgres) {
-        try {
-          await recordBookingConfirmationSms({
-            bookingLegacyId: booking.id,
-            phoneE164,
-            confirmationBody,
-            confirmationSid: out.sid,
-          });
-        } catch (e) {
-          console.error('recordBookingConfirmationSms failed:', e);
-        }
+      try {
+        await recordBookingConfirmationSms({
+          bookingLegacyId: booking.id,
+          phoneE164,
+          confirmationBody,
+          confirmationSid: out.sid,
+        });
+      } catch (e) {
+        console.error('recordBookingConfirmationSms failed:', e);
       }
     } catch (e) {
       confirmation.sent = false;
@@ -180,7 +164,7 @@ export async function POST(req: Request) {
     success: true,
     booking,
     validationSource: snapshot.source,
-    writeSource,
+    writeSource: 'postgres' as const,
     sms: {
       confirmation,
       reminders: {

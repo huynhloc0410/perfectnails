@@ -60,7 +60,7 @@ export function BookingsCalendarClient() {
   const [bookings, setBookings] = useState<Booking[]>([]);
   const [employees, setEmployees] = useState<Employee[]>([]);
   const [serviceCatalog, setServiceCatalog] = useState<ServiceCatalogRow[]>([]);
-  const [bookingsSource, setBookingsSource] = useState<'postgres' | 'cms' | 'local'>('cms');
+  const [bookingsSource, setBookingsSource] = useState<'postgres' | 'unavailable'>('unavailable');
 
   const rawDate = searchParams.get('date');
 
@@ -88,7 +88,6 @@ export function BookingsCalendarClient() {
     (async () => {
       try {
         let loadedFromPostgres = false;
-        let bookingsUseLegacyS3 = false;
 
         const pgRes = await fetch('/api/admin/bookings', {
           credentials: 'same-origin',
@@ -101,8 +100,6 @@ export function BookingsCalendarClient() {
             setBookings(attachCustomerVisitStats(pgData.bookings as Booking[]));
             setBookingsSource('postgres');
             loadedFromPostgres = true;
-          } else if (pgData.configured === false) {
-            bookingsUseLegacyS3 = true;
           }
         }
 
@@ -124,25 +121,19 @@ export function BookingsCalendarClient() {
           }
         }
 
-        if (cancelled || loadedFromPostgres || !bookingsUseLegacyS3) return;
+        if (cancelled || loadedFromPostgres) return;
 
         const r = await fetch('/api/cms/site', { cache: 'no-store' });
         const data = await r.json();
         if (cancelled) return;
 
-        if (data.configured === true && data.site && !data.error) {
+        if (data.configured === true && data.site && !data.error && !loadedConfigFromPostgres) {
           const s = data.site;
-          if (Array.isArray(s.bookings)) {
-            setBookings(attachCustomerVisitStats(s.bookings as Booking[]));
-            setBookingsSource('cms');
-          }
-          if (!loadedConfigFromPostgres) {
-            if (Array.isArray(s.employees)) setEmployees(s.employees as Employee[]);
-            if (Array.isArray(s.services)) setServiceCatalog(s.services as ServiceCatalogRow[]);
-          }
+          if (Array.isArray(s.employees)) setEmployees(s.employees as Employee[]);
+          if (Array.isArray(s.services)) setServiceCatalog(s.services as ServiceCatalogRow[]);
         }
       } catch {
-        /* keep empty state — bookings live in Postgres when DATABASE_URL is set */
+        if (!cancelled) setBookingsSource('unavailable');
       }
     })();
     return () => {
@@ -195,70 +186,18 @@ export function BookingsCalendarClient() {
       /* ignore */
     }
 
-    if (bookingsSource === 'postgres') {
-      try {
-        const del = await fetch(`/api/admin/bookings/${encodeURIComponent(id)}`, {
-          method: 'DELETE',
-          credentials: 'same-origin',
-        });
-        if (!del.ok) {
-          const msg = await del.text().catch(() => '');
-          alert(`Could not delete booking (${del.status}). ${msg || 'Try again.'}`);
-          setBookings(previous);
-        }
-      } catch {
-        alert('Could not delete booking.');
-        setBookings(previous);
-      }
-      return;
-    }
-
     try {
-      const r = await fetch('/api/cms/site');
-      const data = await r.json();
-      if (!data.site || data.error) {
-        alert('Could not load site data to save.');
-        setBookings(previous);
-        return;
-      }
-      const s = data.site as Record<string, unknown>;
-      const put = await fetch('/api/cms/site', {
-        method: 'PUT',
+      const del = await fetch(`/api/admin/bookings/${encodeURIComponent(id)}`, {
+        method: 'DELETE',
         credentials: 'same-origin',
-        headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({
-          version: typeof s.version === 'number' ? s.version : 1,
-          services: Array.isArray(s.services) ? s.services : [],
-          employees: Array.isArray(s.employees) ? s.employees : [],
-          bookings: nextBookings,
-          smsJobs: [],
-          about:
-            s.about && typeof s.about === 'object'
-              ? s.about
-              : { title: '', content: '' },
-          contact:
-            s.contact && typeof s.contact === 'object'
-              ? s.contact
-              : {
-                  address: '',
-                  phone: '',
-                  email: '',
-                  hours: '',
-                  socialMedia: { facebook: '', instagram: '', yelp: '' },
-                },
-          gallery: Array.isArray(s.gallery) ? s.gallery : [],
-          bookingBlocks: Array.isArray((s as { bookingBlocks?: unknown }).bookingBlocks)
-            ? (s as { bookingBlocks: unknown[] }).bookingBlocks
-            : [],
-        }),
       });
-      if (!put.ok) {
-        const msg = await put.text().catch(() => '');
-        alert(`Could not save delete (${put.status}). ${msg || 'Check S3 configuration.'}`);
+      if (!del.ok) {
+        const msg = await del.text().catch(() => '');
+        alert(`Could not delete booking (${del.status}). ${msg || 'Try again.'}`);
         setBookings(previous);
       }
     } catch {
-      alert('Could not save delete to cloud.');
+      alert('Could not delete booking.');
       setBookings(previous);
     }
   };
@@ -291,8 +230,8 @@ export function BookingsCalendarClient() {
               {bookingsSource === 'postgres' && (
                 <p className="mt-1 text-sm text-champagne-300/90">Bookings load from PostgreSQL only.</p>
               )}
-              {bookingsSource === 'cms' && (
-                <p className="mt-1 text-sm text-amber-200/90">Bookings load from S3 (legacy). Set DATABASE_URL for Postgres.</p>
+              {bookingsSource === 'unavailable' && (
+                <p className="mt-1 text-sm text-amber-200/90">Could not load bookings. Check DATABASE_URL on the server.</p>
               )}
             </div>
             <div className="flex flex-wrap gap-2">

@@ -23,5 +23,5 @@ echo "Running db/nailsbyni/verify.sql ..."
 psql "$DATABASE_URL" -v ON_ERROR_STOP=1 -f db/nailsbyni/verify.sql
 
 echo ""
-echo "Schema ready. Live site still uses S3 cmsSite."
-echo "Optional: npm run db:migrate-from-s3  (copy S3 data into Postgres)"
+echo "Schema ready. Set DATABASE_URL on Render for live bookings and site data."
+echo "Gallery images use S3 — see .env.example."
