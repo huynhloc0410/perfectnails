@@ -33,6 +33,9 @@ const HERO_IMAGE = '/images/nail0.webp';
 /** Fallback thumbnails when CMS gallery empty */
 const GALLERY_FALLBACK = ['/images/nail0.webp', '/images/nail1.webp', '/images/nail2.jpeg'] as const;
 
+const HERO_ACTION_BTN =
+  'cta-flash-btn font-display relative flex min-h-[4.75rem] w-full items-center justify-center overflow-hidden rounded-md border-2 border-champagne-300/55 bg-lux-espresso/45 px-8 py-4 text-center text-lg font-semibold uppercase leading-tight tracking-[0.12em] text-champagne-100 shadow-[0_4px_18px_rgba(0,0,0,0.28)] backdrop-blur-md transition hover:border-champagne-200/75 hover:bg-lux-espresso/55 active:scale-[0.99] sm:text-xl';
+
 type PreviewService = {
   id: string;
   name: string;
@@ -47,14 +50,6 @@ function resolveImageSrc(url: string): string {
   if (u.startsWith('http://') || u.startsWith('https://') || u.startsWith('data:')) return u;
   if (typeof window !== 'undefined' && u.startsWith('/')) return `${window.location.origin}${u}`;
   return u;
-}
-
-function PhoneIcon({ className }: { className?: string }) {
-  return (
-    <svg className={className} viewBox="0 0 24 24" fill="currentColor" aria-hidden>
-      <path d="M6.62 10.79c1.44 2.83 3.76 5.14 6.59 6.59l2.2-2.2c.27-.27.67-.36 1.02-.24 1.12.37 2.33.57 3.57.57.55 0 1 .45 1 1V21c0 .55-.45 1-1 1-9.39 0-17-7.61-17-17 0-.55.45-1 1-1h3.5c.55 0 1 .45 1 1 0 1.25.2 2.45.57 3.57.11.35.03.74-.25 1.02l-2.2 2.2z" />
-    </svg>
-  );
 }
 
 export default function HomeContent() {
@@ -158,53 +153,23 @@ export default function HomeContent() {
             </h1>
             <div className="mx-auto mt-2 h-px w-12 bg-gradient-to-r from-transparent via-champagne-400/70 to-transparent sm:mt-2.5 sm:w-14" aria-hidden />
 
-            <p className="mt-2 max-w-md text-sm font-light leading-relaxed text-white/75 sm:mt-2.5 sm:max-w-lg">
-              {SITE_HERO_APPOINTMENT_LINE}
-            </p>
-
-            <div className="mt-4 flex w-full max-w-lg flex-col gap-3 sm:mt-5 sm:max-w-2xl sm:flex-row sm:justify-center sm:gap-3.5">
-              <Link
-                href="/services"
-                className="cta-flash-btn hero-cta-pulse group relative flex min-h-[3.35rem] flex-1 items-center justify-center overflow-hidden rounded-md border-2 border-champagne-300/85 bg-lux-espresso/50 px-5 py-3 text-center shadow-[0_0_0_1px_rgba(255,255,255,0.08)_inset,0_0_20px_rgba(168,138,61,0.25)] backdrop-blur-md transition duration-300 hover:border-champagne-200/95 hover:bg-lux-espresso/60 hover:shadow-[0_0_28px_rgba(212,175,55,0.35)] active:scale-[0.99] sm:min-h-[3.5rem] sm:px-8"
-              >
-                <span className="font-display text-base font-medium tracking-[0.03em] text-white sm:text-lg">
-                  Services &amp; prices
-                </span>
-                <span
-                  className="pointer-events-none absolute inset-0 opacity-0 transition duration-300 group-hover:opacity-100"
-                  aria-hidden
-                >
-                  <span className="absolute inset-x-0 top-0 h-px bg-gradient-to-r from-transparent via-champagne-300/50 to-transparent" />
-                </span>
+            <div className="mt-6 flex w-full max-w-md flex-col gap-2.5 sm:mt-7">
+              <Link href="/services" className={HERO_ACTION_BTN}>
+                Services &amp; prices
               </Link>
-              <Link
-                href="/gallery"
-                className="cta-flash-btn hero-cta-pulse group relative flex min-h-[3.35rem] flex-1 items-center justify-center overflow-hidden rounded-md border-2 border-champagne-300/85 bg-lux-espresso/50 px-5 py-3 text-center shadow-[0_0_0_1px_rgba(255,255,255,0.08)_inset,0_0_20px_rgba(168,138,61,0.25)] backdrop-blur-md transition duration-300 hover:border-champagne-200/95 hover:bg-lux-espresso/60 hover:shadow-[0_0_28px_rgba(212,175,55,0.35)] active:scale-[0.99] sm:min-h-[3.5rem] sm:px-8"
-              >
-                <span className="font-display text-base font-medium tracking-[0.03em] text-white sm:text-lg">
-                  Gallery
-                </span>
-                <span className="pointer-events-none absolute inset-0 opacity-0 transition duration-300 group-hover:opacity-100" aria-hidden>
-                  <span className="absolute inset-x-0 top-0 h-px bg-gradient-to-r from-transparent via-champagne-300/50 to-transparent" />
-                </span>
+              <Link href="/gallery" className={HERO_ACTION_BTN}>
+                Gallery
               </Link>
-            </div>
 
-            <div className="mt-3.5 w-full max-w-md space-y-2.5 sm:mt-4 sm:space-y-2.5">
-              <a
-                href={callHref}
-                className="cta-flash-btn hero-cta-pulse cta-call-primary relative flex w-full flex-col items-center justify-center gap-1 overflow-hidden rounded-md border-2 border-champagne-300/90 bg-lux-espresso/55 px-8 py-4 text-center shadow-[0_0_22px_rgba(168,138,61,0.28)] backdrop-blur-md transition hover:border-champagne-200 hover:bg-lux-espresso/65"
-              >
-                <span className="flex items-center gap-3 text-sm font-semibold uppercase tracking-[0.24em] text-champagne-100 sm:text-base">
-                  <PhoneIcon className="h-4 w-4 text-champagne-300 sm:h-5 sm:w-5" />
-                  Call
-                </span>
-                <span className="font-display text-lg font-medium text-white sm:text-xl">{phoneDisplay}</span>
+              <p className="hidden text-sm font-light leading-relaxed text-white/75 md:block">
+                {SITE_HERO_APPOINTMENT_LINE}
+              </p>
+
+              <a href={callHref} className={`${HERO_ACTION_BTN} flex-col gap-1`}>
+                <span>Call</span>
+                <span className="text-lg normal-case tracking-normal sm:text-xl">{phoneDisplay}</span>
               </a>
-              <Link
-                href="/booking"
-                className="cta-flash-btn hero-cta-pulse relative flex min-h-[3.25rem] w-full items-center justify-center overflow-hidden rounded-md border-2 border-champagne-400/70 bg-gradient-to-b from-champagne-700 to-champagne-900 px-8 py-3.5 text-center text-base font-semibold uppercase tracking-[0.16em] text-champagne-50 shadow-[0_4px_22px_rgba(0,0,0,0.35)] transition hover:border-champagne-300 hover:from-champagne-600 hover:to-champagne-950 active:scale-[0.99] sm:text-lg"
-              >
+              <Link href="/booking" className={HERO_ACTION_BTN}>
                 Book Now
               </Link>
             </div>

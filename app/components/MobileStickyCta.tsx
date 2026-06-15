@@ -13,10 +13,17 @@ import {
 } from '@/lib/site/contact';
 import { readLocalStorageJson } from '@/lib/storage/local-json';
 
+const HOME_SCROLL_THRESHOLD_PX = 120;
+
 export default function MobileStickyCta() {
   const pathname = usePathname() || '/';
   const [phoneHref, setPhoneHref] = useState(SITE_PHONE_HREF);
   const [phoneLabel, setPhoneLabel] = useState(SITE_PHONE_DISPLAY);
+  const [visible, setVisible] = useState(false);
+
+  const isAdmin = pathname.startsWith('/admin');
+  const isBooking = pathname.startsWith('/booking');
+  const isHome = pathname === '/';
 
   const refresh = useCallback(async () => {
     migrateLegacyStoredContactAddress();
@@ -44,10 +51,41 @@ export default function MobileStickyCta() {
     void refresh();
   }, [refresh]);
 
-  if (pathname.startsWith('/admin')) return null;
+  useEffect(() => {
+    if (isAdmin || isBooking) {
+      setVisible(false);
+      return;
+    }
+
+    if (!isHome) {
+      setVisible(true);
+      return;
+    }
+
+    const update = () => {
+      setVisible(window.scrollY > HOME_SCROLL_THRESHOLD_PX);
+    };
+
+    update();
+    window.addEventListener('scroll', update, { passive: true });
+    return () => window.removeEventListener('scroll', update);
+  }, [isAdmin, isBooking, isHome]);
+
+  useEffect(() => {
+    document.body.classList.toggle('mobile-sticky-cta-visible', visible);
+    return () => {
+      document.body.classList.remove('mobile-sticky-cta-visible');
+    };
+  }, [visible]);
+
+  if (isAdmin || isBooking) return null;
 
   return (
-    <div className="fixed bottom-0 left-0 right-0 z-[250] border-t border-lux-line/40 bg-lux-paper/97 px-3 py-2 backdrop-blur-md md:hidden pb-[max(0.5rem,env(safe-area-inset-bottom,0px))]">
+    <div
+      className={`fixed bottom-0 left-0 right-0 z-[250] border-t border-lux-line/40 bg-lux-paper/97 px-3 py-2 backdrop-blur-md transition-transform duration-300 ease-out md:hidden pb-[max(0.5rem,env(safe-area-inset-bottom,0px))] ${
+        visible ? 'translate-y-0' : 'pointer-events-none translate-y-full'
+      }`}
+    >
       <div className="mx-auto flex max-w-lg gap-2">
         <a
           href={phoneHref}

@@ -4,7 +4,7 @@ import SiteFooter from "./components/SiteFooter";
 import MobileStickyCta from "./components/MobileStickyCta";
 import PromotionPopup from "./components/PromotionPopup";
 import Script from "next/script";
-import { Cormorant_Garamond, Outfit, Poppins } from "next/font/google";
+import { Outfit, Poppins } from "next/font/google";
 import type { Metadata, Viewport } from "next";
 import JsonLd from "./components/JsonLd";
 import {
@@ -21,14 +21,7 @@ const poppins = Poppins({
   weight: ["300", "400", "500", "600", "700"],
 });
 
-/* Elegant serif for the brand wordmark and hero headlines */
-const cormorant = Cormorant_Garamond({
-  subsets: ["latin"],
-  weight: ["500", "600", "700"],
-  variable: "--font-display",
-});
-
-/* Distinct UI font for navigation + footer (clearer than body Poppins) */
+/* Navigation + footer */
 const outfit = Outfit({
   subsets: ["latin"],
   weight: ["400", "500", "600", "700"],
@@ -94,7 +87,7 @@ export default function RootLayout({ children }: { children: React.ReactNode }) 
   return (
     <html lang="en">
       <body
-        className={`${poppins.className} ${cormorant.variable} ${outfit.variable} flex min-h-screen flex-col bg-lux-paper antialiased`}
+        className={`${poppins.className} ${outfit.variable} flex min-h-screen flex-col bg-lux-paper antialiased`}
       >
         <JsonLd data={buildSalonJsonLd()} />
 
@@ -118,7 +111,7 @@ gtag('config', '${gaId}');
         <PromotionPopup />
         <SiteHeader />
 
-        <main className="w-full flex-1 overflow-x-hidden pb-[4.75rem] md:pb-0">{children}</main>
+        <main className="site-main w-full flex-1 overflow-x-hidden">{children}</main>
 
         <MobileStickyCta />
 

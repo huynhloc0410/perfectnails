@@ -28,7 +28,7 @@ module.exports = {
         },
       },
       fontFamily: {
-        display: ["var(--font-display)", "Georgia", "serif"],
+        display: ["var(--font-display)", "Times New Roman", "Times", "serif"],
         nav: ["var(--font-nav)", "system-ui", "sans-serif"],
       },
     },
