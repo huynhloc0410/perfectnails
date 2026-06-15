@@ -80,7 +80,7 @@ export default function AdminPage() {
   const [employeeForm, setEmployeeForm] = useState({ name: '', role: '' as 'Water' | 'Powder' | 'Everything' | '', phone: '' });
   const [editingService, setEditingService] = useState<Service | null>(null);
   const [editingEmployee, setEditingEmployee] = useState<Employee | null>(null);
-  /** When true, services/employees/bookings/about/contact sync to S3 via PUT /api/cms/site */
+  /** When true, gallery images sync to S3; services, staff, bookings, and site copy use PostgreSQL. */
   const [useCms, setUseCms] = useState(false);
   /** Weekly booking navigator (Bookings tab): anchor day for strip + selection highlight. */
   const [bookingsNavDate, setBookingsNavDate] = useState(() => startOfLocalDay(new Date()));
@@ -212,6 +212,21 @@ export default function AdminPage() {
       (!schedulingFromPg && partial.bookings !== undefined);
 
     if (!needsS3) {
+      return true;
+    }
+
+    if (schedulingFromPg && contentFromPg) {
+      const res = await fetch('/api/cms/site', {
+        method: 'PUT',
+        credentials: 'same-origin',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ version: 1, gallery: nextGallery }),
+      });
+      if (!res.ok) {
+        const msg = await res.text().catch(() => '');
+        alert(`Could not save gallery (${res.status}). ${msg || 'Check S3 env vars on the server.'}`);
+        return false;
+      }
       return true;
     }
 
@@ -505,24 +520,10 @@ export default function AdminPage() {
         const urls = normalizeCmsGalleryList(local);
         if (urls.length === 0) return;
         const s = d.site as Record<string, unknown>;
-        const galleryPut: Record<string, unknown> = {
-            version: typeof s.version === 'number' ? s.version : 1,
-            services: Array.isArray(s.services) ? s.services : [],
-            employees: Array.isArray(s.employees) ? s.employees : [],
-            bookingBlocks: Array.isArray(s.bookingBlocks) ? s.bookingBlocks : [],
-            about: s.about && typeof s.about === 'object' ? s.about : { title: '', content: '' },
-            contact:
-              s.contact && typeof s.contact === 'object'
-                ? s.contact
-                : {
-                    address: '',
-                    phone: '',
-                    email: '',
-                    hours: '',
-                    socialMedia: { facebook: '', instagram: '', yelp: '' },
-                  },
-            gallery: urls,
-          };
+        const galleryPut = {
+          version: typeof s.version === 'number' ? s.version : 1,
+          gallery: urls,
+        };
         const put = await fetch('/api/cms/site', {
           method: 'PUT',
           credentials: 'same-origin',

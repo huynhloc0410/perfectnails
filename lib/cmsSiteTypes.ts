@@ -1,5 +1,4 @@
 import { normalizeContactSocialMedia } from '@/lib/site/contact';
-import { isBookingsManagedInPostgres } from '@/lib/db/config';
 
 export interface CmsService {
   id: string;
@@ -274,11 +273,7 @@ export function normalizeCmsSite(raw: unknown): CmsSitePayload {
   const bookingBlocks = bookingBlocksRaw
     .map((x) => normalizeCmsBookingBlock(x))
     .filter((b): b is CmsBookingBlock => b !== null);
-  const bookings = isBookingsManagedInPostgres()
-    ? []
-    : Array.isArray(o.bookings)
-      ? (o.bookings as CmsBooking[])
-      : [];
+  const bookings = Array.isArray(o.bookings) ? (o.bookings as CmsBooking[]) : [];
 
   return {
     version: typeof o.version === 'number' ? o.version : CMS_SITE_VERSION,

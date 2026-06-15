@@ -9,7 +9,7 @@ import {
   employeeCanPerformService,
   isNonBookableAddonService,
 } from '@/lib/booking/serviceEmployeeMatch';
-import { isDatabaseConfigured, isDualWriteToDbEnabled, isAdminSiteConfigFromPostgres, isBookingsManagedInPostgres } from '@/lib/db/config';
+import { isDatabaseConfigured, isDualWriteToDbEnabled, isAdminSiteConfigFromPostgres, isBookingsManagedInPostgres, isS3GalleryOnlyStorage } from '@/lib/db/config';
 import { compactLegacyId, customerLegacyId, customerPhoneDigits10, customerPhoneStored, galleryLegacyId } from '@/lib/db/legacyId';
 import { withPgClient } from '@/lib/db/pool';
 
@@ -655,6 +655,12 @@ async function syncCmsSiteToPostgresInternal(
   client: PoolClient,
   site: CmsSitePayload
 ): Promise<void> {
+  if (isS3GalleryOnlyStorage()) {
+    const salonId = await resolveSalonId(client);
+    await syncGallery(client, salonId, site);
+    return;
+  }
+
   const salonId = await syncSalon(client, site);
   const schedulingInPostgres = isAdminSiteConfigFromPostgres();
   const bookingsInPostgres = isBookingsManagedInPostgres();

@@ -1,10 +1,10 @@
 /**
- * Remove bookings and smsJobs keys from S3 cms/site.json (Postgres is source of truth).
+ * Rewrite S3 cms/site.json to gallery-only (Postgres owns everything else).
  *
- *   npm run cms:strip-s3-bookings
+ *   npm run cms:strip-s3-site
  */
 import { toS3CmsDocument } from '../lib/cms/s3CmsDocument';
-import { isBookingsManagedInPostgres } from '../lib/db/config';
+import { isS3GalleryOnlyStorage } from '../lib/db/config';
 import { isS3CmsConfigured, readCmsSiteFromS3, writeCmsSiteToS3 } from '../lib/s3CmsSite';
 
 async function main() {
@@ -12,8 +12,8 @@ async function main() {
     console.error('S3 CMS is not configured.');
     process.exit(1);
   }
-  if (!isBookingsManagedInPostgres()) {
-    console.error('Bookings are not managed in Postgres — nothing to strip.');
+  if (!isS3GalleryOnlyStorage()) {
+    console.error('Site is not in gallery-only S3 mode — check DATABASE_URL and CMS_* flags.');
     process.exit(1);
   }
 
@@ -23,12 +23,12 @@ async function main() {
     process.exit(1);
   }
 
-  const hadBookings = site.bookings.length > 0;
+  const before = JSON.stringify(site).length;
   await writeCmsSiteToS3(site);
+  const afterDoc = toS3CmsDocument(site);
+  const after = JSON.stringify(afterDoc).length;
   console.log(
-    hadBookings
-      ? `Rewrote S3 cms/site.json without bookings/smsJobs keys (had ${site.bookings.length} stale booking(s)).`
-      : 'Rewrote S3 cms/site.json without bookings/smsJobs keys.',
+    `S3 cms/site.json is now gallery-only (${site.gallery.length} image(s), ${before} → ${after} bytes).`,
   );
 }
 

@@ -5,8 +5,7 @@ import {
   defaultCmsSite,
   normalizeCmsSite,
 } from '@/lib/cmsSiteTypes';
-import { toS3CmsDocument } from '@/lib/cms/s3CmsDocument';
-import { isBookingsManagedInPostgres } from '@/lib/db/config';
+import { toS3CmsDocument, applyPostgresOwnedFieldDefaults } from '@/lib/cms/s3CmsDocument';
 
 /** First non-empty trimmed value among env keys (copy/paste from other projects often uses different names). */
 function s3Env(...keys: string[]): string | undefined {
@@ -89,10 +88,7 @@ export async function readCmsSiteFromS3(): Promise<CmsSitePayload | null> {
     const text = await out.Body?.transformToString();
     if (!text) return defaultCmsSite();
     const parsed = JSON.parse(text) as unknown;
-    const site = normalizeCmsSite(parsed);
-    if (isBookingsManagedInPostgres()) {
-      return { ...site, bookings: [], smsJobs: [] };
-    }
+    const site = applyPostgresOwnedFieldDefaults(normalizeCmsSite(parsed));
     return site;
   } catch (e: unknown) {
     const name = e && typeof e === 'object' && 'name' in e ? (e as { name: string }).name : '';

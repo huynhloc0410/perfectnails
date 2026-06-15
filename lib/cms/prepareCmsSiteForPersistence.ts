@@ -1,19 +1,25 @@
 import type { CmsSitePayload } from '@/lib/cmsSiteTypes';
-import {
-  isAdminContentFromPostgres,
-  isAdminSiteConfigFromPostgres,
-  isBookingsManagedInPostgres,
-} from '@/lib/db/config';
+import { CMS_SITE_VERSION, defaultCmsSite } from '@/lib/cmsSiteTypes';
+import { isS3GalleryOnlyStorage, isAdminContentFromPostgres, isAdminSiteConfigFromPostgres, isBookingsManagedInPostgres } from '@/lib/db/config';
 import { readCmsSiteFromS3 } from '@/lib/s3CmsSite';
 
 /**
- * Build the in-memory snapshot before S3 write. Bookings/smsJobs are omitted from the
- * S3 JSON file by writeCmsSiteToS3 → toS3CmsDocument when Postgres owns bookings.
+ * Build the in-memory snapshot before S3 write. When Postgres owns site data,
+ * only gallery is merged; writeCmsSiteToS3 serializes via toS3CmsDocument.
  */
 export async function prepareCmsSiteForPersistence(
   incoming: CmsSitePayload
 ): Promise<CmsSitePayload> {
-  const existing = (await readCmsSiteFromS3()) ?? incoming;
+  const existing = (await readCmsSiteFromS3()) ?? defaultCmsSite();
+
+  if (isS3GalleryOnlyStorage()) {
+    return {
+      ...defaultCmsSite(),
+      version: incoming.version ?? existing.version ?? CMS_SITE_VERSION,
+      gallery: incoming.gallery ?? existing.gallery,
+    };
+  }
+
   const schedulingInPg = isAdminSiteConfigFromPostgres();
   const bookingsInPg = isBookingsManagedInPostgres();
   const contentInPg = isAdminContentFromPostgres();
