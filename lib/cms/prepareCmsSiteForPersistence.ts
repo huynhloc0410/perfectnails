@@ -4,11 +4,12 @@ import {
   isAdminSiteConfigFromPostgres,
   isBookingsManagedInPostgres,
 } from '@/lib/db/config';
+import { stripBookingsFromCmsSite } from '@/lib/cms/s3BookingsExcluded';
 import { readCmsSiteFromS3 } from '@/lib/s3CmsSite';
 
 /**
- * Build the S3 snapshot to write. When Postgres owns bookings/scheduling/content,
- * do not let a gallery-only (or stale) client payload overwrite those fields in S3.
+ * Build the S3 snapshot to write. Postgres-owned sections are not stored in S3;
+ * gallery is the primary S3 payload when DATABASE_URL is set.
  */
 export async function prepareCmsSiteForPersistence(
   incoming: CmsSitePayload
@@ -18,7 +19,7 @@ export async function prepareCmsSiteForPersistence(
   const bookingsInPg = isBookingsManagedInPostgres();
   const contentInPg = isAdminContentFromPostgres();
 
-  return {
+  const snapshot: CmsSitePayload = {
     ...existing,
     version: incoming.version ?? existing.version,
     gallery: incoming.gallery ?? existing.gallery,
@@ -26,8 +27,10 @@ export async function prepareCmsSiteForPersistence(
     services: schedulingInPg ? existing.services : incoming.services,
     employees: schedulingInPg ? existing.employees : incoming.employees,
     bookingBlocks: schedulingInPg ? existing.bookingBlocks : incoming.bookingBlocks,
-    bookings: bookingsInPg ? existing.bookings : incoming.bookings,
+    bookings: bookingsInPg ? [] : incoming.bookings,
     about: contentInPg ? existing.about : incoming.about,
     contact: contentInPg ? existing.contact : incoming.contact,
   };
+
+  return stripBookingsFromCmsSite(snapshot);
 }

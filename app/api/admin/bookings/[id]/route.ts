@@ -1,6 +1,5 @@
 import { NextRequest, NextResponse } from 'next/server';
 import { ADMIN_SESSION_COOKIE, verifyAdminToken } from '@/lib/adminSessionVerify';
-import { removeBookingFromCmsSite } from '@/lib/cms/patchCmsSiteBooking';
 import { deleteAdminBookingFromPostgres } from '@/lib/db/adminBookings';
 import { isAdminBookingsFromPostgres, isDatabaseConfigured } from '@/lib/db/config';
 
@@ -31,12 +30,6 @@ export async function DELETE(req: NextRequest, context: RouteContext) {
     const deleted = await deleteAdminBookingFromPostgres(legacyId);
     if (!deleted) {
       return NextResponse.json({ error: 'Booking not found' }, { status: 404 });
-    }
-
-    try {
-      await removeBookingFromCmsSite(legacyId);
-    } catch (e) {
-      console.error('S3 cmsSite patch after PG delete failed:', e);
     }
 
     return NextResponse.json({ ok: true, id: legacyId, source: 'postgres' });

@@ -44,30 +44,18 @@ function timeLabelForNotify(b: BookingRow): string {
   return formatMinutesAsTimeLabel(mins);
 }
 
-/** Postgres is the only booking source when DATABASE_URL is set. S3/local are legacy fallbacks. */
+/** Bookings come from Postgres only — S3 is gallery-only. */
 async function fetchBookingsList(): Promise<BookingRow[]> {
   try {
     const r = await fetch('/api/admin/bookings', { credentials: 'same-origin', cache: 'no-store' });
-    if (r.ok) {
-      const data = await r.json();
-      if (data.source === 'postgres' && Array.isArray(data.bookings)) {
-        return data.bookings as BookingRow[];
-      }
-    }
-  } catch {
-    /* fall through */
-  }
-
-  try {
-    const r = await fetch('/api/cms/site', { credentials: 'same-origin', cache: 'no-store' });
+    if (!r.ok) return [];
     const data = await r.json();
-    if (data.site && Array.isArray(data.site.bookings)) {
-      return data.site.bookings as BookingRow[];
+    if (data.source === 'postgres' && Array.isArray(data.bookings)) {
+      return data.bookings as BookingRow[];
     }
   } catch {
     /* ignore */
   }
-
   return [];
 }
 

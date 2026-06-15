@@ -234,7 +234,7 @@ export default function AdminPage() {
         s3Services = Array.isArray(s.services) ? (s.services as Service[]) : nextServices;
         s3Employees = Array.isArray(s.employees) ? (s.employees as Employee[]) : nextEmployees;
         s3Blocks = coerceBookingBlocksList((s as { bookingBlocks?: unknown[] }).bookingBlocks);
-        s3Bookings = Array.isArray(s.bookings) ? (s.bookings as Booking[]) : [];
+        s3Bookings = [];
       }
       if (contentFromPg) {
         if (s.about && typeof s.about === 'object') {
@@ -360,12 +360,15 @@ export default function AdminPage() {
         }
 
         let pgBookings: Booking[] = [];
+        let bookingsUseLegacyS3 = false;
         if (!cancelled && bookingsRes.ok) {
           const bookingsData = await bookingsRes.json();
           if (bookingsData.source === 'postgres' && Array.isArray(bookingsData.bookings)) {
             pgBookings = bookingsData.bookings as Booking[];
             loadedBookingsFromPg = true;
             setBookings(pgBookings);
+          } else if (bookingsData.configured === false) {
+            bookingsUseLegacyS3 = true;
           }
         }
 
@@ -382,7 +385,7 @@ export default function AdminPage() {
             const blkUnknown = (s as { bookingBlocks?: unknown[] }).bookingBlocks;
             setBookingBlocks(coerceBookingBlocksList(blkUnknown));
           }
-          if (!loadedBookingsFromPg && Array.isArray(s.bookings)) {
+          if (!loadedBookingsFromPg && bookingsUseLegacyS3 && Array.isArray(s.bookings)) {
             setBookings(s.bookings as Booking[]);
           }
           if (!loadedContentFromPg) {
@@ -506,7 +509,7 @@ export default function AdminPage() {
             version: typeof s.version === 'number' ? s.version : 1,
             services: Array.isArray(s.services) ? s.services : [],
             employees: Array.isArray(s.employees) ? s.employees : [],
-            bookings: Array.isArray(s.bookings) ? s.bookings : [],
+            bookings: [],
             smsJobs: [],
             bookingBlocks: Array.isArray(s.bookingBlocks) ? s.bookingBlocks : [],
             about: s.about && typeof s.about === 'object' ? s.about : { title: '', content: '' },

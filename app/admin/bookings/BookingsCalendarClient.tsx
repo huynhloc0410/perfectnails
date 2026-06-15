@@ -88,6 +88,7 @@ export function BookingsCalendarClient() {
     (async () => {
       try {
         let loadedFromPostgres = false;
+        let bookingsUseLegacyS3 = false;
 
         const pgRes = await fetch('/api/admin/bookings', {
           credentials: 'same-origin',
@@ -100,6 +101,8 @@ export function BookingsCalendarClient() {
             setBookings(attachCustomerVisitStats(pgData.bookings as Booking[]));
             setBookingsSource('postgres');
             loadedFromPostgres = true;
+          } else if (pgData.configured === false) {
+            bookingsUseLegacyS3 = true;
           }
         }
 
@@ -121,7 +124,7 @@ export function BookingsCalendarClient() {
           }
         }
 
-        if (cancelled || loadedFromPostgres) return;
+        if (cancelled || loadedFromPostgres || !bookingsUseLegacyS3) return;
 
         const r = await fetch('/api/cms/site', { cache: 'no-store' });
         const data = await r.json();

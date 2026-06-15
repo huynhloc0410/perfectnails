@@ -22,6 +22,7 @@
     "db:sync-from-s3": "tsx scripts/sync-s3-to-postgres.ts",
     "cms:inspect": "tsx scripts/inspect-cms-site.ts",
     "cms:cleanup-sms-jobs": "tsx scripts/cleanup-cms-sms-jobs.ts",
+    "cms:strip-s3-bookings": "tsx scripts/strip-s3-bookings.ts",
     "db:patch-customers": "psql \"$DATABASE_URL\" -v ON_ERROR_STOP=1 -f db/nailsbyni/003_customers_single_name.sql",
     "db:merge-customers": "psql \"$DATABASE_URL\" -v ON_ERROR_STOP=1 -f db/nailsbyni/005_merge_duplicate_customers.sql",
     "db:patch-sms-scheduled": "psql \"$DATABASE_URL\" -v ON_ERROR_STOP=1 -f db/nailsbyni/006_sms_logs_scheduled.sql",
