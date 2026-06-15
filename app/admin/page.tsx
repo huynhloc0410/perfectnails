@@ -17,7 +17,6 @@ import {
   type CmsGalleryImage,
 } from '@/lib/cmsSiteTypes';
 import { galleryHasDedicatedThumb, galleryThumbSrc } from '@/lib/galleryDisplay';
-import { mergeBookingLists } from '@/lib/booking/mergeBookingLists';
 
 interface Service {
   id: string;
@@ -235,25 +234,7 @@ export default function AdminPage() {
         s3Services = Array.isArray(s.services) ? (s.services as Service[]) : nextServices;
         s3Employees = Array.isArray(s.employees) ? (s.employees as Employee[]) : nextEmployees;
         s3Blocks = coerceBookingBlocksList((s as { bookingBlocks?: unknown[] }).bookingBlocks);
-        let pgForS3: Booking[] = [];
-        try {
-          const pgRes = await fetch('/api/admin/bookings', {
-            credentials: 'same-origin',
-            cache: 'no-store',
-          });
-          if (pgRes.ok) {
-            const pgData = await pgRes.json();
-            if (pgData.source === 'postgres' && Array.isArray(pgData.bookings)) {
-              pgForS3 = pgData.bookings as Booking[];
-            }
-          }
-        } catch {
-          /* server merge on PUT is the fallback */
-        }
-        s3Bookings = mergeBookingLists(
-          pgForS3,
-          Array.isArray(s.bookings) ? (s.bookings as Booking[]) : [],
-        );
+        s3Bookings = Array.isArray(s.bookings) ? (s.bookings as Booking[]) : [];
       }
       if (contentFromPg) {
         if (s.about && typeof s.about === 'object') {
@@ -384,31 +365,25 @@ export default function AdminPage() {
           if (bookingsData.source === 'postgres' && Array.isArray(bookingsData.bookings)) {
             pgBookings = bookingsData.bookings as Booking[];
             loadedBookingsFromPg = true;
+            setBookings(pgBookings);
           }
         }
 
         const data = await cmsRes.json();
         if (cancelled) return;
 
-        let s3Bookings: Booking[] = [];
-        let localBookings: Booking[] = [];
-        try {
-          const savedBookings = localStorage.getItem('admin-bookings');
-          if (savedBookings) localBookings = JSON.parse(savedBookings) as Booking[];
-        } catch {
-          /* ignore */
-        }
-
         if (data.configured === true && data.site && !data.error) {
           const s = data.site;
           setUseCms(true);
-          if (Array.isArray(s.bookings)) s3Bookings = s.bookings as Booking[];
           if (!loadedSchedulingFromPg) {
             setSchedulingConfigSource('cms');
             if (Array.isArray(s.services)) setServices(s.services as Service[]);
             if (Array.isArray(s.employees)) setEmployees(s.employees as Employee[]);
             const blkUnknown = (s as { bookingBlocks?: unknown[] }).bookingBlocks;
             setBookingBlocks(coerceBookingBlocksList(blkUnknown));
+          }
+          if (!loadedBookingsFromPg && Array.isArray(s.bookings)) {
+            setBookings(s.bookings as Booking[]);
           }
           if (!loadedContentFromPg) {
             setContentConfigSource('cms');
@@ -430,7 +405,6 @@ export default function AdminPage() {
           if (Array.isArray(s.gallery) && s.gallery.length > 0) {
             setGalleryImages(normalizeCmsGalleryList(s.gallery));
           }
-          setBookings(mergeBookingLists(pgBookings, s3Bookings, localBookings));
         } else {
           setSchedulingConfigSource('local');
           setContentConfigSource('local');
@@ -439,7 +413,7 @@ export default function AdminPage() {
           const savedAbout = localStorage.getItem('admin-about');
           const savedContact = localStorage.getItem('admin-contact');
           if (savedServices) setServices(JSON.parse(savedServices));
-          setBookings(mergeBookingLists(pgBookings, localBookings));
+          if (loadedBookingsFromPg) setBookings(pgBookings);
           if (savedEmployees) setEmployees(JSON.parse(savedEmployees));
           if (savedAbout) setAboutContent(JSON.parse(savedAbout));
           if (savedContact) {
@@ -462,12 +436,10 @@ export default function AdminPage() {
       } catch {
         if (!cancelled) {
           const savedServices = localStorage.getItem('admin-services');
-          const savedBookings = localStorage.getItem('admin-bookings');
           const savedEmployees = localStorage.getItem('admin-employees');
           const savedAbout = localStorage.getItem('admin-about');
           const savedContact = localStorage.getItem('admin-contact');
           if (savedServices) setServices(JSON.parse(savedServices));
-          if (savedBookings) setBookings(JSON.parse(savedBookings));
           if (savedEmployees) setEmployees(JSON.parse(savedEmployees));
           if (savedAbout) setAboutContent(JSON.parse(savedAbout));
           if (savedContact) {
@@ -856,7 +828,7 @@ export default function AdminPage() {
               <p className="text-champagne-200 mt-2">Manage your nail salon website</p>
               {useCms && (
                 <p className="text-champagne-300/90 text-sm mt-1">
-                  Site data (services, staff, bookings, about, contact) is saved to Amazon S3.
+                  Gallery images are stored on Amazon S3. Bookings, services, staff, and site copy use PostgreSQL.
                 </p>
               )}
             </div>

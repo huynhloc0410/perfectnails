@@ -1,11 +1,10 @@
 /**
- * One-shot sync: read cmsSite from S3 → write full snapshot to PostgreSQL.
- * Use after deleting bookings in admin so PG matches S3.
+ * ONE-TIME migration only. Do NOT run on a live Postgres site — bookings are owned by the DB.
+ * This reads cms/site.json from S3 and upserts into PostgreSQL (legacy migration path).
  *
- * Usage:
- *   export DATABASE_URL='postgresql://...'
- *   export AWS_ACCESS_KEY_ID=... AWS_SECRET_ACCESS_KEY=... AWS_S3_BUCKET_NAME=...
- *   npm run db:sync-from-s3
+ *   npm run db:migrate-from-s3
+ *
+ * For routine operation with DATABASE_URL set, use Postgres APIs only — not this script.
  */
 import { isDatabaseConfigured } from '../lib/db/config';
 import { disconnectPgPool } from '../lib/db/pool';

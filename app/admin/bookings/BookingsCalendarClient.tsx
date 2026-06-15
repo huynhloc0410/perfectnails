@@ -13,7 +13,6 @@ import {
 } from '@/lib/admin/week-calendar';
 import { adminBookingLegendSwatchClasses } from '@/lib/booking/booking-service-kind';
 import { attachCustomerVisitStats } from '@/lib/booking/customerVisitStats';
-import { mergeBookingLists } from '@/lib/booking/mergeBookingLists';
 import { groupBookingsByStartTime } from '@/lib/booking/time-display';
 import type { CustomerVisitInfo } from '@/lib/cmsSiteTypes';
 import { salonAppointmentDate } from '@/lib/db/timezone';
@@ -88,7 +87,6 @@ export function BookingsCalendarClient() {
 
     (async () => {
       try {
-        let pgBookings: Booking[] = [];
         let loadedFromPostgres = false;
 
         const pgRes = await fetch('/api/admin/bookings', {
@@ -99,7 +97,8 @@ export function BookingsCalendarClient() {
         if (!cancelled && pgRes.ok) {
           const pgData = await pgRes.json();
           if (pgData.source === 'postgres' && Array.isArray(pgData.bookings)) {
-            pgBookings = pgData.bookings as Booking[];
+            setBookings(attachCustomerVisitStats(pgData.bookings as Booking[]));
+            setBookingsSource('postgres');
             loadedFromPostgres = true;
           }
         }
@@ -122,7 +121,8 @@ export function BookingsCalendarClient() {
           }
         }
 
-        let s3Bookings: Booking[] = [];
+        if (cancelled || loadedFromPostgres) return;
+
         const r = await fetch('/api/cms/site', { cache: 'no-store' });
         const data = await r.json();
         if (cancelled) return;
@@ -130,54 +130,16 @@ export function BookingsCalendarClient() {
         if (data.configured === true && data.site && !data.error) {
           const s = data.site;
           if (Array.isArray(s.bookings)) {
-            s3Bookings = s.bookings as Booking[];
+            setBookings(attachCustomerVisitStats(s.bookings as Booking[]));
+            setBookingsSource('cms');
           }
           if (!loadedConfigFromPostgres) {
             if (Array.isArray(s.employees)) setEmployees(s.employees as Employee[]);
             if (Array.isArray(s.services)) setServiceCatalog(s.services as ServiceCatalogRow[]);
           }
         }
-
-        let localBookings: Booking[] = [];
-        try {
-          const savedBookings = localStorage.getItem('admin-bookings');
-          if (savedBookings) localBookings = JSON.parse(savedBookings) as Booking[];
-        } catch {
-          /* ignore */
-        }
-
-        const merged = mergeBookingLists(pgBookings, s3Bookings, localBookings);
-        setBookings(attachCustomerVisitStats(merged));
-        setBookingsSource(
-          loadedFromPostgres ? 'postgres' : s3Bookings.length > 0 ? 'cms' : localBookings.length > 0 ? 'local' : 'cms',
-        );
-
-        if (!data.configured && localBookings.length === 0 && merged.length === 0) {
-          try {
-            const savedEmployees = localStorage.getItem('admin-employees');
-            const savedServices = localStorage.getItem('admin-services');
-            if (savedEmployees) setEmployees(JSON.parse(savedEmployees));
-            if (savedServices) setServiceCatalog(JSON.parse(savedServices));
-          } catch {
-            /* ignore */
-          }
-        }
       } catch {
-        if (!cancelled) {
-          try {
-            const savedBookings = localStorage.getItem('admin-bookings');
-            const savedEmployees = localStorage.getItem('admin-employees');
-            const savedServices = localStorage.getItem('admin-services');
-            if (savedBookings) {
-              setBookings(attachCustomerVisitStats(JSON.parse(savedBookings) as Booking[]));
-              setBookingsSource('local');
-            }
-            if (savedEmployees) setEmployees(JSON.parse(savedEmployees));
-            if (savedServices) setServiceCatalog(JSON.parse(savedServices));
-          } catch {
-            /* ignore */
-          }
-        }
+        /* keep empty state — bookings live in Postgres when DATABASE_URL is set */
       }
     })();
     return () => {
@@ -228,15 +190,6 @@ export function BookingsCalendarClient() {
       sessionStorage.removeItem(`admin-sms-reminder-${id}`);
     } catch {
       /* ignore */
-    }
-
-    if (bookingsSource === 'local') {
-      try {
-        localStorage.setItem('admin-bookings', JSON.stringify(nextBookings));
-      } catch {
-        /* ignore */
-      }
-      return;
     }
 
     if (bookingsSource === 'postgres') {
@@ -333,10 +286,10 @@ export function BookingsCalendarClient() {
               <h1 className="text-2xl font-bold text-white sm:text-3xl">Bookings by day</h1>
               <p className="mt-1 text-champagne-200">Pick a day to review appointments</p>
               {bookingsSource === 'postgres' && (
-                <p className="mt-1 text-sm text-champagne-300/90">Bookings load from PostgreSQL.</p>
+                <p className="mt-1 text-sm text-champagne-300/90">Bookings load from PostgreSQL only.</p>
               )}
               {bookingsSource === 'cms' && (
-                <p className="mt-1 text-sm text-champagne-300/90">Bookings load from site data (S3).</p>
+                <p className="mt-1 text-sm text-amber-200/90">Bookings load from S3 (legacy). Set DATABASE_URL for Postgres.</p>
               )}
             </div>
             <div className="flex flex-wrap gap-2">

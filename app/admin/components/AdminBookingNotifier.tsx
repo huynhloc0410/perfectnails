@@ -44,19 +44,14 @@ function timeLabelForNotify(b: BookingRow): string {
   return formatMinutesAsTimeLabel(mins);
 }
 
-/** Merge Postgres admin bookings + S3/local snapshot for dev + hybrid setups. */
+/** Postgres is the only booking source when DATABASE_URL is set. S3/local are legacy fallbacks. */
 async function fetchBookingsList(): Promise<BookingRow[]> {
-  const byId = new Map<string, BookingRow>();
-
   try {
     const r = await fetch('/api/admin/bookings', { credentials: 'same-origin', cache: 'no-store' });
     if (r.ok) {
       const data = await r.json();
       if (data.source === 'postgres' && Array.isArray(data.bookings)) {
-        for (const b of data.bookings as BookingRow[]) {
-          if (b?.id) byId.set(b.id, b);
-        }
-        return Array.from(byId.values());
+        return data.bookings as BookingRow[];
       }
     }
   } catch {
@@ -67,29 +62,13 @@ async function fetchBookingsList(): Promise<BookingRow[]> {
     const r = await fetch('/api/cms/site', { credentials: 'same-origin', cache: 'no-store' });
     const data = await r.json();
     if (data.site && Array.isArray(data.site.bookings)) {
-      for (const b of data.site.bookings as BookingRow[]) {
-        if (b?.id) byId.set(b.id, b);
-      }
-    }
-  } catch {
-    /* fall through */
-  }
-
-  try {
-    const raw = localStorage.getItem('admin-bookings');
-    if (raw) {
-      const parsed = JSON.parse(raw) as unknown;
-      if (Array.isArray(parsed)) {
-        for (const b of parsed as BookingRow[]) {
-          if (b?.id) byId.set(b.id, b);
-        }
-      }
+      return data.site.bookings as BookingRow[];
     }
   } catch {
     /* ignore */
   }
 
-  return Array.from(byId.values());
+  return [];
 }
 
 function readKnownIds(): Set<string> {
@@ -223,14 +202,6 @@ export function AdminBookingNotifier() {
     void poll();
     const interval = window.setInterval(() => void poll(), POLL_MS);
 
-    const onStorage = (e: StorageEvent) => {
-      if (e.key === 'admin-bookings') {
-        console.log(LOG, 'storage event admin-bookings, re-polling');
-        void poll();
-      }
-    };
-    window.addEventListener('storage', onStorage);
-
     const onVisible = () => {
       if (document.visibilityState === 'visible') void poll();
     };
@@ -253,7 +224,6 @@ export function AdminBookingNotifier() {
 
     return () => {
       window.clearInterval(interval);
-      window.removeEventListener('storage', onStorage);
       document.removeEventListener('visibilitychange', onVisible);
       try {
         bc?.close();

@@ -166,7 +166,7 @@ export default function Booking() {
     };
     const onStorage = (e: StorageEvent) => {
       const k = e.key;
-      if (k === null || k === 'admin-booking-blocks' || k === 'admin-bookings' || k === 'admin-employees') {
+      if (k === null || k === 'admin-booking-blocks' || k === 'admin-employees') {
         void loadSiteDataForBooking();
       }
     };
@@ -510,11 +510,15 @@ export default function Booking() {
       }
 
       if (result.success) {
-        const savedBookings = localStorage.getItem('admin-bookings') || '[]';
-        const bookingsList = JSON.parse(savedBookings);
-        bookingsList.push(result.booking);
-        localStorage.setItem('admin-bookings', JSON.stringify(bookingsList));
-        setBookings(bookingsList);
+        if (result.writeSource !== 'postgres') {
+          const savedBookings = localStorage.getItem('admin-bookings') || '[]';
+          const bookingsList = JSON.parse(savedBookings);
+          bookingsList.push(result.booking);
+          localStorage.setItem('admin-bookings', JSON.stringify(bookingsList));
+          setBookings(bookingsList);
+        } else {
+          setBookings((prev) => [...prev, result.booking]);
+        }
 
         try {
           const bc = new BroadcastChannel(ADMIN_BOOKINGS_BROADCAST);

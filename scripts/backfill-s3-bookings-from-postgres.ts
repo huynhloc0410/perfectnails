@@ -1,5 +1,6 @@
 /**
- * Copy all Postgres bookings into S3 cmsSite (merge). Run after DB-only bookings were dropped from S3.
+ * Emergency one-way backup: copy Postgres bookings into S3 cmsSite (merge).
+ * Safe to run — does NOT delete Postgres rows. Use only if you need S3 to mirror PG.
  *
  *   export DATABASE_URL='...'
  *   npm run db:backfill-s3-bookings

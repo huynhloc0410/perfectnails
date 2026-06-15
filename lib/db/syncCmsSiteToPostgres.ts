@@ -1,6 +1,6 @@
 /**
- * Sync CmsSitePayload → PostgreSQL (dual-write companion to S3).
- * Idempotent via legacy_id_mappings. S3 remains source of truth for reads.
+ * Sync CmsSitePayload → PostgreSQL (gallery + legacy migration paths).
+ * When Postgres owns bookings/scheduling, those sections are not synced from S3.
  */
 import { randomUUID } from 'crypto';
 import type { PoolClient } from 'pg';
@@ -496,49 +496,6 @@ async function syncBookings(
   }
 
   return { keepBookingIds, cmsLegacyIds };
-}
-
-/** Remove PG bookings (and stale mappings) that no longer exist in S3 cmsSite. */
-async function pruneRemovedBookings(
-  client: PoolClient,
-  salonId: string,
-  keepBookingIds: string[],
-  cmsLegacyIds: string[]
-): Promise<number> {
-  let deleted = 0;
-
-  if (keepBookingIds.length === 0) {
-    const r = await client.query(`DELETE FROM bookings WHERE salon_id = $1`, [salonId]);
-    deleted = r.rowCount ?? 0;
-  } else {
-    const r = await client.query(
-      `DELETE FROM bookings WHERE salon_id = $1 AND id <> ALL($2::uuid[])`,
-      [salonId, keepBookingIds]
-    );
-    deleted = r.rowCount ?? 0;
-  }
-
-  const bookingKeys = cmsLegacyIds.map((id) => compactLegacyId(id));
-  const bsKeys = cmsLegacyIds.map((id) => compactLegacyId(`bs:${id}`));
-
-  if (bookingKeys.length === 0) {
-    await client.query(
-      `DELETE FROM legacy_id_mappings WHERE entity_type IN ('booking', 'booking_service')`
-    );
-  } else {
-    await client.query(
-      `DELETE FROM legacy_id_mappings
-       WHERE entity_type = 'booking' AND legacy_id <> ALL($1::varchar[])`,
-      [bookingKeys]
-    );
-    await client.query(
-      `DELETE FROM legacy_id_mappings
-       WHERE entity_type = 'booking_service' AND legacy_id <> ALL($1::varchar[])`,
-      [bsKeys]
-    );
-  }
-
-  return deleted;
 }
 
 async function syncGallery(
