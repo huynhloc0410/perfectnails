@@ -234,8 +234,26 @@ export default function AdminPage() {
       if (schedulingFromPg) {
         s3Services = Array.isArray(s.services) ? (s.services as Service[]) : nextServices;
         s3Employees = Array.isArray(s.employees) ? (s.employees as Employee[]) : nextEmployees;
-        s3Bookings = Array.isArray(s.bookings) ? (s.bookings as Booking[]) : [];
         s3Blocks = coerceBookingBlocksList((s as { bookingBlocks?: unknown[] }).bookingBlocks);
+        let pgForS3: Booking[] = [];
+        try {
+          const pgRes = await fetch('/api/admin/bookings', {
+            credentials: 'same-origin',
+            cache: 'no-store',
+          });
+          if (pgRes.ok) {
+            const pgData = await pgRes.json();
+            if (pgData.source === 'postgres' && Array.isArray(pgData.bookings)) {
+              pgForS3 = pgData.bookings as Booking[];
+            }
+          }
+        } catch {
+          /* server merge on PUT is the fallback */
+        }
+        s3Bookings = mergeBookingLists(
+          pgForS3,
+          Array.isArray(s.bookings) ? (s.bookings as Booking[]) : [],
+        );
       }
       if (contentFromPg) {
         if (s.about && typeof s.about === 'object') {

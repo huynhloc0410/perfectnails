@@ -713,7 +713,7 @@ async function syncCmsSiteToPostgresInternal(
   );
 
   const customerIds = await syncCustomers(client, salonId, site.bookings);
-  const { keepBookingIds, cmsLegacyIds } = await syncBookings(
+  const { cmsLegacyIds } = await syncBookings(
     client,
     salonId,
     site,
@@ -721,15 +721,9 @@ async function syncCmsSiteToPostgresInternal(
     employeeIds,
     serviceByKey
   );
-  const removedBookings = await pruneRemovedBookings(
-    client,
-    salonId,
-    keepBookingIds,
-    cmsLegacyIds
-  );
-  if (removedBookings > 0) {
-    console.info(`PostgreSQL sync: removed ${removedBookings} booking(s) no longer in cmsSite`);
-  }
+  // Do not prune Postgres bookings missing from S3 — online bookings are saved to DB first
+  // and S3 can lag. Pruning deleted real appointments when gallery/about was saved.
+  void cmsLegacyIds;
   await syncGallery(client, salonId, site);
   await syncBookingBlocks(client, salonId, site, employeeIds);
   await syncSmsLogs(client, salonId, site);

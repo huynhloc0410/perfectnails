@@ -132,6 +132,18 @@ export async function POST(req: Request) {
       console.error('createOnlineBookingInPostgres failed:', detail, e);
       return NextResponse.json({ success: false, error: 'save_failed' }, { status: 502 });
     }
+    if (isS3CmsConfigured()) {
+      try {
+        const site = await readCmsSiteFromS3();
+        if (site) {
+          site.bookings = [...site.bookings.filter((b) => b.id !== booking.id), booking];
+          site.smsJobs = [];
+          await persistCmsSite(site);
+        }
+      } catch (e) {
+        console.error('S3 backup after Postgres booking failed (booking saved to DB):', e);
+      }
+    }
   } else if (isS3CmsConfigured()) {
     try {
       const site = await readCmsSiteFromS3();
