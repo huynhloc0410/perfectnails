@@ -9,7 +9,7 @@ import {
   employeeCanPerformService,
   isNonBookableAddonService,
 } from '@/lib/booking/serviceEmployeeMatch';
-import { isDatabaseConfigured, isDualWriteToDbEnabled } from '@/lib/db/config';
+import { isDatabaseConfigured, isDualWriteToDbEnabled, isAdminSiteConfigFromPostgres, isBookingsManagedInPostgres } from '@/lib/db/config';
 import { compactLegacyId, customerLegacyId, customerPhoneDigits10, customerPhoneStored, galleryLegacyId } from '@/lib/db/legacyId';
 import { withPgClient } from '@/lib/db/pool';
 
@@ -699,34 +699,41 @@ async function syncCmsSiteToPostgresInternal(
   site: CmsSitePayload
 ): Promise<void> {
   const salonId = await syncSalon(client, site);
-  const categoryIds = await syncCategories(client, salonId, site.services);
-  const serviceByKey = await syncServices(client, salonId, categoryIds, site.services);
-  const employeeIds = await syncEmployees(client, salonId, site.employees);
+  const schedulingInPostgres = isAdminSiteConfigFromPostgres();
+  const bookingsInPostgres = isBookingsManagedInPostgres();
 
-  await syncEmployeeServices(
-    client,
-    salonId,
-    site.employees,
-    employeeIds,
-    site.services,
-    serviceByKey
-  );
+  let employeeIds = new Map<string, string>();
+  let serviceByKey = new Map<string, CmsService & { pgId: string }>();
 
-  const customerIds = await syncCustomers(client, salonId, site.bookings);
-  const { cmsLegacyIds } = await syncBookings(
-    client,
-    salonId,
-    site,
-    customerIds,
-    employeeIds,
-    serviceByKey
-  );
-  // Do not prune Postgres bookings missing from S3 — online bookings are saved to DB first
-  // and S3 can lag. Pruning deleted real appointments when gallery/about was saved.
-  void cmsLegacyIds;
+  if (!schedulingInPostgres) {
+    const categoryIds = await syncCategories(client, salonId, site.services);
+    serviceByKey = await syncServices(client, salonId, categoryIds, site.services);
+    employeeIds = await syncEmployees(client, salonId, site.employees);
+    await syncEmployeeServices(
+      client,
+      salonId,
+      site.employees,
+      employeeIds,
+      site.services,
+      serviceByKey
+    );
+    await syncBookingBlocks(client, salonId, site, employeeIds);
+  } else if (!bookingsInPostgres) {
+    const categoryIds = await syncCategories(client, salonId, site.services);
+    serviceByKey = await syncServices(client, salonId, categoryIds, site.services);
+    employeeIds = await syncEmployees(client, salonId, site.employees);
+  }
+
+  if (!bookingsInPostgres) {
+    const customerIds = await syncCustomers(client, salonId, site.bookings);
+    await syncBookings(client, salonId, site, customerIds, employeeIds, serviceByKey);
+  }
+
   await syncGallery(client, salonId, site);
-  await syncBookingBlocks(client, salonId, site, employeeIds);
-  await syncSmsLogs(client, salonId, site);
+
+  if (!bookingsInPostgres && site.smsJobs.length > 0) {
+    await syncSmsLogs(client, salonId, site);
+  }
 }
 
 /** Sync full cmsSite snapshot to Postgres. No-op when DATABASE_URL unset or CMS_WRITE_DB=false. */

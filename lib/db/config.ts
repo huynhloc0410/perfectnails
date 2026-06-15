@@ -80,6 +80,14 @@ export function isPublicBookingWriteToPostgres(): boolean {
   return true;
 }
 
+/**
+ * Bookings are owned by Postgres — S3 cmsSite.bookings must not be synced into the DB.
+ * (Gallery still uses S3 until a later phase.)
+ */
+export function isBookingsManagedInPostgres(): boolean {
+  return isPublicBookingWriteToPostgres() && isAdminBookingsFromPostgres();
+}
+
 export function databaseUrlFromEnv(): string | undefined {
   return runtimeEnv('DATABASE_URL')?.trim() || undefined;
 }
