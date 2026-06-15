@@ -19,7 +19,12 @@ type BookingRow = {
 
 const LIST_SQL = `
   SELECT
-    COALESCE(bm.legacy_id, NULLIF(REPLACE(b.booking_number, 'CMS-', ''), b.booking_number)) AS legacy_id,
+    CASE
+      WHEN bm.legacy_id IS NOT NULL AND TRIM(bm.legacy_id) <> '' THEN TRIM(bm.legacy_id)
+      WHEN b.booking_number LIKE 'CMS-%' THEN NULLIF(TRIM(SUBSTRING(b.booking_number FROM 5)), '')
+      WHEN b.booking_number IS NOT NULL AND TRIM(b.booking_number) <> '' THEN TRIM(b.booking_number)
+      ELSE b.id::text
+    END AS legacy_id,
     b.start_datetime,
     b.notes,
     NULLIF(TRIM(b.guest_name), '') AS guest_name,
@@ -65,9 +70,12 @@ function rowToCmsBooking(row: BookingRow): CmsBooking | null {
 export async function listAdminBookingsFromPostgres(): Promise<CmsBooking[]> {
   const rows = await withPgClient((client) => client.query<BookingRow>(LIST_SQL));
   const out: CmsBooking[] = [];
+  const seen = new Set<string>();
   for (const row of rows.rows) {
     const b = rowToCmsBooking(row);
-    if (b) out.push(b);
+    if (!b || seen.has(b.id)) continue;
+    seen.add(b.id);
+    out.push(b);
   }
   return attachCustomerVisitStats(out);
 }

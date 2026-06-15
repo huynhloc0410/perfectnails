@@ -17,6 +17,7 @@ import {
   type CmsGalleryImage,
 } from '@/lib/cmsSiteTypes';
 import { galleryHasDedicatedThumb, galleryThumbSrc } from '@/lib/galleryDisplay';
+import { mergeBookingLists } from '@/lib/booking/mergeBookingLists';
 
 interface Service {
   id: string;
@@ -359,10 +360,11 @@ export default function AdminPage() {
           }
         }
 
+        let pgBookings: Booking[] = [];
         if (!cancelled && bookingsRes.ok) {
           const bookingsData = await bookingsRes.json();
           if (bookingsData.source === 'postgres' && Array.isArray(bookingsData.bookings)) {
-            setBookings(bookingsData.bookings as Booking[]);
+            pgBookings = bookingsData.bookings as Booking[];
             loadedBookingsFromPg = true;
           }
         }
@@ -370,18 +372,25 @@ export default function AdminPage() {
         const data = await cmsRes.json();
         if (cancelled) return;
 
+        let s3Bookings: Booking[] = [];
+        let localBookings: Booking[] = [];
+        try {
+          const savedBookings = localStorage.getItem('admin-bookings');
+          if (savedBookings) localBookings = JSON.parse(savedBookings) as Booking[];
+        } catch {
+          /* ignore */
+        }
+
         if (data.configured === true && data.site && !data.error) {
           const s = data.site;
           setUseCms(true);
+          if (Array.isArray(s.bookings)) s3Bookings = s.bookings as Booking[];
           if (!loadedSchedulingFromPg) {
             setSchedulingConfigSource('cms');
             if (Array.isArray(s.services)) setServices(s.services as Service[]);
             if (Array.isArray(s.employees)) setEmployees(s.employees as Employee[]);
             const blkUnknown = (s as { bookingBlocks?: unknown[] }).bookingBlocks;
             setBookingBlocks(coerceBookingBlocksList(blkUnknown));
-          }
-          if (!loadedBookingsFromPg && Array.isArray(s.bookings)) {
-            setBookings(s.bookings as Booking[]);
           }
           if (!loadedContentFromPg) {
             setContentConfigSource('cms');
@@ -403,16 +412,16 @@ export default function AdminPage() {
           if (Array.isArray(s.gallery) && s.gallery.length > 0) {
             setGalleryImages(normalizeCmsGalleryList(s.gallery));
           }
+          setBookings(mergeBookingLists(pgBookings, s3Bookings, localBookings));
         } else {
           setSchedulingConfigSource('local');
           setContentConfigSource('local');
           const savedServices = localStorage.getItem('admin-services');
-          const savedBookings = localStorage.getItem('admin-bookings');
           const savedEmployees = localStorage.getItem('admin-employees');
           const savedAbout = localStorage.getItem('admin-about');
           const savedContact = localStorage.getItem('admin-contact');
           if (savedServices) setServices(JSON.parse(savedServices));
-          if (savedBookings) setBookings(JSON.parse(savedBookings));
+          setBookings(mergeBookingLists(pgBookings, localBookings));
           if (savedEmployees) setEmployees(JSON.parse(savedEmployees));
           if (savedAbout) setAboutContent(JSON.parse(savedAbout));
           if (savedContact) {
