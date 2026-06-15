@@ -5,6 +5,8 @@ import {
   defaultCmsSite,
   normalizeCmsSite,
 } from '@/lib/cmsSiteTypes';
+import { toS3CmsDocument } from '@/lib/cms/s3CmsDocument';
+import { isBookingsManagedInPostgres } from '@/lib/db/config';
 
 /** First non-empty trimmed value among env keys (copy/paste from other projects often uses different names). */
 function s3Env(...keys: string[]): string | undefined {
@@ -87,7 +89,11 @@ export async function readCmsSiteFromS3(): Promise<CmsSitePayload | null> {
     const text = await out.Body?.transformToString();
     if (!text) return defaultCmsSite();
     const parsed = JSON.parse(text) as unknown;
-    return normalizeCmsSite(parsed);
+    const site = normalizeCmsSite(parsed);
+    if (isBookingsManagedInPostgres()) {
+      return { ...site, bookings: [], smsJobs: [] };
+    }
+    return site;
   } catch (e: unknown) {
     const name = e && typeof e === 'object' && 'name' in e ? (e as { name: string }).name : '';
     if (name === 'NoSuchKey') return defaultCmsSite();
@@ -104,7 +110,7 @@ export async function writeCmsSiteToS3(site: CmsSitePayload): Promise<void> {
   const client = getClient();
   if (!client) throw new Error('S3 CMS is not configured');
 
-  const body = JSON.stringify(site);
+  const body = JSON.stringify(toS3CmsDocument(site));
   if (body.length > 2_000_000) {
     throw new Error('Site payload too large');
   }

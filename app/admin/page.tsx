@@ -249,21 +249,25 @@ export default function AdminPage() {
       return false;
     }
 
-    const res = await fetch('/api/cms/site', {
-      method: 'PUT',
-      credentials: 'same-origin',
-      headers: { 'Content-Type': 'application/json' },
-      body: JSON.stringify({
+    const s3Body: Record<string, unknown> = {
         version: 1,
         services: s3Services,
         employees: s3Employees,
-        bookings: s3Bookings,
-        smsJobs: [],
         bookingBlocks: s3Blocks,
         about: s3About,
         contact: s3Contact,
         gallery: nextGallery,
-      }),
+      };
+    if (!schedulingFromPg) {
+      s3Body.bookings = s3Bookings;
+      s3Body.smsJobs = [];
+    }
+
+    const res = await fetch('/api/cms/site', {
+      method: 'PUT',
+      credentials: 'same-origin',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify(s3Body),
     });
     if (!res.ok) {
       const msg = await res.text().catch(() => '');
@@ -501,16 +505,10 @@ export default function AdminPage() {
         const urls = normalizeCmsGalleryList(local);
         if (urls.length === 0) return;
         const s = d.site as Record<string, unknown>;
-        const put = await fetch('/api/cms/site', {
-          method: 'PUT',
-          credentials: 'same-origin',
-          headers: { 'Content-Type': 'application/json' },
-          body: JSON.stringify({
+        const galleryPut: Record<string, unknown> = {
             version: typeof s.version === 'number' ? s.version : 1,
             services: Array.isArray(s.services) ? s.services : [],
             employees: Array.isArray(s.employees) ? s.employees : [],
-            bookings: [],
-            smsJobs: [],
             bookingBlocks: Array.isArray(s.bookingBlocks) ? s.bookingBlocks : [],
             about: s.about && typeof s.about === 'object' ? s.about : { title: '', content: '' },
             contact:
@@ -524,7 +522,12 @@ export default function AdminPage() {
                     socialMedia: { facebook: '', instagram: '', yelp: '' },
                   },
             gallery: urls,
-          }),
+          };
+        const put = await fetch('/api/cms/site', {
+          method: 'PUT',
+          credentials: 'same-origin',
+          headers: { 'Content-Type': 'application/json' },
+          body: JSON.stringify(galleryPut),
         });
         if (put.ok) setGalleryImages(urls);
       } catch {

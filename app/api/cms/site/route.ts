@@ -8,7 +8,7 @@ import {
   s3EnvMissingParts,
 } from '@/lib/s3CmsSite';
 import { persistCmsSite } from '@/lib/cms/persistCmsSite';
-import { stripBookingsFromCmsSite } from '@/lib/cms/s3BookingsExcluded';
+import { toCmsSiteApiPayload } from '@/lib/cms/s3CmsDocument';
 
 export const dynamic = 'force-dynamic';
 
@@ -32,7 +32,7 @@ export async function GET() {
 
   try {
     const raw = await readCmsSiteFromS3();
-    const site = stripBookingsFromCmsSite(raw ?? defaultCmsSite());
+    const site = toCmsSiteApiPayload(raw ?? defaultCmsSite());
     return NextResponse.json(
       { configured: true, site },
       {

@@ -1,4 +1,5 @@
 import { normalizeContactSocialMedia } from '@/lib/site/contact';
+import { isBookingsManagedInPostgres } from '@/lib/db/config';
 
 export interface CmsService {
   id: string;
@@ -121,10 +122,11 @@ export interface CmsSitePayload {
   version: number;
   services: CmsService[];
   employees: CmsEmployee[];
+  /** In-memory / Postgres only when DATABASE_URL is set — not stored in S3 cms/site.json. */
   bookings: CmsBooking[];
   /**
-   * Server-only SMS queue for reminders/confirmations.
-   * Not used by the public UI; stored here for a lightweight persistence layer.
+   * Legacy SMS queue — not stored in S3 when Postgres owns bookings.
+   * Reminders use sms_logs in Postgres.
    */
   smsJobs: CmsSmsJob[];
   about: CmsAbout;
@@ -272,7 +274,11 @@ export function normalizeCmsSite(raw: unknown): CmsSitePayload {
   const bookingBlocks = bookingBlocksRaw
     .map((x) => normalizeCmsBookingBlock(x))
     .filter((b): b is CmsBookingBlock => b !== null);
-  const bookings = Array.isArray(o.bookings) ? (o.bookings as CmsBooking[]) : [];
+  const bookings = isBookingsManagedInPostgres()
+    ? []
+    : Array.isArray(o.bookings)
+      ? (o.bookings as CmsBooking[])
+      : [];
 
   return {
     version: typeof o.version === 'number' ? o.version : CMS_SITE_VERSION,

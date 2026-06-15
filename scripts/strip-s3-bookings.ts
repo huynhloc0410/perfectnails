@@ -1,12 +1,11 @@
 /**
- * Remove stale bookings from S3 cms/site.json (Postgres is source of truth).
+ * Remove bookings and smsJobs keys from S3 cms/site.json (Postgres is source of truth).
  *
  *   npm run cms:strip-s3-bookings
  */
-import { stripBookingsFromCmsSite } from '../lib/cms/s3BookingsExcluded';
+import { toS3CmsDocument } from '../lib/cms/s3CmsDocument';
 import { isBookingsManagedInPostgres } from '../lib/db/config';
 import { isS3CmsConfigured, readCmsSiteFromS3, writeCmsSiteToS3 } from '../lib/s3CmsSite';
-import { normalizeCmsSite } from '../lib/cmsSiteTypes';
 
 async function main() {
   if (!isS3CmsConfigured()) {
@@ -24,15 +23,13 @@ async function main() {
     process.exit(1);
   }
 
-  const before = site.bookings.length;
-  const stripped = stripBookingsFromCmsSite(site);
-  if (before === 0 && stripped.smsJobs.length === 0) {
-    console.log('S3 already has no bookings.');
-    return;
-  }
-
-  await writeCmsSiteToS3(normalizeCmsSite(stripped));
-  console.log(`Stripped ${before} booking(s) from S3 cms/site.json.`);
+  const hadBookings = site.bookings.length > 0;
+  await writeCmsSiteToS3(site);
+  console.log(
+    hadBookings
+      ? `Rewrote S3 cms/site.json without bookings/smsJobs keys (had ${site.bookings.length} stale booking(s)).`
+      : 'Rewrote S3 cms/site.json without bookings/smsJobs keys.',
+  );
 }
 
 main().catch((e) => {
