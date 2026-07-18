@@ -442,7 +442,7 @@ export default function Booking() {
       })
     ) {
       alert(
-        'That time is no longer available for this service. Please choose another slot or call the salon.',
+        `${bookableServices.length}\n\nThat time is no longer available for this service. Please choose another slot or call the salon.`,
       );
       return;
     }
