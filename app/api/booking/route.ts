@@ -11,6 +11,7 @@ import { normalizePhoneE164 } from '@/lib/phone';
 import { isSlotStartAllowedForBooking } from '@/lib/bookingLeadTime';
 import { isNonBookableAddonService } from '@/lib/booking/serviceEmployeeMatch';
 import { hasBookingCapacity } from '@/lib/booking/slotAvailability';
+import { salonDateTimeToUtc } from '@/lib/db/timezone';
 import { bookingConfirmationSms } from '@/lib/smsTemplates';
 import { isTwilioConfigured, sendSms } from '@/lib/twilioServer';
 
@@ -85,13 +86,15 @@ export async function POST(req: Request) {
 
   const dateYmd = `${year}-${String(month).padStart(2, '0')}-${String(day).padStart(2, '0')}`;
   const empId = (employee || '').trim();
-  const slotEndExclusive = new Date(bookingDate.getTime());
+  /** Capacity/blocks must use salon wall clock — ISO from the browser is fine for lead time, but UTC servers must not mix it with timeSlot-parsed rows. */
+  const slotStartSalon = salonDateTimeToUtc(dateYmd, timeSlot) ?? bookingDate;
+  const slotEndExclusive = new Date(slotStartSalon.getTime());
   slotEndExclusive.setMinutes(slotEndExclusive.getMinutes() + bookingDuration);
 
   const blocked = isBookingWindowBlocked({
     dateYmd,
     employeeId: empId,
-    slotStartLocal: bookingDate,
+    slotStartLocal: slotStartSalon,
     slotEndExclusiveLocal: slotEndExclusive,
     blocks: snapshot.bookingBlocks,
   });
@@ -102,7 +105,7 @@ export async function POST(req: Request) {
   if (
     !hasBookingCapacity({
       dateYmd,
-      slotStartLocal: bookingDate,
+      slotStartLocal: slotStartSalon,
       slotEndExclusiveLocal: slotEndExclusive,
       service: svcRow,
       employees: snapshot.employees,

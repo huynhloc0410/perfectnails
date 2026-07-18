@@ -9,6 +9,11 @@ import {
   bookingServiceStaffFamily,
   employeeCanPerformService,
 } from '@/lib/booking/serviceEmployeeMatch';
+import {
+  salonAppointmentDate,
+  salonDateTimeToUtc,
+  salonTimeSlotLabel,
+} from '@/lib/db/timezone';
 
 export type SlotBooking = {
   id: string;
@@ -34,14 +39,8 @@ export type SlotState = 'open' | 'salon_blocked' | 'staff_blocked' | 'fully_book
 
 type BookingInterval = { start: Date; end: Date };
 
-function parseLocalDateYYYYMMDD(date: string): Date | null {
-  if (!/^\d{4}-\d{2}-\d{2}$/.test(date)) return null;
-  const [year, month, day] = date.split('-').map(Number);
-  return new Date(year, month - 1, day);
-}
-
 function localDayKey(d: Date): string {
-  return `${d.getFullYear()}-${String(d.getMonth() + 1).padStart(2, '0')}-${String(d.getDate()).padStart(2, '0')}`;
+  return salonAppointmentDate(d);
 }
 
 function bookingDurationMinutes(booking: SlotBooking): number {
@@ -50,34 +49,34 @@ function bookingDurationMinutes(booking: SlotBooking): number {
   return Number.isFinite(n) && n > 0 ? n : 45;
 }
 
-function calendarPartsForBooking(booking: SlotBooking): { year: number; month: number; day: number } | null {
-  if (typeof booking.date === 'string' && /^\d{4}-\d{2}-\d{2}$/.test(booking.date)) {
-    const [year, month, day] = booking.date.split('-').map(Number);
-    return { year, month, day };
-  }
-  const base = new Date(booking.date);
-  if (!Number.isFinite(base.getTime())) return null;
-  return { year: base.getFullYear(), month: base.getMonth() + 1, day: base.getDate() };
-}
-
-/** Local start/end for a booking row (half-open end). Uses the booking's real calendar day + timeSlot. */
+/**
+ * Start/end for a booking row (half-open end).
+ * Prefers the absolute ISO on `date` (Postgres/CMS); otherwise salon wall clock from YYYY-MM-DD + timeSlot.
+ * Never uses `new Date(y, m, d, h, min)` — that breaks capacity checks on UTC servers.
+ */
 export function parseBookingInterval(booking: SlotBooking, bufferMinutes = 0): BookingInterval | null {
-  const parts = calendarPartsForBooking(booking);
-  if (!parts) return null;
+  let start: Date | null = null;
 
-  const t = (booking.timeSlot || '').trim();
-  const m = /^(\d{1,2}):(\d{2})$/.exec(t);
-  let start: Date;
-  if (m) {
-    const hh = parseInt(m[1], 10);
-    const mm = parseInt(m[2], 10);
-    if (!Number.isFinite(hh) || !Number.isFinite(mm)) return null;
-    start = new Date(parts.year, parts.month - 1, parts.day, hh, mm, 0, 0);
-  } else {
-    const base = new Date(booking.date);
-    if (!Number.isFinite(base.getTime())) return null;
-    start = base;
+  if (typeof booking.date === 'string' && booking.date.includes('T')) {
+    const fromIso = new Date(booking.date);
+    if (Number.isFinite(fromIso.getTime())) start = fromIso;
   }
+
+  if (!start) {
+    let dateYmd: string | null = null;
+    if (typeof booking.date === 'string' && /^\d{4}-\d{2}-\d{2}$/.test(booking.date)) {
+      dateYmd = booking.date;
+    } else if (booking.date) {
+      const base = new Date(booking.date);
+      if (Number.isFinite(base.getTime())) dateYmd = salonAppointmentDate(base);
+    }
+    const t = (booking.timeSlot || '').trim();
+    if (dateYmd && t) {
+      start = salonDateTimeToUtc(dateYmd, t);
+    }
+  }
+
+  if (!start) return null;
 
   const end = new Date(start.getTime());
   end.setMinutes(end.getMinutes() + bookingDurationMinutes(booking) + bufferMinutes);
@@ -333,7 +332,7 @@ export function evaluateSlotState(opts: {
     service: service.name,
     employee: stylist || undefined,
     date: dateYmd,
-    timeSlot: `${String(slotStartLocal.getHours()).padStart(2, '0')}:${String(slotStartLocal.getMinutes()).padStart(2, '0')}`,
+    timeSlot: salonTimeSlotLabel(slotStartLocal),
     duration: service.duration,
   };
 

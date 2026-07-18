@@ -1,4 +1,5 @@
 import type { CmsBookingBlock } from '@/lib/cmsSiteTypes';
+import { salonDateTimeToUtc } from '@/lib/db/timezone';
 
 /** True when this interval should suppress booking for everyone (stylist IDs ignored). */
 export function isSalonWideBookingBlock(block: CmsBookingBlock): boolean {
@@ -71,10 +72,6 @@ export function isBookingWindowBlocked(opts: {
   const t1 = slotEndExclusiveLocal.getTime();
   if (!Number.isFinite(t0) || !Number.isFinite(t1)) return false;
 
-  const y = slotStartLocal.getFullYear();
-  const mo = slotStartLocal.getMonth();
-  const d = slotStartLocal.getDate();
-
   for (const block of blocks) {
     if (block.date !== dateYmd) continue;
 
@@ -84,10 +81,11 @@ export function isBookingWindowBlocked(opts: {
     const em = hmToMinutes(block.endTime);
     if (sm === null || em === null || em <= sm) continue;
 
-    const bStart = new Date(y, mo, d, Math.floor(sm / 60), sm % 60, 0, 0).getTime();
-    const bEnd = new Date(y, mo, d, Math.floor(em / 60), em % 60, 0, 0).getTime();
+    const bStartDate = salonDateTimeToUtc(dateYmd, block.startTime);
+    const bEndDate = salonDateTimeToUtc(dateYmd, block.endTime);
+    if (!bStartDate || !bEndDate) continue;
 
-    if (intervalsOverlapExclusiveEnd(t0, t1, bStart, bEnd)) return true;
+    if (intervalsOverlapExclusiveEnd(t0, t1, bStartDate.getTime(), bEndDate.getTime())) return true;
   }
 
   return false;
@@ -105,18 +103,15 @@ export function overlapsSalonWideBookingWindow(opts: {
   const t1 = slotEndExclusiveLocal.getTime();
   if (!Number.isFinite(t0) || !Number.isFinite(t1)) return false;
 
-  const y = slotStartLocal.getFullYear();
-  const mo = slotStartLocal.getMonth();
-  const d = slotStartLocal.getDate();
-
   for (const block of blocks) {
     if (block.date !== dateYmd || !isSalonWideBookingBlock(block)) continue;
     const sm = hmToMinutes(block.startTime);
     const em = hmToMinutes(block.endTime);
     if (sm === null || em === null || em <= sm) continue;
-    const bStart = new Date(y, mo, d, Math.floor(sm / 60), sm % 60, 0, 0).getTime();
-    const bEnd = new Date(y, mo, d, Math.floor(em / 60), em % 60, 0, 0).getTime();
-    if (intervalsOverlapExclusiveEnd(t0, t1, bStart, bEnd)) return true;
+    const bStartDate = salonDateTimeToUtc(dateYmd, block.startTime);
+    const bEndDate = salonDateTimeToUtc(dateYmd, block.endTime);
+    if (!bStartDate || !bEndDate) continue;
+    if (intervalsOverlapExclusiveEnd(t0, t1, bStartDate.getTime(), bEndDate.getTime())) return true;
   }
   return false;
 }
@@ -137,10 +132,6 @@ export function overlapsStylistScopedBookingWindow(opts: {
   const t1 = slotEndExclusiveLocal.getTime();
   if (!Number.isFinite(t0) || !Number.isFinite(t1)) return false;
 
-  const y = slotStartLocal.getFullYear();
-  const mo = slotStartLocal.getMonth();
-  const d = slotStartLocal.getDate();
-
   for (const block of blocks) {
     if (block.date !== dateYmd || isSalonWideBookingBlock(block)) continue;
     if (!bookingBlockAppliesToEmployee(block, employeeId)) continue;
@@ -148,9 +139,10 @@ export function overlapsStylistScopedBookingWindow(opts: {
     const sm = hmToMinutes(block.startTime);
     const em = hmToMinutes(block.endTime);
     if (sm === null || em === null || em <= sm) continue;
-    const bStart = new Date(y, mo, d, Math.floor(sm / 60), sm % 60, 0, 0).getTime();
-    const bEnd = new Date(y, mo, d, Math.floor(em / 60), em % 60, 0, 0).getTime();
-    if (intervalsOverlapExclusiveEnd(t0, t1, bStart, bEnd)) return true;
+    const bStartDate = salonDateTimeToUtc(dateYmd, block.startTime);
+    const bEndDate = salonDateTimeToUtc(dateYmd, block.endTime);
+    if (!bStartDate || !bEndDate) continue;
+    if (intervalsOverlapExclusiveEnd(t0, t1, bStartDate.getTime(), bEndDate.getTime())) return true;
   }
   return false;
 }
