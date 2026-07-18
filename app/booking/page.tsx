@@ -483,7 +483,7 @@ export default function Booking() {
 
       if (response.status === 409 && result?.error === 'no_capacity') {
         alert(
-          'That time is no longer available for this service. Please choose another slot or call the salon.',
+          `${response.status}\n\nThat time is no longer available for this service. Please choose another slot or call the salon.`,
         );
         return;
       }
