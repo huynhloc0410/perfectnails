@@ -1209,7 +1209,11 @@ export default function Booking() {
                 Thank you for your booking!
               </h2>
               <p className="mt-3 text-sm leading-relaxed text-lux-espressoLight">
-                We have successfully received your appointment request. Have a wonderful day, and see you soon.
+                Please check your text messages for your appointment confirmation and our salon address. We have
+                successfully received your appointment request.
+              </p>
+              <p className="mt-3 text-sm leading-relaxed text-lux-espressoLight">
+                Have a wonderful day, and we look forward to seeing you soon!
               </p>
               <button
                 type="button"
