@@ -33,20 +33,26 @@ export async function POST(req: Request) {
     return NextResponse.json({ success: false, error: 'sms_consent_required' }, { status: 400 });
   }
 
-  let bookingDate: Date;
-  const parsedFromIso = slotStartIso ? new Date(slotStartIso) : null;
-  if (parsedFromIso && Number.isFinite(parsedFromIso.getTime())) {
-    bookingDate = parsedFromIso;
-  } else {
-    const [hours, minutes] = timeSlot.split(':');
-    const [year, month, day] = date.split('-').map(Number);
-    bookingDate = new Date(year, month - 1, day, parseInt(hours, 10), parseInt(minutes, 10), 0, 0);
+  const [year, month, day] = date.split('-').map(Number);
+  const dateYmd = `${year}-${String(month).padStart(2, '0')}-${String(day).padStart(2, '0')}`;
+
+  /**
+   * Appointment wall clock is always America/Phoenix (salon), never the booker's browser TZ.
+   * slotStartIso is only a legacy client hint for lead-time fallback if date/timeSlot are malformed.
+   */
+  const slotStartSalon =
+    salonDateTimeToUtc(dateYmd, timeSlot) ??
+    (() => {
+      const parsedFromIso = slotStartIso ? new Date(slotStartIso) : null;
+      return parsedFromIso && Number.isFinite(parsedFromIso.getTime()) ? parsedFromIso : null;
+    })();
+
+  if (!slotStartSalon) {
+    return NextResponse.json({ success: false, error: 'invalid_datetime' }, { status: 400 });
   }
 
-  const [year, month, day] = date.split('-').map(Number);
-
   const nowForLead = new Date();
-  if (!isSlotStartAllowedForBooking(bookingDate, nowForLead)) {
+  if (!isSlotStartAllowedForBooking(slotStartSalon, nowForLead)) {
     return NextResponse.json({ success: false, error: 'min_notice' }, { status: 400 });
   }
 
@@ -57,7 +63,7 @@ export async function POST(req: Request) {
     phone,
     service,
     employee: employee || undefined,
-    date: bookingDate.toISOString(),
+    date: slotStartSalon.toISOString(),
     timeSlot,
     duration: bookingDuration,
     ...(notes ? { notes } : {}),
@@ -84,10 +90,7 @@ export async function POST(req: Request) {
     return NextResponse.json({ success: false, error: 'invalid_service' }, { status: 400 });
   }
 
-  const dateYmd = `${year}-${String(month).padStart(2, '0')}-${String(day).padStart(2, '0')}`;
   const empId = (employee || '').trim();
-  /** Capacity/blocks must use salon wall clock — ISO from the browser is fine for lead time, but UTC servers must not mix it with timeSlot-parsed rows. */
-  const slotStartSalon = salonDateTimeToUtc(dateYmd, timeSlot) ?? bookingDate;
   const slotEndExclusive = new Date(slotStartSalon.getTime());
   slotEndExclusive.setMinutes(slotEndExclusive.getMinutes() + bookingDuration);
 

@@ -39,7 +39,22 @@ export function salonWallClock(dt: Date): { hours: number; minutes: number } {
     if (p.type === 'hour') hours = parseInt(p.value, 10);
     if (p.type === 'minute') minutes = parseInt(p.value, 10);
   }
+  // Some engines return "24" for midnight with hour12: false.
+  if (hours === 24) hours = 0;
   return { hours, minutes };
+}
+
+/** Minutes from salon local midnight (0–1439). */
+export function salonMinutesSinceMidnight(dt: Date): number {
+  const { hours, minutes } = salonWallClock(dt);
+  return hours * 60 + minutes;
+}
+
+/** Calendar day-of-week for a YYYY-MM-DD salon date (0=Sun … 6=Sat). */
+export function salonDayOfWeekFromYmd(dateYmd: string): number | null {
+  if (!/^\d{4}-\d{2}-\d{2}$/.test(dateYmd)) return null;
+  const [y, m, d] = dateYmd.split('-').map(Number);
+  return new Date(Date.UTC(y, m - 1, d, 12, 0, 0)).getUTCDay();
 }
 
 /** HH:MM for admin booking rows (matches cmsSite timeSlot). */

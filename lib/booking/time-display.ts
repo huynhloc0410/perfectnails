@@ -1,6 +1,9 @@
 /**
  * Parse booking wall-clock start and group rows for admin calendar views.
+ * Times are America/Phoenix salon clock — never the admin browser's local zone.
  */
+
+import { salonMinutesSinceMidnight } from '@/lib/db/timezone';
 
 export function getBookingStartMinutes(booking: { date: string; timeSlot?: string }): number {
   const ts = (booking.timeSlot ?? '').trim();
@@ -24,7 +27,7 @@ export function getBookingStartMinutes(booking: { date: string; timeSlot?: strin
 
   const dt = new Date(booking.date);
   if (!Number.isNaN(dt.getTime())) {
-    return dt.getHours() * 60 + dt.getMinutes();
+    return salonMinutesSinceMidnight(dt);
   }
 
   return 0;

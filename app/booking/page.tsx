@@ -21,6 +21,12 @@ import {
 } from '@/lib/bookingLeadTime';
 import { employeeCanPerformService, isNonBookableAddonService } from '@/lib/booking/serviceEmployeeMatch';
 import { evaluateSlotState, hasBookingCapacity } from '@/lib/booking/slotAvailability';
+import {
+  salonAppointmentDate,
+  salonDateTimeToUtc,
+  salonDayOfWeekFromYmd,
+  salonMinutesSinceMidnight,
+} from '@/lib/db/timezone';
 
 interface Service {
   id: string;
@@ -58,19 +64,11 @@ type BookingSlotRow = {
   state: 'open' | 'salon_blocked' | 'staff_blocked' | 'fully_booked';
 };
 
-function minutesSinceMidnight(d: Date): number {
-  return d.getHours() * 60 + d.getMinutes();
-}
-
-function getBusinessHoursForDate(dateLocal: Date): BusinessHours {
-  // 0 = Sunday, 6 = Saturday
-  const dow = dateLocal.getDay();
+function getBusinessHoursForDateYmd(dateYmd: string): BusinessHours {
+  const dow = salonDayOfWeekFromYmd(dateYmd);
+  if (dow === null) return null;
   if (dow === 0) return null; // Sunday closed
-  if (dow === 6) {
-    // Saturday: 9:30 AM - 7:00 PM
-    return { openMinutes: 9 * 60 + 30, closeMinutes: 19 * 60 };
-  }
-  // Mon - Fri: 9:30 AM - 7:00 PM
+  // Mon - Sat: 9:30 AM - 7:00 PM (Arizona)
   return { openMinutes: 9 * 60 + 30, closeMinutes: 19 * 60 };
 }
 
@@ -252,16 +250,12 @@ export default function Booking() {
       service: Service,
     ): BookingSlotRow[] => {
       const rows: BookingSlotRow[] = [];
-      const [year, month, day] = date.split('-').map(Number);
-      const selectedDateObj = new Date(year, month - 1, day);
-      const today = new Date();
-      today.setHours(0, 0, 0, 0);
-
-      if (selectedDateObj < today) {
+      const todayYmd = salonAppointmentDate(new Date());
+      if (date < todayYmd) {
         return [];
       }
 
-      const hours = getBusinessHoursForDate(selectedDateObj);
+      const hours = getBusinessHoursForDateYmd(date);
       if (!hours) {
         return [];
       }
@@ -286,16 +280,16 @@ export default function Booking() {
         const hour = Math.floor(startMinutes / 60);
         const minute = startMinutes % 60;
         const slotTime = `${hour.toString().padStart(2, '0')}:${minute.toString().padStart(2, '0')}`;
-        const slotDateTime = new Date(selectedDateObj);
-        slotDateTime.setHours(hour, minute, 0, 0);
+        const slotDateTime = salonDateTimeToUtc(date, slotTime);
+        if (!slotDateTime) continue;
 
         if (slotDateTime.getTime() < earliestBookableStart.getTime()) {
           continue;
         }
 
-        const slotEndTime = new Date(slotDateTime);
+        const slotEndTime = new Date(slotDateTime.getTime());
         slotEndTime.setMinutes(slotEndTime.getMinutes() + duration + BUFFER_TIME);
-        if (minutesSinceMidnight(slotEndTime) > hours.closeMinutes) continue;
+        if (salonMinutesSinceMidnight(slotEndTime) > hours.closeMinutes) continue;
 
         const state = evaluateSlotState({
           dateYmd: date,
@@ -388,12 +382,13 @@ export default function Booking() {
       alert('Invalid date or time.');
       return;
     }
-    const yy = parseInt(parts[1], 10);
-    const mo = parseInt(parts[2], 10);
-    const dd = parseInt(parts[3], 10);
-    const hh = parseInt(hm[1], 10);
-    const mins = parseInt(hm[2], 10);
-    const slotStart = new Date(yy, mo - 1, dd, hh, mins, 0, 0);
+    const dateYmd = `${parts[1]}-${parts[2]}-${parts[3]}`;
+    const slotHm = `${hm[1].padStart(2, '0')}:${hm[2]}`;
+    const slotStart = salonDateTimeToUtc(dateYmd, slotHm);
+    if (!slotStart) {
+      alert('Invalid date or time.');
+      return;
+    }
     const slotEndExclusive = new Date(slotStart.getTime());
     slotEndExclusive.setMinutes(slotEndExclusive.getMinutes() + serviceDuration + BUFFER_TIME);
     if (!isSlotStartAllowedForBooking(slotStart, new Date())) {
@@ -404,7 +399,7 @@ export default function Booking() {
     }
     if (
       isBookingWindowBlocked({
-        dateYmd: formData.date.trim(),
+        dateYmd,
         employeeId: effectiveEmp,
         slotStartLocal: slotStart,
         slotEndExclusiveLocal: slotEndExclusive,
@@ -413,7 +408,7 @@ export default function Booking() {
     ) {
       if (
         overlapsSalonWideBookingWindow({
-          dateYmd: formData.date.trim(),
+          dateYmd,
           slotStartLocal: slotStart,
           slotEndExclusiveLocal: slotEndExclusive,
           blocks: bookingBlocks,
@@ -429,7 +424,7 @@ export default function Booking() {
     const catalog = bookableServices.length > 0 ? bookableServices : services;
     if (
       !hasBookingCapacity({
-        dateYmd: formData.date.trim(),
+        dateYmd,
         slotStartLocal: slotStart,
         slotEndExclusiveLocal: slotEndExclusive,
         service: selectedService,
@@ -456,7 +451,7 @@ export default function Booking() {
     formDataObj.append('date', formData.date);
     formDataObj.append('timeSlot', formData.timeSlot);
     formDataObj.append('duration', serviceDuration.toString());
-    /** Same instant as slotStart — API uses this so min_notice matches the browser (server TZ is often UTC). */
+    /** Phoenix wall-clock instant — server also re-derives from date + timeSlot. */
     formDataObj.append('slotStartIso', slotStart.toISOString());
     formDataObj.append('smsConsent', 'true');
 
@@ -994,7 +989,9 @@ export default function Booking() {
           {bookingStep === 4 && formData.date && formData.service && formData.employee && (
             <div>
               <label className="block mb-3 text-sm font-medium text-lux-espresso">Select Time *</label>
-              
+              <p className="mb-3 text-xs text-lux-espressoLight/80">
+                All times are Arizona (Phoenix) time.
+              </p>
               {/* Time slots (compact grid — open selectable; blocked/booked greyed out) */}
               {timeSlotChoices.length > 0 ? (
                 <div className="space-y-3">

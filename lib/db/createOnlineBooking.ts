@@ -8,7 +8,7 @@ import {
 } from '@/lib/db/legacyId';
 import { getMappedUuid, mappedOrNew, rememberMapping } from '@/lib/db/legacyMapping';
 import { getDefaultSalonId } from '@/lib/db/salon';
-import { salonAppointmentDate } from '@/lib/db/timezone';
+import { salonAppointmentDate, salonDateTimeToUtc } from '@/lib/db/timezone';
 import { withPgClient } from '@/lib/db/pool';
 
 function customerDisplayName(name: string): string {
@@ -123,14 +123,30 @@ export async function createOnlineBookingInPostgres(
   const { booking, serviceLegacyId } = params;
 
   const legacyId = booking.id.trim();
-  const start = new Date(booking.date);
-  if (!Number.isFinite(start.getTime())) {
+
+  /** Prefer explicit salon wall clock (date YMD + timeSlot) so out-of-state browsers cannot shift start_datetime. */
+  let start: Date | null = null;
+  const timeSlot = (booking.timeSlot ?? '').trim();
+  const dateRaw = typeof booking.date === 'string' ? booking.date.trim() : '';
+  const dateYmdFromField = /^\d{4}-\d{2}-\d{2}$/.test(dateRaw)
+    ? dateRaw
+    : dateRaw.includes('T')
+      ? salonAppointmentDate(new Date(dateRaw))
+      : '';
+  if (dateYmdFromField && timeSlot) {
+    start = salonDateTimeToUtc(dateYmdFromField, timeSlot);
+  }
+  if (!start) {
+    const fromIso = new Date(booking.date);
+    if (Number.isFinite(fromIso.getTime())) start = fromIso;
+  }
+  if (!start || !Number.isFinite(start.getTime())) {
     throw new Error('Invalid booking date');
   }
 
   const duration = booking.duration > 0 ? booking.duration : 45;
   const end = new Date(start.getTime() + duration * 60_000);
-  const apptDate = salonAppointmentDate(start);
+  const apptDate = dateYmdFromField || salonAppointmentDate(start);
   const bookingNumber = `CMS-${legacyId}`.slice(0, 32);
 
   await withPgClient(async (client) => {
