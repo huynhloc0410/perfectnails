@@ -16,13 +16,27 @@ export interface CmsEmployee {
   phone: string;
 }
 
+/** One salon calendar day of visits for a customer (same phone). */
+export type CustomerVisitDay = {
+  /** Visit day, MM-DD-YYYY (Phoenix). */
+  date: string;
+  /** Distinct guest names used on that day. */
+  clientNames: string[];
+  /** Distinct services booked that day. */
+  services: string[];
+};
+
 /** Repeat-visit summary for admin booking cards (by normalized phone). */
 export type CustomerVisitInfo = {
+  /** Distinct visit days (multiple appointments same day = 1). */
   visitCount: number;
   /** First appointment date at the salon, MM-DD-YYYY (Phoenix). */
   firstVisitDate: string;
-  /** True when this appointment is after the guest's first visit (same phone). */
+  /** True when this appointment is after the guest's first visit day (same phone). */
   isReturning: boolean;
+  firstVisit: CustomerVisitDay;
+  /** Up to 3 most recent visit days (may include first when history is short). */
+  recentVisits: CustomerVisitDay[];
 };
 
 export interface CmsBooking {
