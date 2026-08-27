@@ -21,10 +21,10 @@ import {
 } from '@/lib/bookingLeadTime';
 import { employeeCanPerformService, isNonBookableAddonService } from '@/lib/booking/serviceEmployeeMatch';
 import { evaluateSlotState, hasBookingCapacity } from '@/lib/booking/slotAvailability';
+import { getBusinessHoursForDateYmd } from '@/lib/booking/businessHours';
 import {
   salonAppointmentDate,
   salonDateTimeToUtc,
-  salonDayOfWeekFromYmd,
   salonMinutesSinceMidnight,
 } from '@/lib/db/timezone';
 
@@ -57,20 +57,10 @@ interface Booking {
 const BUFFER_TIME = 0; // minutes between appointments
 const ANYBODY_EMPLOYEE_ID = '__anybody__';
 
-type BusinessHours = { openMinutes: number; closeMinutes: number } | null;
-
 type BookingSlotRow = {
   time: string;
   state: 'open' | 'salon_blocked' | 'staff_blocked' | 'fully_booked';
 };
-
-function getBusinessHoursForDateYmd(dateYmd: string): BusinessHours {
-  const dow = salonDayOfWeekFromYmd(dateYmd);
-  if (dow === null) return null;
-  if (dow === 0) return null; // Sunday closed
-  // Mon - Sat: 9:30 AM - 7:00 PM (Arizona)
-  return { openMinutes: 9 * 60 + 30, closeMinutes: 19 * 60 };
-}
 
 function parseLocalDateYYYYMMDD(date: string): Date {
   const [year, month, day] = date.split('-').map(Number);
@@ -479,6 +469,13 @@ export default function Booking() {
       if (response.status === 409 && result?.error === 'no_capacity') {
         alert(
           `${response.status}\n\nThat time is no longer available for this service. Please choose another slot or call the salon.`,
+        );
+        return;
+      }
+
+      if (response.status === 400 && result?.error === 'outside_hours') {
+        alert(
+          'That time is outside salon hours. Saturday appointments finish by 6:00 PM; weekdays by 7:00 PM.',
         );
         return;
       }

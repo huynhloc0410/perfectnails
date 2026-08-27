@@ -11,6 +11,7 @@ import { normalizePhoneE164 } from '@/lib/phone';
 import { isSlotStartAllowedForBooking } from '@/lib/bookingLeadTime';
 import { isNonBookableAddonService } from '@/lib/booking/serviceEmployeeMatch';
 import { hasBookingCapacity } from '@/lib/booking/slotAvailability';
+import { isWithinBusinessHours } from '@/lib/booking/businessHours';
 import { salonDateTimeToUtc } from '@/lib/db/timezone';
 import { bookingConfirmationSms } from '@/lib/smsTemplates';
 import { isTwilioConfigured, sendSms } from '@/lib/twilioServer';
@@ -57,6 +58,10 @@ export async function POST(req: Request) {
   }
 
   const bookingDuration = parseInt(duration, 10) || 45;
+  if (!isWithinBusinessHours(dateYmd, slotStartSalon, bookingDuration)) {
+    return NextResponse.json({ success: false, error: 'outside_hours' }, { status: 400 });
+  }
+
   const booking: CmsBooking = {
     id: Date.now().toString(),
     name,
