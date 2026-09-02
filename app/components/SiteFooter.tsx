@@ -12,7 +12,7 @@ import {
   migrateLegacyStoredContactAddress,
   toTelHref,
 } from '@/lib/site/contact';
-import { SITE_BRAND_NAME } from '@/lib/site/branding';
+import { SITE_BRAND_NAME, siteSalonGoogleMapsUrl } from '@/lib/site/branding';
 import SiteLogoLink from './SiteLogoLink';
 
 function applyLocalContact(
@@ -93,14 +93,16 @@ export default function SiteFooter() {
     };
   }, [refreshContact]);
 
-  const mapsUrl = `https://www.google.com/maps/search/?api=1&query=${encodeURIComponent(address)}`;
+  const mapsUrl = siteSalonGoogleMapsUrl(address);
 
   return (
     <footer className="font-nav mt-auto border-t border-lux-line/40 bg-gradient-to-b from-lux-paper to-lux-cream/50">
       <div className="mx-auto max-w-3xl px-4 py-5 text-center sm:px-6 sm:py-6">
         <SiteLogoLink variant="footer" />
         <p className="footer-animate-in footer-animate-in-delay-1 mx-auto mt-1.5 max-w-md text-xs leading-snug text-gray-600 sm:text-sm">
-          {address}
+          <a href={mapsUrl} target="_blank" rel="noopener noreferrer" className="footer-action-link">
+            {address}
+          </a>
         </p>
         <div className="footer-animate-in footer-animate-in-delay-2 mt-3 flex flex-wrap items-center justify-center gap-x-4 gap-y-1.5 text-sm font-medium text-gray-700 sm:mt-4 sm:text-[15px]">
           <a href={phoneHref} className="footer-action-link">

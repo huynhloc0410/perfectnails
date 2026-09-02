@@ -41,17 +41,30 @@ export const SITE_SALON_ADDRESS_LINE =
   `${SITE_SCHEMA_POSTAL_ADDRESS.streetAddress}, ${SITE_SCHEMA_POSTAL_ADDRESS.addressLocality}, ${SITE_SCHEMA_POSTAL_ADDRESS.addressRegion} ${SITE_SCHEMA_POSTAL_ADDRESS.postalCode}`;
 
 /**
+ * Search query that opens the Google Business listing for the salon
+ * (name + street), not a generic pin on the address alone.
+ */
+export function siteMapsSearchQuery(address?: string | null): string {
+  const street = (address ?? '').trim() || SITE_SALON_ADDRESS_LINE;
+  return `${SITE_BRAND_NAME}, ${street}`;
+}
+
+/**
  * Opens Google Maps (app or web) with the salon pinned — reliable from SMS on Android & iOS.
  */
-export function siteSalonGoogleMapsUrl(): string {
-  const query = `${SITE_BRAND_NAME}, ${SITE_SALON_ADDRESS_LINE}`;
-  return `https://www.google.com/maps/search/?api=1&query=${encodeURIComponent(query)}`;
+export function siteSalonGoogleMapsUrl(address?: string | null): string {
+  return `https://www.google.com/maps/search/?api=1&query=${encodeURIComponent(siteMapsSearchQuery(address))}`;
+}
+
+/** Embedded Google Maps iframe for the contact page. */
+export function siteSalonGoogleMapsEmbedUrl(address?: string | null): string {
+  const q = encodeURIComponent(siteMapsSearchQuery(address));
+  return `https://maps.google.com/maps?q=${q}&t=&z=15&ie=UTF8&iwloc=&output=embed`;
 }
 
 /** Opens Apple Maps on iPhone/iPad; usable from SMS for guests who prefer Apple Maps. */
-export function siteSalonAppleMapsUrl(): string {
-  const q = encodeURIComponent(`${SITE_BRAND_NAME}, ${SITE_SALON_ADDRESS_LINE}`);
-  return `https://maps.apple.com/?q=${q}`;
+export function siteSalonAppleMapsUrl(address?: string | null): string {
+  return `https://maps.apple.com/?q=${encodeURIComponent(siteMapsSearchQuery(address))}`;
 }
 
 const _siteUrl = process.env.NEXT_PUBLIC_SITE_URL?.trim().replace(/\/$/, '');

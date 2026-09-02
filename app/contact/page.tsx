@@ -8,7 +8,7 @@ import {
   normalizeContactSocialMedia,
 } from '@/lib/site/contact';
 import { fetchPublicSiteData } from '@/lib/cms/site-client';
-import { SITE_BRAND_NAME } from '@/lib/site/branding';
+import { siteSalonGoogleMapsEmbedUrl, siteSalonGoogleMapsUrl } from '@/lib/site/branding';
 
 interface ContactContent {
   address: string;
@@ -70,9 +70,8 @@ export default function Contact() {
 
   const defaultAddress = SITE_DEFAULT_ADDRESS;
   const displayAddress = contact.address || defaultAddress;
-  
-  // Format address for Google Maps
-  const mapAddress = encodeURIComponent(displayAddress);
+  const mapsUrl = siteSalonGoogleMapsUrl(displayAddress);
+  const mapsEmbedUrl = siteSalonGoogleMapsEmbedUrl(displayAddress);
 
   return (
     <div>
@@ -91,12 +90,19 @@ export default function Contact() {
           
           <div className="mb-4">
             <h3 className="mb-1 font-semibold text-lux-espresso">Address</h3>
-            <p className="text-lux-espressoLight/90">{displayAddress}</p>
             <a
-              href={`https://www.google.com/maps/search/?api=1&query=${mapAddress}`}
+              href={mapsUrl}
               target="_blank"
               rel="noopener noreferrer"
-              className="mt-1 inline-block text-sm font-medium text-champagne-700 transition hover:text-champagne-800"
+              className="text-lux-espressoLight/90 transition hover:text-champagne-800"
+            >
+              {displayAddress}
+            </a>
+            <a
+              href={mapsUrl}
+              target="_blank"
+              rel="noopener noreferrer"
+              className="mt-1 block text-sm font-medium text-champagne-700 transition hover:text-champagne-800"
             >
               Get Directions →
             </a>
@@ -216,16 +222,24 @@ export default function Contact() {
             loading="lazy"
             allowFullScreen
             referrerPolicy="no-referrer-when-downgrade"
-            src={`https://maps.google.com/maps?q=${mapAddress}&t=&z=15&ie=UTF8&iwloc=&output=embed`}
+            src={mapsEmbedUrl}
             className="absolute inset-0"
           ></iframe>
         </div>
         <div className="p-6 pt-4">
           <p className="text-sm text-lux-espressoLight/90">
-            Visit us at <span className="font-semibold text-lux-espresso">{displayAddress}</span>
+            Visit us at{' '}
+            <a
+              href={mapsUrl}
+              target="_blank"
+              rel="noopener noreferrer"
+              className="font-semibold text-lux-espresso transition hover:text-champagne-800"
+            >
+              {displayAddress}
+            </a>
           </p>
           <a
-            href={`https://www.google.com/maps/search/?api=1&query=${mapAddress}`}
+            href={mapsUrl}
             target="_blank"
             rel="noopener noreferrer"
             className="mt-2 inline-block text-sm font-medium text-champagne-700 transition hover:text-champagne-800"

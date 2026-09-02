@@ -25,6 +25,7 @@ import {
   SITE_STANDARD_INTRO,
   SITE_TRUST_POINTS,
   SITE_TRUST_SECTION_LABEL,
+  siteSalonGoogleMapsUrl,
 } from '@/lib/site/branding';
 
 /** Single still hero — luxury direction: one focal visual, no carousel. */
@@ -120,7 +121,7 @@ export default function HomeContent() {
     };
   }, []);
 
-  const mapsUrl = `https://www.google.com/maps/search/?api=1&query=${encodeURIComponent(heroAddress)}`;
+  const mapsUrl = siteSalonGoogleMapsUrl(heroAddress);
 
   return (
     <>
