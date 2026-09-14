@@ -17,6 +17,13 @@ import {
   type CmsGalleryImage,
 } from '@/lib/cmsSiteTypes';
 import { galleryHasDedicatedThumb, galleryThumbSrc } from '@/lib/galleryDisplay';
+import {
+  EMPLOYEE_DAY_OFF_END,
+  EMPLOYEE_DAY_OFF_MAX_CALENDAR_DAYS,
+  EMPLOYEE_DAY_OFF_START,
+  buildEmployeeDayOffBlock,
+  planEmployeeDayOff,
+} from '@/lib/booking/employeeDayOff';
 
 interface Service {
   id: string;
@@ -62,6 +69,11 @@ export default function AdminPage() {
     startTime: '09:30',
     endTime: '10:30',
     employeeId: '',
+  });
+  const [employeeDayOffDraft, setEmployeeDayOffDraft] = useState({
+    employeeId: '',
+    fromDate: '',
+    toDate: '',
   });
   
   // Content management
@@ -549,6 +561,53 @@ export default function AdminPage() {
       return;
     }
     persistBookingBlocks([...bookingBlocks, normalized]);
+  };
+
+  const addEmployeeDayOff = () => {
+    const plan = planEmployeeDayOff({
+      employeeId: employeeDayOffDraft.employeeId,
+      fromYmd: employeeDayOffDraft.fromDate,
+      toYmd: employeeDayOffDraft.toDate,
+      existing: bookingBlocks,
+    });
+    if (plan.ok === false) {
+      if (plan.error === 'employee') alert('Select an employee.');
+      else if (plan.error === 'dates') alert('Pick a start date and an end date.');
+      else if (plan.error === 'order') alert('End date must be on or after the start date.');
+      else if (plan.error === 'too_long') {
+        alert(`Choose a range of ${EMPLOYEE_DAY_OFF_MAX_CALENDAR_DAYS} days or fewer.`);
+      } else {
+        alert('Sunday is already closed. Pick another day.');
+      }
+      return;
+    }
+    if (plan.dates.length === 0) {
+      alert('Those days off are already set for this employee.');
+      return;
+    }
+    const created: CmsBookingBlock[] = [];
+    for (const dateYmd of plan.dates) {
+      const id =
+        typeof crypto !== 'undefined' && 'randomUUID' in crypto
+          ? crypto.randomUUID()
+          : `${Date.now()}-${dateYmd}-${created.length}`;
+      const block = buildEmployeeDayOffBlock({
+        id,
+        employeeId: employeeDayOffDraft.employeeId.trim(),
+        dateYmd,
+      });
+      if (block) created.push(block);
+    }
+    if (created.length === 0) {
+      alert('Could not save day off. Check the dates and try again.');
+      return;
+    }
+    persistBookingBlocks([...bookingBlocks, ...created]);
+    if (plan.skippedDuplicates > 0) {
+      alert(
+        `Added ${created.length} day(s) off. Skipped ${plan.skippedDuplicates} already listed.`,
+      );
+    }
   };
 
   const removeBookingBlock = (id: string) => {
@@ -1387,6 +1446,63 @@ Saturday - Sunday: 10:00 AM - 6:00 PM`}
                       </button>
                     </div>
                   </div>
+                  <div className="mt-6">
+                    <h4 className="text-base font-semibold text-gray-800 mb-1">Employee day off</h4>
+                    <p className="text-gray-600 text-sm mb-3">
+                      Block one technician for a date range (same day = one day off). Sundays are skipped — the salon
+                      is already closed. Other technicians and &quot;Anyone&quot; stay bookable.
+                    </p>
+                    <div className="grid grid-cols-1 md:grid-cols-12 gap-3 items-end rounded-lg border border-gray-200 bg-white p-4">
+                      <div className="md:col-span-3">
+                        <label className="block text-xs font-medium text-gray-600 mb-1">Employee</label>
+                        <select
+                          value={employeeDayOffDraft.employeeId}
+                          onChange={(e) =>
+                            setEmployeeDayOffDraft({ ...employeeDayOffDraft, employeeId: e.target.value })
+                          }
+                          className="w-full px-3 py-2 border border-gray-300 rounded-md text-sm"
+                        >
+                          <option value="">Select employee</option>
+                          {employees.map((em) => (
+                            <option key={em.id} value={em.id}>
+                              {em.name}
+                            </option>
+                          ))}
+                        </select>
+                      </div>
+                      <div className="md:col-span-3">
+                        <label className="block text-xs font-medium text-gray-600 mb-1">From</label>
+                        <input
+                          type="date"
+                          value={employeeDayOffDraft.fromDate}
+                          onChange={(e) =>
+                            setEmployeeDayOffDraft({ ...employeeDayOffDraft, fromDate: e.target.value })
+                          }
+                          className="w-full px-3 py-2 border border-gray-300 rounded-md text-sm"
+                        />
+                      </div>
+                      <div className="md:col-span-3">
+                        <label className="block text-xs font-medium text-gray-600 mb-1">To</label>
+                        <input
+                          type="date"
+                          value={employeeDayOffDraft.toDate}
+                          onChange={(e) =>
+                            setEmployeeDayOffDraft({ ...employeeDayOffDraft, toDate: e.target.value })
+                          }
+                          className="w-full px-3 py-2 border border-gray-300 rounded-md text-sm"
+                        />
+                      </div>
+                      <div className="md:col-span-3">
+                        <button
+                          type="button"
+                          onClick={addEmployeeDayOff}
+                          className="w-full px-4 py-2 bg-champagne-600 text-white rounded-md hover:bg-champagne-700 text-sm font-semibold"
+                        >
+                          Add day off
+                        </button>
+                      </div>
+                    </div>
+                  </div>
                   {bookingBlocks.length > 0 ? (
                     <ul className="mt-4 space-y-2">
                       {[...bookingBlocks]
@@ -1412,6 +1528,11 @@ Saturday - Sunday: 10:00 AM - 6:00 PM`}
                                   {b.startTime}–{b.endTime}
                                 </span>
                                 <span className="text-gray-500"> · {who}</span>
+                                {!b.salonWide &&
+                                b.startTime === EMPLOYEE_DAY_OFF_START &&
+                                b.endTime === EMPLOYEE_DAY_OFF_END ? (
+                                  <span className="text-gray-500"> · Day off</span>
+                                ) : null}
                               </span>
                               <button
                                 type="button"
