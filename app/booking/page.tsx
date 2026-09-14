@@ -17,7 +17,10 @@ import {
 import {
   BOOKING_SLOT_STEP_MINUTES,
   getEarliestBookableSlotStart,
+  getLatestBookableCalendarDate,
+  isCalendarDateWithinPublicBookingHorizon,
   isSlotStartAllowedForBooking,
+  isYmdWithinPublicBookingHorizon,
 } from '@/lib/bookingLeadTime';
 import { employeeCanPerformService, isNonBookableAddonService } from '@/lib/booking/serviceEmployeeMatch';
 import { evaluateSlotState, hasBookingCapacity } from '@/lib/booking/slotAvailability';
@@ -381,6 +384,10 @@ export default function Booking() {
     }
     const slotEndExclusive = new Date(slotStart.getTime());
     slotEndExclusive.setMinutes(slotEndExclusive.getMinutes() + serviceDuration + BUFFER_TIME);
+    if (!isYmdWithinPublicBookingHorizon(dateYmd)) {
+      alert('Please choose a date within the next 2 months.');
+      return;
+    }
     if (!isSlotStartAllowedForBooking(slotStart, new Date())) {
       alert(
         'Appointments must be at least 30 minutes from now. Please choose a later time slot.'
@@ -477,6 +484,11 @@ export default function Booking() {
         alert(
           'That time is outside salon hours. Saturday appointments finish by 6:00 PM; weekdays by 7:00 PM.',
         );
+        return;
+      }
+
+      if (response.status === 400 && result?.error === 'max_advance') {
+        alert('Please choose a date within the next 2 months.');
         return;
       }
 
@@ -578,14 +590,9 @@ export default function Booking() {
   };
 
   const isDateSelectable = (date: Date): boolean => {
-    const today = new Date();
-    today.setHours(0, 0, 0, 0);
-    const maxDate = new Date();
-    maxDate.setDate(maxDate.getDate() + 30);
-    
     // Sunday closed
     if (date.getDay() === 0) return false;
-    return date >= today && date <= maxDate;
+    return isCalendarDateWithinPublicBookingHorizon(date);
   };
 
   const isDateSelected = (date: Date): boolean => {
@@ -620,9 +627,7 @@ export default function Booking() {
   };
 
   const daysInMonth = getDaysInMonth(currentMonth);
-  const today = new Date();
-  const maxDate = new Date();
-  maxDate.setDate(maxDate.getDate() + 30);
+  const maxDate = getLatestBookableCalendarDate();
 
   /** Same rules as Continue — step is reachable when required fields for that step are filled. */
   const canReachBookingStep = (step: number): boolean => {

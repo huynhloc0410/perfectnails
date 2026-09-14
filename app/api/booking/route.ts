@@ -8,7 +8,7 @@ import {
 } from '@/lib/db/createOnlineBooking';
 import { isDatabaseConfigured, isPublicBookingWriteToPostgres } from '@/lib/db/config';
 import { normalizePhoneE164 } from '@/lib/phone';
-import { isSlotStartAllowedForBooking } from '@/lib/bookingLeadTime';
+import { isSlotStartAllowedForBooking, isYmdWithinPublicBookingHorizon } from '@/lib/bookingLeadTime';
 import { isNonBookableAddonService } from '@/lib/booking/serviceEmployeeMatch';
 import { hasBookingCapacity } from '@/lib/booking/slotAvailability';
 import { isWithinBusinessHours } from '@/lib/booking/businessHours';
@@ -55,6 +55,10 @@ export async function POST(req: Request) {
   const nowForLead = new Date();
   if (!isSlotStartAllowedForBooking(slotStartSalon, nowForLead)) {
     return NextResponse.json({ success: false, error: 'min_notice' }, { status: 400 });
+  }
+
+  if (!isYmdWithinPublicBookingHorizon(dateYmd, nowForLead)) {
+    return NextResponse.json({ success: false, error: 'max_advance' }, { status: 400 });
   }
 
   const bookingDuration = parseInt(duration, 10) || 45;
