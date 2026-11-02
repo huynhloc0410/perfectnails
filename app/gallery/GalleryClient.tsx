@@ -1,12 +1,11 @@
 'use client';
 
-import Image from 'next/image';
 import { useState, useMemo } from 'react';
 import GalleryLightbox from '../components/GalleryLightbox';
 import InnerPageHero from '../components/InnerPageHero';
 import type { CmsGalleryImage } from '@/lib/cmsSiteTypes';
 import { galleryFullSrc, galleryThumbSrc } from '@/lib/galleryDisplay';
-import { GALLERY_PAGE_SIZE, isOptimizableImageSrc, resolveGalleryImageSrc } from '@/lib/gallery';
+import { GALLERY_PAGE_SIZE, resolveGalleryImageSrc } from '@/lib/gallery';
 
 export default function GalleryClient({ images }: { images: CmsGalleryImage[] }) {
   const [visibleCount, setVisibleCount] = useState(GALLERY_PAGE_SIZE);
@@ -48,15 +47,13 @@ export default function GalleryClient({ images }: { images: CmsGalleryImage[] })
                   >
                     <span className="sr-only">Open image {index + 1} in viewer</span>
                     <div className="relative overflow-hidden rounded-lg bg-stone-100 shadow-[inset_0_0_0_1px_rgba(0,0,0,0.06)]">
-                      <div className="relative aspect-[4/5] w-full">
-                        <Image
+                      <div className="aspect-[4/5] w-full">
+                        <img
                           src={src}
                           alt=""
-                          fill
-                          sizes="(max-width: 768px) 50vw, (max-width: 1024px) 33vw, 25vw"
-                          className="object-cover transition-transform duration-300 group-hover:scale-[1.04] motion-reduce:group-hover:scale-100"
-                          priority={index < 4}
-                          unoptimized={!isOptimizableImageSrc(src)}
+                          className="h-full w-full object-cover transition-transform duration-300 group-hover:scale-[1.04] motion-reduce:group-hover:scale-100"
+                          loading={index < 4 ? 'eager' : 'lazy'}
+                          decoding="async"
                         />
                       </div>
                       <div

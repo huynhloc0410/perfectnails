@@ -4,7 +4,7 @@ import SiteFooter from "./components/SiteFooter";
 import MobileStickyCta from "./components/MobileStickyCta";
 import PromotionPopup from "./components/PromotionPopup";
 import { formatPhoneDisplay, toTelHref } from "@/lib/site/contact";
-import { getPublicPageContent, PUBLIC_PAGE_REVALIDATE_SECONDS } from "@/lib/site/publicPageCache";
+import { getPublicPageSnapshot, PUBLIC_PAGE_REVALIDATE_SECONDS } from "@/lib/site/publicPageCache";
 import Script from "next/script";
 import { Outfit, Poppins } from "next/font/google";
 import type { Metadata, Viewport } from "next";
@@ -87,7 +87,7 @@ export const viewport: Viewport = {
 export default async function RootLayout({ children }: { children: React.ReactNode }) {
   const gaId = process.env.NEXT_PUBLIC_GA_ID;
   const shouldLoadAnalytics = process.env.NODE_ENV === "production" && !!gaId;
-  const { contact } = await getPublicPageContent();
+  const { contact } = await getPublicPageSnapshot();
   const phoneHref = toTelHref(contact.phone);
   const phoneLabel = formatPhoneDisplay(contact.phone);
 

@@ -95,33 +95,19 @@ const readCachedPublicGallery = unstable_cache(loadPublicGallery, ['public-pages
   tags: [PUBLIC_PAGE_CACHE_TAG],
 });
 
-async function readContent(): Promise<PublicPageContent> {
-  try {
-    return await readCachedPublicContent();
-  } catch (error: unknown) {
-    console.error('Public page content cache miss failed:', error);
-    return emptyContent();
-  }
-}
-
-async function readGallery(): Promise<CmsGalleryImage[]> {
-  try {
-    return await readCachedPublicGallery();
-  } catch (error: unknown) {
-    console.error('Public gallery cache miss failed:', error);
-    return [];
-  }
-}
-
-/** Menu, about, and contact. Does not read the gallery list. */
-export const getPublicPageContent = cache(readContent);
-
-/** Gallery photo list. Home and the gallery page are the callers. */
-export const getPublicPageGallery = cache(readGallery);
-
-/** Services, about, contact, and gallery for the homepage. Booking slots are not included. */
+/** Services, about, contact, and gallery for public pages. Booking slots are not included. */
 export const getPublicPageSnapshot = cache(async (): Promise<PublicPageSnapshot> => {
-  const [content, gallery] = await Promise.all([getPublicPageContent(), getPublicPageGallery()]);
+  const [content, gallery] = await Promise.all([
+    readCachedPublicContent().catch((error: unknown) => {
+      console.error('Public page content cache miss failed:', error);
+      return emptyContent();
+    }),
+    readCachedPublicGallery().catch((error: unknown) => {
+      console.error('Public gallery cache miss failed:', error);
+      return [] as CmsGalleryImage[];
+    }),
+  ]);
+
   return { ...content, gallery };
 });
 

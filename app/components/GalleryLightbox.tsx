@@ -1,8 +1,6 @@
 'use client';
 
-import Image from 'next/image';
 import { useCallback, useEffect, useRef } from 'react';
-import { isOptimizableImageSrc } from '@/lib/gallery';
 
 const SWIPE_THRESHOLD_PX = 48;
 
@@ -130,13 +128,12 @@ export default function GalleryLightbox({
             onPointerCancel={onPointerCancel}
             style={{ touchAction: canNav ? 'none' : 'auto' }}
           >
-            <Image
+            <img
               src={src}
               alt={`Gallery image ${index + 1} — enlarged view`}
-              fill
-              sizes="100vw"
-              className="pointer-events-none object-contain select-none"
-              unoptimized={!isOptimizableImageSrc(src)}
+              className="pointer-events-none max-h-full max-w-full object-contain select-none"
+              decoding="async"
+              draggable={false}
             />
           </div>
 

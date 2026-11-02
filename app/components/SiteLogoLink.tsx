@@ -1,6 +1,5 @@
 'use client';
 
-import Image from 'next/image';
 import Link from 'next/link';
 import { useState } from 'react';
 import { SITE_BRAND_NAME, SITE_LOGO_PATH } from '@/lib/site/branding';
@@ -43,12 +42,11 @@ export default function SiteLogoLink({ variant }: { variant: Variant }) {
         </span>
         {!logoFailed && (
           <span className={`relative z-0 shrink-0 ${headerBadgeClass}`}>
-            <Image
+            <img
               src={SITE_LOGO_PATH}
               alt=""
               width={160}
               height={160}
-              sizes="80px"
               className={imgClass}
               onError={() => setLogoFailed(true)}
             />
@@ -72,12 +70,11 @@ export default function SiteLogoLink({ variant }: { variant: Variant }) {
   return (
     <Link href="/" className="font-display footer-animate-in inline-flex justify-center">
       <span className={footerBadgeClass}>
-        <Image
+        <img
           src={SITE_LOGO_PATH}
           alt={`${SITE_BRAND_NAME} logo`}
           width={160}
           height={160}
-          sizes="80px"
           className={imgClass}
           onError={() => setLogoFailed(true)}
         />

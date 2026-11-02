@@ -26,20 +26,9 @@ export function sortGalleryNewestFirst(images: CmsGalleryImage[]): CmsGalleryIma
     .map((x) => x.item);
 }
 
-/** Normalize URL for images. Relative paths stay site-relative so server HTML matches the browser. */
+/** Normalize URL for <img>. Relative paths stay site-relative so server HTML matches the browser. */
 export function resolveGalleryImageSrc(url: string): string {
   return (url || '').trim();
 }
 
-/**
- * Only same-origin files use the Next image optimizer.
- * Gallery photos already live on S3 as WebP thumbs. Re-encoding them on the
- * web server fills the only machine and makes booking and policy wait.
- */
-export function isOptimizableImageSrc(src: string): boolean {
-  const u = (src || '').trim();
-  if (!u || u.startsWith('data:') || u.startsWith('//')) return false;
-  return u.startsWith('/');
-}
-
-export const GALLERY_PAGE_SIZE = 12;
+export const GALLERY_PAGE_SIZE = 36;

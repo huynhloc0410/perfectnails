@@ -1,6 +1,4 @@
-import Image from 'next/image';
 import Link from 'next/link';
-import { isOptimizableImageSrc } from '@/lib/gallery';
 import type { CmsContact, CmsGalleryImage, CmsService } from '@/lib/cmsSiteTypes';
 import { galleryThumbSrc } from '@/lib/galleryDisplay';
 import { formatUsd } from '@/lib/format/currency';
@@ -52,13 +50,11 @@ export default function HomeContent({
         className="relative isolate min-h-[min(78svh,720px)] w-full overflow-hidden bg-lux-espresso"
         aria-labelledby="hero-heading"
       >
-        <Image
+        <img
           src={HERO_IMAGE}
           alt={`${SITE_BRAND_NAME} nail salon — Phoenix, AZ`}
-          fill
-          priority
-          sizes="100vw"
-          className="object-cover object-center"
+          className="absolute inset-0 h-full w-full object-cover object-center"
+          fetchPriority="high"
         />
         <div
           className="absolute inset-0 z-[2] bg-gradient-to-t from-lux-espresso/95 via-lux-espresso/35 to-lux-espresso/25"
@@ -213,22 +209,17 @@ export default function HomeContent({
               </Link>
             </div>
             <div className="mt-12 grid grid-cols-2 gap-4 sm:grid-cols-4 sm:gap-5">
-              {(galleryPreview.length > 0 ? galleryPreview : [...GALLERY_FALLBACK])
-                .slice(0, 4)
-                .filter((url) => url.trim())
-                .map((url, i) => (
+              {(galleryPreview.length > 0 ? galleryPreview : [...GALLERY_FALLBACK]).slice(0, 4).map((url, i) => (
                 <Link
                   key={`${url}-${i}`}
                   href="/gallery"
                   className="group relative aspect-[4/5] overflow-hidden border border-lux-line/50 bg-lux-mist ring-1 ring-lux-line/20"
                 >
-                  <Image
+                  <img
                     src={resolveImageSrc(url)}
                     alt={`Nail art preview ${i + 1} — ${SITE_BRAND_NAME}`}
-                    fill
-                    sizes="(max-width: 640px) 50vw, 25vw"
-                    className="object-cover transition duration-500 group-hover:scale-[1.02] motion-reduce:group-hover:scale-100"
-                    unoptimized={!isOptimizableImageSrc(url)}
+                    className="h-full w-full object-cover transition duration-500 group-hover:scale-[1.02] motion-reduce:group-hover:scale-100"
+                    loading="lazy"
                   />
                 </Link>
               ))}
