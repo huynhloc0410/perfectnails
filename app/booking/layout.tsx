@@ -34,6 +34,9 @@ export const metadata: Metadata = {
   },
 };
 
+/** Slot list stays live. This route does not reuse the 60-second public page cache. */
+export const dynamic = 'force-dynamic';
+
 export default function BookingLayout({
   children,
 }: {

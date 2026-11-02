@@ -1,6 +1,8 @@
 import GalleryClient from './GalleryClient';
+import { getPublicPageSnapshot } from '@/lib/site/publicPageCache';
 
-/** Client fetches CMS; images load directly from S3 (not via Render image optimizer). */
-export default function GalleryPage() {
-  return <GalleryClient />;
+/** Images still load from their own URLs. The list of photos is prepared on the server. */
+export default async function GalleryPage() {
+  const { gallery } = await getPublicPageSnapshot();
+  return <GalleryClient images={gallery} />;
 }

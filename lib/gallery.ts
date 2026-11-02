@@ -26,17 +26,9 @@ export function sortGalleryNewestFirst(images: CmsGalleryImage[]): CmsGalleryIma
     .map((x) => x.item);
 }
 
-/** Normalize URL for <img> (relative paths stay site-relative). */
+/** Normalize URL for <img>. Relative paths stay site-relative so server HTML matches the browser. */
 export function resolveGalleryImageSrc(url: string): string {
-  const u = (url || '').trim();
-  if (!u) return '';
-  if (u.startsWith('http://') || u.startsWith('https://') || u.startsWith('data:')) {
-    return u;
-  }
-  if (typeof window !== 'undefined' && u.startsWith('/')) {
-    return `${window.location.origin}${u}`;
-  }
-  return u;
+  return (url || '').trim();
 }
 
 export const GALLERY_PAGE_SIZE = 36;

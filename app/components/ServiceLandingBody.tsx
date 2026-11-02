@@ -1,14 +1,12 @@
 'use client';
 
 import Link from 'next/link';
-import { useEffect, useMemo, useState } from 'react';
+import { useMemo, useState } from 'react';
 import InnerPageHero from './InnerPageHero';
 import JsonLd from './JsonLd';
 import { ServiceMenuCard } from './ServiceMenuCard';
 import type { CmsService } from '@/lib/cmsSiteTypes';
-import { fetchPublicSiteData } from '@/lib/cms/site-client';
 import { filterServicesForLandingSlug } from '@/lib/site/service-landing-filter';
-import { readLocalStorageJson } from '@/lib/storage/local-json';
 import { SITE_BRAND_NAME, SITE_PUBLIC_URL, SITE_SCHEMA_POSTAL_ADDRESS, siteAbsoluteUrl } from '@/lib/site/branding';
 import {
   SERVICE_LANDING_PAGES,
@@ -64,32 +62,15 @@ function buildOffersItemListJsonLd(slug: ServiceSlug, services: CmsService[]) {
   };
 }
 
-export default function ServiceLandingBody({ slug }: { slug: ServiceSlug }) {
+export default function ServiceLandingBody({
+  slug,
+  services,
+}: {
+  slug: ServiceSlug;
+  services: CmsService[];
+}) {
   const copy = SERVICE_LANDING_PAGES[slug];
-  const [services, setServices] = useState<CmsService[]>([]);
   const [expandedServiceId, setExpandedServiceId] = useState<string | null>(null);
-
-  useEffect(() => {
-    let cancelled = false;
-    (async () => {
-      try {
-        const data = await fetchPublicSiteData();
-        if (cancelled) return;
-        if (data.configured && data.site && Array.isArray(data.site.services) && !data.error) {
-          setServices(data.site.services as CmsService[]);
-          return;
-        }
-      } catch {
-        /* local fallback */
-      }
-      if (cancelled) return;
-      const list = readLocalStorageJson<CmsService[]>('admin-services');
-      if (Array.isArray(list)) setServices(list);
-    })();
-    return () => {
-      cancelled = true;
-    };
-  }, []);
 
   const filtered = useMemo(
     () => filterServicesForLandingSlug(services, slug),

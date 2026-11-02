@@ -1,72 +1,10 @@
-'use client';
-
-import { useState, useEffect } from 'react';
 import InnerPageHero from '../components/InnerPageHero';
-import {
-  SITE_DEFAULT_ADDRESS,
-  migrateLegacyStoredContactAddress,
-  normalizeContactSocialMedia,
-} from '@/lib/site/contact';
-import { fetchPublicSiteData } from '@/lib/cms/site-client';
+import { SITE_DEFAULT_ADDRESS } from '@/lib/site/contact';
 import { siteSalonGoogleMapsEmbedUrl, siteSalonGoogleMapsUrl } from '@/lib/site/branding';
+import { getPublicPageSnapshot } from '@/lib/site/publicPageCache';
 
-interface ContactContent {
-  address: string;
-  phone: string;
-  email: string;
-  hours: string;
-  socialMedia: {
-    facebook: string;
-    instagram: string;
-    yelp: string;
-  };
-}
-
-export default function Contact() {
-  const [contact, setContact] = useState<ContactContent>({
-    address: '',
-    phone: '',
-    email: '',
-    hours: '',
-    socialMedia: { facebook: '', instagram: '', yelp: '' },
-  });
-
-  useEffect(() => {
-    migrateLegacyStoredContactAddress();
-    let cancelled = false;
-    (async () => {
-      try {
-        const data = await fetchPublicSiteData();
-        if (cancelled) return;
-        if (data.configured && data.site?.contact && !data.error) {
-          const c = data.site.contact;
-          setContact({
-            address: c.address || '',
-            phone: c.phone || '',
-            email: c.email || '',
-            hours: c.hours || '',
-            socialMedia: normalizeContactSocialMedia(c.socialMedia),
-          });
-          return;
-        }
-      } catch {
-        /* local fallback */
-      }
-      if (!cancelled) {
-        const savedContact = localStorage.getItem('admin-contact');
-        if (savedContact) {
-          const parsed = JSON.parse(savedContact) as ContactContent;
-          setContact({
-            ...parsed,
-            socialMedia: normalizeContactSocialMedia(parsed.socialMedia),
-          });
-        }
-      }
-    })();
-    return () => {
-      cancelled = true;
-    };
-  }, []);
+export default async function Contact() {
+  const { contact } = await getPublicPageSnapshot();
 
   const defaultAddress = SITE_DEFAULT_ADDRESS;
   const displayAddress = contact.address || defaultAddress;

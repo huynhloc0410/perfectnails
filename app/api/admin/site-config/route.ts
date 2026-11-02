@@ -12,6 +12,7 @@ import {
   saveAdminSiteConfigToPostgres,
 } from '@/lib/db/adminSiteConfig';
 import { isAdminSiteConfigFromPostgres, isDatabaseConfigured } from '@/lib/db/config';
+import { revalidatePublicPages } from '@/lib/site/publicPageCache';
 
 export const dynamic = 'force-dynamic';
 
@@ -121,6 +122,7 @@ export async function PUT(req: NextRequest) {
       employees: normalized.employees,
       bookingBlocks: normalized.bookingBlocks,
     });
+    revalidatePublicPages();
     return NextResponse.json({ ok: true, source: 'postgres' });
   } catch (e) {
     console.error('PUT /api/admin/site-config:', e);

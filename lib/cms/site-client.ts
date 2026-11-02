@@ -1,6 +1,7 @@
 /**
- * Browser fetch for `GET /api/cms/site` (public CMS bundle).
- * Keeps cache disabled so admin saves propagate quickly after refresh.
+ * Browser fetches for booking (live slots) and any legacy caller.
+ * Home, services, about, contact, and gallery are rendered on the server
+ * from getPublicPageSnapshot — they do not use these helpers.
  */
 
 /** Dispatched on `window` after admin saves (localStorage or S3) so public UIs can refetch. */

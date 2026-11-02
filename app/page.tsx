@@ -1,5 +1,6 @@
 import { Metadata } from 'next';
 import HomeContent from './components/HomeContent';
+import { getPublicPageSnapshot } from '@/lib/site/publicPageCache';
 import {
   SITE_BRAND_NAME,
   SITE_PUBLIC_URL,
@@ -38,6 +39,7 @@ export const metadata: Metadata = {
   },
 };
 
-export default function HomePage() {
-  return <HomeContent />;
+export default async function HomePage() {
+  const { contact, services, gallery } = await getPublicPageSnapshot();
+  return <HomeContent contact={contact} services={services} gallery={gallery} />;
 }

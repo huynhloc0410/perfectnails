@@ -4,6 +4,8 @@ import {
   AdminBookingNotifier,
 } from './components/AdminBookingNotifier';
 
+export const dynamic = 'force-dynamic';
+
 export const metadata: Metadata = {
   robots: {
     index: false,

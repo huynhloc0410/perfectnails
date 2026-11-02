@@ -1,20 +1,13 @@
 'use client';
 
-import { useState, useEffect, useMemo } from 'react';
+import { useState, useMemo } from 'react';
 import GalleryLightbox from '../components/GalleryLightbox';
 import InnerPageHero from '../components/InnerPageHero';
-import { fetchCmsSite } from '@/lib/cms/site-client';
 import type { CmsGalleryImage } from '@/lib/cmsSiteTypes';
-import { normalizeCmsGalleryList } from '@/lib/cmsSiteTypes';
 import { galleryFullSrc, galleryThumbSrc } from '@/lib/galleryDisplay';
-import {
-  GALLERY_PAGE_SIZE,
-  resolveGalleryImageSrc,
-  sortGalleryNewestFirst,
-} from '@/lib/gallery';
+import { GALLERY_PAGE_SIZE, resolveGalleryImageSrc } from '@/lib/gallery';
 
-export default function GalleryClient() {
-  const [images, setImages] = useState<CmsGalleryImage[]>([]);
+export default function GalleryClient({ images }: { images: CmsGalleryImage[] }) {
   const [visibleCount, setVisibleCount] = useState(GALLERY_PAGE_SIZE);
   const [lightboxIndex, setLightboxIndex] = useState<number | null>(null);
 
@@ -24,41 +17,6 @@ export default function GalleryClient() {
   );
   const lightboxUrls = useMemo(() => images.map((item) => galleryFullSrc(item)), [images]);
   const hasMore = images.length > visibleCount;
-
-  useEffect(() => {
-    let cancelled = false;
-    (async () => {
-      try {
-        const data = await fetchCmsSite();
-        if (cancelled) return;
-        if (
-          data.configured &&
-          data.site &&
-          Array.isArray(data.site.gallery) &&
-          data.site.gallery.length > 0 &&
-          !data.error
-        ) {
-          setImages(sortGalleryNewestFirst(normalizeCmsGalleryList(data.site.gallery)));
-          return;
-        }
-      } catch {
-        /* fallback */
-      }
-      if (cancelled) return;
-      const savedGallery = localStorage.getItem('admin-gallery');
-      if (savedGallery) {
-        try {
-          const parsed = JSON.parse(savedGallery) as unknown;
-          setImages(sortGalleryNewestFirst(normalizeCmsGalleryList(parsed)));
-        } catch {
-          /* ignore */
-        }
-      }
-    })();
-    return () => {
-      cancelled = true;
-    };
-  }, []);
 
   return (
     <div>

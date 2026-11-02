@@ -1,32 +1,18 @@
-'use client';
-
 import Link from 'next/link';
-import { useEffect, useState } from 'react';
-import {
-  SITE_DEFAULT_ADDRESS,
-  SITE_PHONE_DISPLAY,
-  SITE_PHONE_HREF,
-  effectiveContactAddress,
-  formatPhoneDisplay,
-  migrateLegacyStoredContactAddress,
-  toTelHref,
-} from '@/lib/site/contact';
-import { summarizeHoursLabel } from '@/lib/site/hours';
-import { fetchCmsSite, fetchPublicSiteData } from '@/lib/cms/site-client';
-import { normalizeCmsGalleryList } from '@/lib/cmsSiteTypes';
+import type { CmsContact, CmsGalleryImage, CmsService } from '@/lib/cmsSiteTypes';
 import { galleryThumbSrc } from '@/lib/galleryDisplay';
 import { formatUsd } from '@/lib/format/currency';
-import { readLocalStorageJson } from '@/lib/storage/local-json';
 import {
   SITE_BRAND_NAME,
   SITE_HERO_APPOINTMENT_LINE,
-  SITE_HOURS_FALLBACK_SUMMARY,
   SITE_PRIMARY_AREA,
   SITE_STANDARD_INTRO,
   SITE_TRUST_POINTS,
   SITE_TRUST_SECTION_LABEL,
   siteSalonGoogleMapsUrl,
 } from '@/lib/site/branding';
+import { effectiveContactAddress, formatPhoneDisplay, toTelHref } from '@/lib/site/contact';
+import { summarizeHoursLabel } from '@/lib/site/hours';
 
 /** Single still hero — luxury direction: one focal visual, no carousel. */
 const HERO_IMAGE = '/images/nail0.webp';
@@ -37,90 +23,25 @@ const GALLERY_FALLBACK = ['/images/nail0.webp', '/images/nail1.webp', '/images/n
 const HERO_ACTION_BTN =
   'cta-flash-btn font-display relative flex min-h-[4.75rem] w-full items-center justify-center overflow-hidden rounded-md border-2 border-champagne-300/55 bg-lux-espresso/45 px-8 py-4 text-center text-lg font-semibold uppercase leading-tight tracking-[0.12em] text-champagne-100 shadow-[0_4px_18px_rgba(0,0,0,0.28)] backdrop-blur-md transition hover:border-champagne-200/75 hover:bg-lux-espresso/55 active:scale-[0.99] sm:text-xl';
 
-type PreviewService = {
-  id: string;
-  name: string;
-  price: number;
-  duration: number;
-  category?: string;
-};
-
 function resolveImageSrc(url: string): string {
-  const u = (url || '').trim();
-  if (!u) return '';
-  if (u.startsWith('http://') || u.startsWith('https://') || u.startsWith('data:')) return u;
-  if (typeof window !== 'undefined' && u.startsWith('/')) return `${window.location.origin}${u}`;
-  return u;
+  return (url || '').trim();
 }
 
-export default function HomeContent() {
-  const [callHref, setCallHref] = useState(SITE_PHONE_HREF);
-  const [phoneDisplay, setPhoneDisplay] = useState(SITE_PHONE_DISPLAY);
-  const [heroAddress, setHeroAddress] = useState(SITE_DEFAULT_ADDRESS);
-  const [hoursSummary, setHoursSummary] = useState(SITE_HOURS_FALLBACK_SUMMARY);
-  const [servicePreview, setServicePreview] = useState<PreviewService[]>([]);
-  const [galleryPreview, setGalleryPreview] = useState<string[]>([]);
-
-  useEffect(() => {
-    let cancelled = false;
-    (async () => {
-      try {
-        const data = await fetchPublicSiteData();
-        if (cancelled) return;
-        if (data.configured && data.site && !data.error) {
-          const c = data.site.contact;
-          if (c && typeof c === 'object') {
-            if (c.phone) {
-              setCallHref(toTelHref(c.phone));
-              setPhoneDisplay(formatPhoneDisplay(c.phone));
-            }
-            setHeroAddress(effectiveContactAddress(c.address));
-            if (typeof c.hours === 'string') setHoursSummary(summarizeHoursLabel(c.hours));
-          }
-          if (Array.isArray(data.site.services) && data.site.services.length > 0) {
-            const list = data.site.services as PreviewService[];
-            setServicePreview(list.slice(0, 6));
-          }
-        }
-        const galleryData = await fetchCmsSite();
-        if (cancelled) return;
-        if (
-          galleryData.configured &&
-          galleryData.site &&
-          Array.isArray(galleryData.site.gallery) &&
-          galleryData.site.gallery.length > 0
-        ) {
-          const thumbs = normalizeCmsGalleryList(galleryData.site.gallery)
-            .slice(0, 4)
-            .map(galleryThumbSrc);
-          setGalleryPreview(thumbs);
-        }
-        if (data.configured && data.site) return;
-      } catch {
-        /* local fallback */
-      }
-      if (cancelled) return;
-      migrateLegacyStoredContactAddress();
-      const c = readLocalStorageJson<{ phone?: string; address?: string; hours?: string }>('admin-contact');
-      if (c) {
-        if (c.phone) {
-          setCallHref(toTelHref(c.phone));
-          setPhoneDisplay(formatPhoneDisplay(c.phone));
-        }
-        setHeroAddress(effectiveContactAddress(c.address));
-        if (c.hours) setHoursSummary(summarizeHoursLabel(c.hours));
-      }
-      const list = readLocalStorageJson<PreviewService[]>('admin-services');
-      if (Array.isArray(list) && list.length) setServicePreview(list.slice(0, 6));
-      const g = readLocalStorageJson<unknown>('admin-gallery');
-      const items = normalizeCmsGalleryList(g);
-      if (items.length) setGalleryPreview(items.slice(0, 4).map(galleryThumbSrc));
-    })();
-    return () => {
-      cancelled = true;
-    };
-  }, []);
-
+export default function HomeContent({
+  contact,
+  services,
+  gallery,
+}: {
+  contact: CmsContact;
+  services: CmsService[];
+  gallery: CmsGalleryImage[];
+}) {
+  const callHref = toTelHref(contact.phone);
+  const phoneDisplay = formatPhoneDisplay(contact.phone);
+  const heroAddress = effectiveContactAddress(contact.address);
+  const hoursSummary = summarizeHoursLabel(contact.hours);
+  const servicePreview = services.slice(0, 6);
+  const galleryPreview = gallery.slice(0, 4).map(galleryThumbSrc);
   const mapsUrl = siteSalonGoogleMapsUrl(heroAddress);
 
   return (

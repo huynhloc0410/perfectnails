@@ -2,54 +2,23 @@
 
 import Link from 'next/link';
 import { usePathname } from 'next/navigation';
-import { useCallback, useEffect, useState } from 'react';
-import { fetchPublicSiteData } from '@/lib/cms/site-client';
-import {
-  SITE_PHONE_DISPLAY,
-  SITE_PHONE_HREF,
-  formatPhoneDisplay,
-  migrateLegacyStoredContactAddress,
-  toTelHref,
-} from '@/lib/site/contact';
-import { readLocalStorageJson } from '@/lib/storage/local-json';
+import { useEffect, useState } from 'react';
 
 const HOME_SCROLL_THRESHOLD_PX = 120;
 
-export default function MobileStickyCta() {
+export default function MobileStickyCta({
+  phoneHref,
+  phoneLabel,
+}: {
+  phoneHref: string;
+  phoneLabel: string;
+}) {
   const pathname = usePathname() || '/';
-  const [phoneHref, setPhoneHref] = useState(SITE_PHONE_HREF);
-  const [phoneLabel, setPhoneLabel] = useState(SITE_PHONE_DISPLAY);
   const [visible, setVisible] = useState(false);
 
   const isAdmin = pathname.startsWith('/admin');
   const isBooking = pathname.startsWith('/booking');
   const isHome = pathname === '/';
-
-  const refresh = useCallback(async () => {
-    migrateLegacyStoredContactAddress();
-    try {
-      const data = await fetchPublicSiteData();
-      if (data.configured && data.site?.contact && !data.error) {
-        const c = data.site.contact;
-        if (c.phone) {
-          setPhoneHref(toTelHref(c.phone));
-          setPhoneLabel(formatPhoneDisplay(c.phone));
-        }
-        return;
-      }
-    } catch {
-      /* local */
-    }
-    const c = readLocalStorageJson<{ phone?: string }>('admin-contact');
-    if (c?.phone) {
-      setPhoneHref(toTelHref(c.phone));
-      setPhoneLabel(formatPhoneDisplay(c.phone));
-    }
-  }, []);
-
-  useEffect(() => {
-    void refresh();
-  }, [refresh]);
 
   useEffect(() => {
     if (isAdmin || isBooking) {

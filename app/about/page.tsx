@@ -1,40 +1,10 @@
-'use client';
-
-import { useState, useEffect } from 'react';
 import InnerPageHero from '../components/InnerPageHero';
 import Link from 'next/link';
-import { fetchPublicSiteData } from '@/lib/cms/site-client';
 import { SITE_BRAND_NAME } from '@/lib/site/branding';
+import { getPublicPageSnapshot } from '@/lib/site/publicPageCache';
 
-export default function About() {
-  const [aboutContent, setAboutContent] = useState({ title: 'About Us', content: '' });
-
-  useEffect(() => {
-    let cancelled = false;
-    (async () => {
-      try {
-        const data = await fetchPublicSiteData();
-        if (cancelled) return;
-        if (data.configured && data.site?.about && !data.error) {
-          const a = data.site.about;
-          setAboutContent({
-            title: a.title || 'About Us',
-            content: a.content || '',
-          });
-          return;
-        }
-      } catch {
-        /* local fallback */
-      }
-      if (!cancelled) {
-        const savedAbout = localStorage.getItem('admin-about');
-        if (savedAbout) setAboutContent(JSON.parse(savedAbout));
-      }
-    })();
-    return () => {
-      cancelled = true;
-    };
-  }, []);
+export default async function About() {
+  const { about: aboutContent } = await getPublicPageSnapshot();
 
   return (
     <div>

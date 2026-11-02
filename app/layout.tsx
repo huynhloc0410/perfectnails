@@ -3,6 +3,8 @@ import SiteHeader from "./components/SiteHeader";
 import SiteFooter from "./components/SiteFooter";
 import MobileStickyCta from "./components/MobileStickyCta";
 import PromotionPopup from "./components/PromotionPopup";
+import { formatPhoneDisplay, toTelHref } from "@/lib/site/contact";
+import { getPublicPageSnapshot, PUBLIC_PAGE_REVALIDATE_SECONDS } from "@/lib/site/publicPageCache";
 import Script from "next/script";
 import { Outfit, Poppins } from "next/font/google";
 import type { Metadata, Viewport } from "next";
@@ -73,6 +75,8 @@ export const metadata: Metadata = {
   },
 };
 
+export const revalidate = PUBLIC_PAGE_REVALIDATE_SECONDS;
+
 export const viewport: Viewport = {
   width: "device-width",
   initialScale: 1,
@@ -80,9 +84,12 @@ export const viewport: Viewport = {
   viewportFit: "cover",
 };
 
-export default function RootLayout({ children }: { children: React.ReactNode }) {
+export default async function RootLayout({ children }: { children: React.ReactNode }) {
   const gaId = process.env.NEXT_PUBLIC_GA_ID;
   const shouldLoadAnalytics = process.env.NODE_ENV === "production" && !!gaId;
+  const { contact } = await getPublicPageSnapshot();
+  const phoneHref = toTelHref(contact.phone);
+  const phoneLabel = formatPhoneDisplay(contact.phone);
 
   return (
     <html lang="en">
@@ -113,9 +120,9 @@ gtag('config', '${gaId}');
 
         <main className="site-main w-full flex-1 overflow-x-hidden">{children}</main>
 
-        <MobileStickyCta />
+        <MobileStickyCta phoneHref={phoneHref} phoneLabel={phoneLabel} />
 
-        <SiteFooter />
+        <SiteFooter contact={contact} />
       </body>
     </html>
   );
