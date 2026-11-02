@@ -26,9 +26,22 @@ export function sortGalleryNewestFirst(images: CmsGalleryImage[]): CmsGalleryIma
     .map((x) => x.item);
 }
 
-/** Normalize URL for <img>. Relative paths stay site-relative so server HTML matches the browser. */
+/** Normalize URL for images. Relative paths stay site-relative so server HTML matches the browser. */
 export function resolveGalleryImageSrc(url: string): string {
   return (url || '').trim();
+}
+
+/** Local files and the salon S3/CloudFront hosts can go through the Next image optimizer. */
+export function isOptimizableImageSrc(src: string): boolean {
+  const u = (src || '').trim();
+  if (!u || u.startsWith('data:')) return false;
+  if (u.startsWith('/')) return true;
+  try {
+    const host = new URL(u).hostname;
+    return host.endsWith('.amazonaws.com') || host.endsWith('.cloudfront.net');
+  } catch {
+    return false;
+  }
 }
 
 export const GALLERY_PAGE_SIZE = 36;
