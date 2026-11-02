@@ -11,7 +11,10 @@ export type BookingSiteSnapshot = {
   bookingBlocks: CmsBookingBlock[];
 };
 
-/** Scheduling data for public booking (slots + POST validation). */
+/**
+ * Services, employees, and blocks for public booking.
+ * Day occupancy is loaded separately so this does not read booking history.
+ */
 export async function loadBookingSiteSnapshot(): Promise<BookingSiteSnapshot | null> {
   if (isPublicBookingFromPostgres()) {
     try {

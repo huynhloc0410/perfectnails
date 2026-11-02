@@ -5,7 +5,6 @@ import type {
   CmsEmployee,
   CmsService,
 } from '@/lib/cmsSiteTypes';
-import { listAdminBookingsFromPostgres } from '@/lib/db/adminBookings';
 import { getDefaultSalonId } from '@/lib/db/salon';
 import { withPgClient } from '@/lib/db/pool';
 
@@ -189,8 +188,6 @@ async function loadBookingBlocks(client: PoolClient, salonId: string): Promise<C
 }
 
 export async function loadPublicBookingSiteFromPostgres(): Promise<PublicBookingSitePayload> {
-  const bookings = await listAdminBookingsFromPostgres();
-
   return withPgClient(async (client) => {
     const salonId = await getDefaultSalonId(client);
 
@@ -222,6 +219,6 @@ export async function loadPublicBookingSiteFromPostgres(): Promise<PublicBooking
       loadBookingBlocks(client, salonId),
     ]);
 
-    return { services, employees, bookings, bookingBlocks };
+    return { services, employees, bookings: [], bookingBlocks };
   });
 }

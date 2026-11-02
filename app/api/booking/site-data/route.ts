@@ -35,7 +35,6 @@ export async function GET() {
         site: {
           services: snapshot.services,
           employees: snapshot.employees,
-          bookings: snapshot.bookings,
           bookingBlocks: snapshot.bookingBlocks,
         },
       },

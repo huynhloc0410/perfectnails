@@ -11,6 +11,7 @@ import { normalizePhoneE164 } from '@/lib/phone';
 import { isSlotStartAllowedForBooking, isYmdWithinPublicBookingHorizon } from '@/lib/bookingLeadTime';
 import { isNonBookableAddonService } from '@/lib/booking/serviceEmployeeMatch';
 import { hasBookingCapacity } from '@/lib/booking/slotAvailability';
+import { listPublicSlotBookingsForDate, slotBookingsFromCmsForDate } from '@/lib/db/publicSlotBookings';
 import { isWithinBusinessHours } from '@/lib/booking/businessHours';
 import { salonDateTimeToUtc } from '@/lib/db/timezone';
 import { bookingConfirmationSms } from '@/lib/smsTemplates';
@@ -92,6 +93,17 @@ export async function POST(req: Request) {
     return NextResponse.json({ success: false, error: 'booking_unavailable' }, { status: 503 });
   }
 
+  let dayBookings;
+  try {
+    dayBookings =
+      snapshot.source === 'postgres'
+        ? await listPublicSlotBookingsForDate(dateYmd)
+        : slotBookingsFromCmsForDate(snapshot.bookings, dateYmd);
+  } catch (e) {
+    console.error('listPublicSlotBookingsForDate failed:', e);
+    return NextResponse.json({ success: false, error: 'booking_unavailable' }, { status: 503 });
+  }
+
   const svcRow = snapshot.services.find(
     (s) => String(s.name ?? '').trim() === String(service ?? '').trim()
   );
@@ -121,7 +133,7 @@ export async function POST(req: Request) {
       slotEndExclusiveLocal: slotEndExclusive,
       service: svcRow,
       employees: snapshot.employees,
-      bookings: snapshot.bookings,
+      bookings: dayBookings,
       services: snapshot.services,
       blocks: snapshot.bookingBlocks,
       stylistId: empId || undefined,

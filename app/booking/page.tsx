@@ -1,13 +1,18 @@
 'use client';
 
-import { useState, useEffect, useCallback, useMemo } from 'react';
+import { useState, useEffect, useCallback, useMemo, useRef } from 'react';
 import { useSearchParams } from 'next/navigation';
 import { ADMIN_BOOKINGS_BROADCAST } from '@/lib/admin/booking-broadcast';
 import { isValidUsCustomerPhone } from '@/lib/phone';
 import Link from 'next/link';
 import { SITE_BRAND_NAME } from '@/lib/site/branding';
 import InnerPageHero from '../components/InnerPageHero';
-import { fetchBookingSiteData, SITE_DATA_UPDATED_EVENT } from '@/lib/cms/site-client';
+import {
+  fetchBookingDaySlots,
+  fetchBookingSiteData,
+  SITE_DATA_UPDATED_EVENT,
+  type BookingDaySlot,
+} from '@/lib/cms/site-client';
 import { coerceBookingBlocksList, type CmsBookingBlock } from '@/lib/cmsSiteTypes';
 import {
   isBookingWindowBlocked,
@@ -46,17 +51,6 @@ interface Employee {
   phone: string;
 }
 
-interface Booking {
-  id: string;
-  name: string;
-  phone: string;
-  service: string;
-  employee?: string;
-  date: string;
-  timeSlot: string;
-  duration: number;
-}
-
 const BUFFER_TIME = 0; // minutes between appointments
 const ANYBODY_EMPLOYEE_ID = '__anybody__';
 
@@ -81,7 +75,12 @@ export default function Booking() {
   const serviceFromQuery = searchParams.get('service');
   const [services, setServices] = useState<Service[]>([]);
   const [employees, setEmployees] = useState<Employee[]>([]);
-  const [bookings, setBookings] = useState<Booking[]>([]);
+  const [bookings, setBookings] = useState<BookingDaySlot[]>([]);
+  /** Salon date whose occupancy is currently in `bookings`. */
+  const [dayLoadedFor, setDayLoadedFor] = useState<string | null>(null);
+  const [dayLoadError, setDayLoadError] = useState(false);
+  const [dayReloadKey, setDayReloadKey] = useState(0);
+  const dayLoadedForRef = useRef<string | null>(null);
   const [bookingBlocks, setBookingBlocks] = useState<CmsBookingBlock[]>([]);
   const [selectedCategory, setSelectedCategory] = useState<string>('');
   const [formData, setFormData] = useState({
@@ -106,8 +105,6 @@ export default function Booking() {
   /** Prevents duplicate POST /api/booking when the connection is slow. */
   const [isSubmitting, setIsSubmitting] = useState(false);
 
-  const [bookingDataSource, setBookingDataSource] = useState<'postgres' | 'cms' | 'local'>('cms');
-
   const loadSiteDataForBooking = useCallback(async () => {
     try {
       const data = await fetchBookingSiteData();
@@ -119,11 +116,7 @@ export default function Booking() {
         if (Array.isArray(site.employees)) {
           setEmployees(site.employees as Employee[]);
         }
-        if (Array.isArray(site.bookings)) {
-          setBookings(site.bookings as Booking[]);
-        }
         setBookingBlocks(coerceBookingBlocksList(site.bookingBlocks as unknown[]));
-        setBookingDataSource(data.source === 'postgres' ? 'postgres' : 'cms');
         return;
       }
     } catch {
@@ -134,7 +127,6 @@ export default function Booking() {
     const savedBlocks = localStorage.getItem('admin-booking-blocks');
     if (savedServices) setServices(JSON.parse(savedServices));
     if (savedEmployees) setEmployees(JSON.parse(savedEmployees));
-    setBookingDataSource('local');
     if (savedBlocks) {
       try {
         const parsed = JSON.parse(savedBlocks) as unknown[];
@@ -161,7 +153,7 @@ export default function Booking() {
     };
     const onVisible = () => {
       if (document.visibilityState === 'visible') {
-        void loadSiteDataForBooking();
+        setDayReloadKey((n) => n + 1);
         setSlotClock((n) => n + 1);
       }
     };
@@ -179,6 +171,46 @@ export default function Booking() {
     const id = window.setInterval(() => setSlotClock((n) => n + 1), 60_000);
     return () => window.clearInterval(id);
   }, []);
+
+  useEffect(() => {
+    const date = formData.date.trim();
+    if (!date) {
+      dayLoadedForRef.current = null;
+      setBookings([]);
+      setDayLoadedFor(null);
+      setDayLoadError(false);
+      return;
+    }
+
+    let cancelled = false;
+    if (dayLoadedForRef.current !== date) {
+      dayLoadedForRef.current = null;
+      setBookings([]);
+      setDayLoadedFor(null);
+      setDayLoadError(false);
+    }
+
+    void (async () => {
+      try {
+        const slots = await fetchBookingDaySlots(date);
+        if (cancelled) return;
+        dayLoadedForRef.current = date;
+        setBookings(slots);
+        setDayLoadedFor(date);
+        setDayLoadError(false);
+      } catch {
+        if (cancelled) return;
+        if (dayLoadedForRef.current === date) return;
+        setBookings([]);
+        setDayLoadError(true);
+        setDayLoadedFor(date);
+      }
+    })();
+
+    return () => {
+      cancelled = true;
+    };
+  }, [formData.date, dayReloadKey]);
 
   /** Services that may be booked online (excludes add-on / "Additional …" line items). */
   const bookableServices = useMemo(
@@ -307,7 +339,13 @@ export default function Booking() {
 
   // Build time rows (open + greyed) when service, employee, and date are selected
   useEffect(() => {
-    if (!formData.service || !formData.employee || !formData.date) {
+    if (
+      !formData.service ||
+      !formData.employee ||
+      !formData.date ||
+      dayLoadedFor !== formData.date ||
+      dayLoadError
+    ) {
       setTimeSlotChoices([]);
       return;
     }
@@ -334,6 +372,8 @@ export default function Booking() {
     bookableServices,
     slotClock,
     buildTimeSlotChoices,
+    dayLoadedFor,
+    dayLoadError,
   ]);
 
   useEffect(() => {
@@ -347,6 +387,7 @@ export default function Booking() {
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
     if (isSubmitting) return;
+    if (dayLoadedFor !== formData.date || dayLoadError) return;
 
     if (!formData.timeSlot || !formData.date) {
       alert('Please select a date and time slot');
@@ -512,7 +553,17 @@ export default function Booking() {
       }
 
       if (result.success) {
-        setBookings((prev) => [...prev, result.booking]);
+        setBookings((prev) => [
+          ...prev,
+          {
+            id: String(result.booking.id ?? ''),
+            service: String(result.booking.service ?? formData.service),
+            ...(result.booking.employee ? { employee: String(result.booking.employee) } : {}),
+            date: String(result.booking.date ?? ''),
+            timeSlot: String(result.booking.timeSlot ?? formData.timeSlot),
+            duration: Number(result.booking.duration) || schedulingMinutes(selectedService?.duration),
+          },
+        ]);
 
         try {
           const bc = new BroadcastChannel(ADMIN_BOOKINGS_BROADCAST);
@@ -994,8 +1045,26 @@ export default function Booking() {
               <p className="mb-3 text-xs text-lux-espressoLight/80">
                 All times are Arizona (Phoenix) time.
               </p>
-              {/* Time slots (compact grid — open selectable; blocked/booked greyed out) */}
-              {timeSlotChoices.length > 0 ? (
+              {dayLoadError ? (
+                <div className="rounded-md border border-red-300 bg-red-50 px-4 py-3 text-sm text-red-700">
+                  <p>Could not load times for this day. Please try again.</p>
+                  <button
+                    type="button"
+                    className="mt-2 font-semibold text-champagne-700 underline"
+                    onClick={() => {
+                      dayLoadedForRef.current = null;
+                      setDayLoadedFor(null);
+                      setDayReloadKey((n) => n + 1);
+                    }}
+                  >
+                    Retry
+                  </button>
+                </div>
+              ) : dayLoadedFor !== formData.date ? (
+                <p className="rounded-md border border-champagne-200/80 bg-lux-mist/40 px-4 py-3 text-sm text-lux-espresso" role="status">
+                  Checking available times…
+                </p>
+              ) : timeSlotChoices.length > 0 ? (
                 <div className="space-y-3">
                   {timeSlotChoices.some((r) => r.state === 'salon_blocked') && (
                     <p
@@ -1164,6 +1233,8 @@ export default function Booking() {
                   className="w-full rounded-xl bg-champagne-600 px-5 py-3 text-sm font-semibold text-white shadow-sm hover:bg-champagne-700 disabled:cursor-not-allowed disabled:bg-champagne-200/80 disabled:text-lux-espresso/50 sm:ml-auto sm:w-auto sm:min-w-[12rem] sm:order-2"
                   disabled={
                     isSubmitting ||
+                    dayLoadError ||
+                    dayLoadedFor !== formData.date ||
                     !formData.employee ||
                     !formData.service ||
                     !formData.date ||

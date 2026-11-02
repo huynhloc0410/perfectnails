@@ -68,7 +68,7 @@ export async function fetchPublicSiteData(): Promise<CmsSiteApiResponse> {
   return cms;
 }
 
-/** Public booking page: Postgres scheduling data when configured, else cms/S3. */
+/** Services, employees, and blocks for the booking page. Occupancy is loaded per day. */
 export async function fetchBookingSiteData(): Promise<CmsSiteApiResponse> {
   try {
     const pg = await fetch('/api/booking/site-data', {
@@ -85,4 +85,43 @@ export async function fetchBookingSiteData(): Promise<CmsSiteApiResponse> {
     /* fall through to cms */
   }
   return fetchCmsSite();
+}
+
+export type BookingDaySlot = {
+  id: string;
+  service: string;
+  employee?: string;
+  date: string;
+  timeSlot: string;
+  duration?: number;
+};
+
+/** Occupancy for one salon day: time, employee, duration, and service only. */
+export async function fetchBookingDaySlots(dateYmd: string): Promise<BookingDaySlot[]> {
+  const r = await fetch(`/api/booking/day?date=${encodeURIComponent(dateYmd)}`, {
+    credentials: 'same-origin',
+    cache: 'no-store',
+  });
+  const data = (await r.json().catch(() => null)) as { bookings?: unknown[] } | null;
+  if (!r.ok || !data || !Array.isArray(data.bookings)) {
+    throw new Error('day_slots_failed');
+  }
+  const slots: BookingDaySlot[] = [];
+  for (const raw of data.bookings) {
+    if (!raw || typeof raw !== 'object') continue;
+    const row = raw as Record<string, unknown>;
+    const id = String(row.id ?? '').trim();
+    if (!id) continue;
+    const employee = String(row.employee ?? '').trim();
+    const duration = Number(row.duration);
+    slots.push({
+      id,
+      service: String(row.service ?? '').trim() || 'Appointment',
+      ...(employee ? { employee } : {}),
+      date: String(row.date ?? ''),
+      timeSlot: String(row.timeSlot ?? ''),
+      ...(Number.isFinite(duration) && duration > 0 ? { duration } : {}),
+    });
+  }
+  return slots;
 }
