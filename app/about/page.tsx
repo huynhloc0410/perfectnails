@@ -1,10 +1,10 @@
 import InnerPageHero from '../components/InnerPageHero';
 import Link from 'next/link';
 import { SITE_BRAND_NAME } from '@/lib/site/branding';
-import { getPublicPageSnapshot } from '@/lib/site/publicPageCache';
+import { getPublicPageContent } from '@/lib/site/publicPageCache';
 
 export default async function About() {
-  const { about: aboutContent } = await getPublicPageSnapshot();
+  const { about: aboutContent } = await getPublicPageContent();
 
   return (
     <div>

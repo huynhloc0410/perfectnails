@@ -1,10 +1,10 @@
 import InnerPageHero from '../components/InnerPageHero';
 import { SITE_DEFAULT_ADDRESS } from '@/lib/site/contact';
 import { siteSalonGoogleMapsEmbedUrl, siteSalonGoogleMapsUrl } from '@/lib/site/branding';
-import { getPublicPageSnapshot } from '@/lib/site/publicPageCache';
+import { getPublicPageContent } from '@/lib/site/publicPageCache';
 
 export default async function Contact() {
-  const { contact } = await getPublicPageSnapshot();
+  const { contact } = await getPublicPageContent();
 
   const defaultAddress = SITE_DEFAULT_ADDRESS;
   const displayAddress = contact.address || defaultAddress;

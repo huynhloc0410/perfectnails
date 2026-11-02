@@ -1,7 +1,7 @@
 import JsonLd from '../components/JsonLd';
 import type { CmsService } from '@/lib/cmsSiteTypes';
 import { SITE_BRAND_NAME, siteAbsoluteUrl } from '@/lib/site/branding';
-import { getPublicPageSnapshot } from '@/lib/site/publicPageCache';
+import { getPublicPageContent } from '@/lib/site/publicPageCache';
 import ServicesCatalog from './ServicesCatalog';
 
 function buildServiceSchema(services: CmsService[]) {
@@ -43,7 +43,7 @@ function buildServiceSchema(services: CmsService[]) {
 }
 
 export default async function ServicesPage() {
-  const { services } = await getPublicPageSnapshot();
+  const { services } = await getPublicPageContent();
 
   return (
     <>

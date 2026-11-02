@@ -31,17 +31,15 @@ export function resolveGalleryImageSrc(url: string): string {
   return (url || '').trim();
 }
 
-/** Local files and the salon S3/CloudFront hosts can go through the Next image optimizer. */
+/**
+ * Only same-origin files use the Next image optimizer.
+ * Gallery photos already live on S3 as WebP thumbs. Re-encoding them on the
+ * web server fills the only machine and makes booking and policy wait.
+ */
 export function isOptimizableImageSrc(src: string): boolean {
   const u = (src || '').trim();
-  if (!u || u.startsWith('data:')) return false;
-  if (u.startsWith('/')) return true;
-  try {
-    const host = new URL(u).hostname;
-    return host.endsWith('.amazonaws.com') || host.endsWith('.cloudfront.net');
-  } catch {
-    return false;
-  }
+  if (!u || u.startsWith('data:') || u.startsWith('//')) return false;
+  return u.startsWith('/');
 }
 
-export const GALLERY_PAGE_SIZE = 36;
+export const GALLERY_PAGE_SIZE = 12;
